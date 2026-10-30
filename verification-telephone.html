@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://apis.google.com; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://www.gstatic.com https://www.google.com; connect-src https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebase.googleapis.com https://www.google.com https://www.recaptcha.net; frame-src https://www.google.com https://www.recaptcha.net https://anrsh-31e57.firebaseapp.com; base-uri 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f4a36">
+<title>التحقق من رقم الهاتف – ANRSH</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--green:#0f4a36;--gold:#e0b83a;--ink:#10241c;--paper:#f6f3ea;--line:#d9d2bd}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:"Tajawal",Tahoma,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.8;font-size:18px}
+header{background:var(--green);color:#fff;padding:26px 20px}
+.wrap{max-width:520px;margin:0 auto}
+.mark{display:inline-block;border:2px solid var(--gold);color:var(--gold);font-weight:800;letter-spacing:2px;padding:2px 14px;border-radius:6px;margin-bottom:12px}
+h1{font-size:1.6rem;line-height:1.4;margin:0}
+main{padding:24px 20px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-weight:800;margin-bottom:6px}
+input{width:100%;min-height:56px;font:inherit;font-size:1.3rem;padding:8px 14px;border:2px solid var(--green);border-radius:10px;direction:ltr;text-align:center;letter-spacing:2px}
+input:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hint{font-size:.9rem;color:#4b5a52;margin:6px 0 16px}
+button{display:block;width:100%;min-height:56px;background:var(--green);color:#fff;border:0;border-radius:12px;font:inherit;font-weight:800;font-size:1.15rem;cursor:pointer}
+button.alt{background:#fff;color:var(--green);border:2px solid var(--green);margin-top:10px}
+button:disabled{opacity:.55;cursor:not-allowed}
+.msg{margin:14px 0 0;padding:10px 14px;border-radius:10px;font-weight:700}
+.err{background:#fde8e6;color:#7a1a12}
+.ok{background:#e1f3e8;color:#0d5a31}
+.note{margin-top:20px;font-size:.92rem;color:#4b5a52;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="mark" aria-hidden="true">ANRSH</span><h1>التحقق من رقم هاتفكم</h1></div></header>
+<main class="wrap">
+  <div class="card">
+    <form id="f1" novalidate>
+      <label for="phone">رقم الهاتف المحمول</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0X XX XX XX XX" dir="ltr">
+      <p class="hint">أدخلوا رقمكم الجزائري، مثال: 0657123456. سنرسل لكم رمزاً من 6 أرقام عبر رسالة SMS.</p>
+      <button type="submit" id="send">إرسال الرمز</button>
+    </form>
+
+    <form id="f2" novalidate hidden>
+      <label for="code">رمز التحقق (6 أرقام)</label>
+      <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" dir="ltr">
+      <p class="hint" id="sentto"></p>
+      <button type="submit" id="verify">تأكيد الرمز</button>
+      <button type="button" class="alt" id="resend" disabled>إعادة الإرسال</button>
+      <button type="button" class="alt" id="change">تغيير الرقم</button>
+    </form>
+
+    <div id="done" hidden>
+      <div class="msg ok" role="status">تم التحقق من رقم هاتفكم بنجاح ✓</div>
+    </div>
+
+    <div id="msg" class="msg" role="alert" hidden></div>
+    <div id="recaptcha"></div>
+  </div>
+  <p class="note">لا تشاركوا رمز التحقق مع أي شخص، ولو قال إنه من الجمعية. لن نطلب منكم أبداً رقم بطاقة بنكية أو كلمة مرور بالهاتف.</p>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDDrftMbhvo6W2qGEdMW3b362IbwM-lR5g",
+  authDomain: "anrsh-31e57.firebaseapp.com",
+  projectId: "anrsh-31e57",
+  storageBucket: "anrsh-31e57.firebasestorage.app",
+  messagingSenderId: "537854521431",
+  appId: "1:537854521431:web:834adcd198109b3562b312"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+auth.languageCode = "ar";
+
+const $ = (id) => document.getElementById(id);
+const f1 = $("f1"), f2 = $("f2"), done = $("done"), msg = $("msg");
+let confirmation = null, verifier = null, timer = null, phoneE164 = "";
+
+function show(text, ok){
+  msg.textContent = text;
+  msg.className = "msg " + (ok ? "ok" : "err");
+  msg.hidden = !text;
+}
+function digits(s){
+  return String(s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+                  .replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+}
+function toE164(raw){
+  let s = digits(raw).replace(/[\s\-().]/g, "");
+  if (s.startsWith("00213")) s = "+" + s.slice(2);
+  else if (s.startsWith("213")) s = "+" + s;
+  else if (s.startsWith("0")) s = "+213" + s.slice(1);
+  return /^\+213[567]\d{8}$/.test(s) ? s : null;
+}
+function errText(e){
+  const c = (e && e.code) || "";
+  if (c.includes("invalid-phone-number")) return "رقم الهاتف غير صحيح.";
+  if (c.includes("too-many-requests")) return "محاولات كثيرة. انتظروا قليلاً ثم أعيدوا المحاولة.";
+  if (c.includes("invalid-verification-code")) return "الرمز غير صحيح. تأكدوا منه وأعيدوا الإدخال.";
+  if (c.includes("code-expired") || c.includes("session-expired")) return "انتهت صلاحية الرمز. اطلبوا رمزاً جديداً.";
+  if (c.includes("quota-exceeded")) return "تم بلوغ الحد اليومي للرسائل. حاولوا غداً أو تواصلوا مع الجمعية.";
+  if (c.includes("captcha") ) return "فشل التحقق الأمني. أعيدوا تحميل الصفحة.";
+  if (c.includes("network")) return "تعذّر الاتصال بالإنترنت.";
+  if (c.includes("billing") || c.includes("operation-not-allowed")) return "خدمة الرسائل غير مفعّلة بعد في هذا المشروع.";
+  return "حدث خطأ. أعيدوا المحاولة بعد قليل.";
+}
+function makeVerifier(){
+  if (verifier) { try { verifier.clear(); } catch(e){} verifier = null; }
+  $("recaptcha").replaceChildren();
+  verifier = new RecaptchaVerifier(auth, "recaptcha", { size: "invisible" });
+}
+function startTimer(){
+  let n = 60;
+  const b = $("resend");
+  b.disabled = true;
+  clearInterval(timer);
+  timer = setInterval(() => {
+    n--;
+    b.textContent = n > 0 ? "إعادة الإرسال بعد " + n + " ثانية" : "إعادة الإرسال";
+    if (n <= 0) { clearInterval(timer); b.disabled = false; }
+  }, 1000);
+  b.textContent = "إعادة الإرسال بعد 60 ثانية";
+}
+async function sendCode(){
+  show("");
+  const p = toE164($("phone").value);
+  if (!p) { show("أدخلوا رقماً جزائرياً صحيحاً مثل 0657123456.", false); return; }
+  $("send").disabled = true; $("resend").disabled = true;
+  try {
+    makeVerifier();
+    confirmation = await signInWithPhoneNumber(auth, p, verifier);
+    phoneE164 = p;
+    f1.hidden = true; f2.hidden = false;
+    $("sentto").textContent = "أرسلنا الرمز إلى " + p;
+    show("تم إرسال الرمز. قد يستغرق دقيقة.", true);
+    startTimer();
+    $("code").focus();
+  } catch (e) {
+    show(errText(e), false);
+    $("resend").disabled = false;
+  } finally { $("send").disabled = false; }
+}
+f1.addEventListener("submit", (e) => { e.preventDefault(); sendCode(); });
+$("resend").addEventListener("click", () => { f1.hidden = false; f2.hidden = true; sendCode(); });
+$("change").addEventListener("click", () => { clearInterval(timer); f2.hidden = true; f1.hidden = false; show(""); $("phone").focus(); });
+f2.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const c = digits($("code").value).replace(/\D/g, "");
+  if (c.length !== 6) { show("الرمز مكوّن من 6 أرقام.", false); return; }
+  $("verify").disabled = true;
+  try {
+    const cred = await confirmation.confirm(c);
+    clearInterval(timer);
+    f2.hidden = true; done.hidden = false; show("");
+    window.dispatchEvent(new CustomEvent("anrsh:phone-verified", { detail: { phone: cred.user.phoneNumber } }));
+    await signOut(auth);
+  } catch (err) { show(errText(err), false); }
+  finally { $("verify").disabled = false; }
+});
+</script>
+</body>
+</html>
