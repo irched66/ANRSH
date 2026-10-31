@@ -1,0 +1,4 @@
+window.ANRSH_CONFIG = {
+  supabaseUrl: "https://ehhxpfqtmhnnubpoxyhb.supabase.co",
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoaHhwZnF0bWhubnVicG94eWhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NzM2MTMsImV4cCI6MjEwODQ0OTYxM30.EC3xkOvgiMkqS4OaQzg_aC5GTK69PNeZkQdBdwobn8s"
+};
