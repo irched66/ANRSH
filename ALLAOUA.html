@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlRoot">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>ANRSH – المنصة الرقمية الرسمية 2026 | سوناطراك</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#d97706">
+
+    <meta name="theme-color" content="#d97706">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <style>
+        :root {
+            --gold-primary: #f59e0b;
+            --gold-light: #fbbf24;
+            --gold-dark: #b45309;
+            --bg-dark: #090d16;
+            --card-glass: rgba(18, 24, 38, 0.95);
+            --card-border: rgba(245, 158, 11, 0.4);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --green-wa: #25D366;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0; padding: 0;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", Tahoma, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .bg-cinematic {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -2;
+            background: radial-gradient(circle at 50% 15%, #1e293b 0%, #070a10 100%);
+        }
+
+        .audio-assistant-bar {
+            background: linear-gradient(90deg, #1e3a8a, #0284c7);
+            color: #fff;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1002;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .audio-btn {
+            background: #fff;
+            color: #0369a1;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 16px 16px 90px 16px;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 22px;
+        }
+
+        .logo-box {
+            width: 86px;
+            height: 86px;
+            background: #000;
+            border: 2px solid var(--gold-primary);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
+            margin-bottom: 12px;
+        }
+
+        .logo-svg { width: 70px; height: 70px; }
+
+        .header-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: var(--gold-light);
+            margin-bottom: 6px;
+        }
+
+        .header-welcome {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            max-width: 850px;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.55);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .lang-strip {
+            display: flex;
+            gap: 8px;
+            margin: 14px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .lang-pill {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.82rem;
+            transition: 0.2s;
+        }
+
+        .lang-pill.active {
+            background: var(--gold-primary);
+            color: #000;
+            border-color: var(--gold-light);
+        }
+
+        .tabs-nav {
+            display: flex;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            gap: 8px;
+            margin: 14px auto 22px auto;
+            width: 100%;
+            max-width: 800px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: #cbd5e1;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--gold-primary);
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 22px;
+        }
+
+        @media (min-width: 992px) {
+            .main-grid {
+                grid-template-columns: 1.18fr 0.82fr;
+                align-items: start;
+            }
+        }
+
+        .glass-card {
+            background: var(--card-glass);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            backdrop-filter: blur(14px);
+        }
+
+        .section-header-badge {
+            display: inline-block;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--gold-primary);
+            color: var(--gold-light);
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .form-section-title {
+            color: var(--gold-light);
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin: 18px 0 10px 0;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+            padding-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        @media (min-width: 560px) {
+            .form-row.two-col { grid-template-columns: 1fr 1fr; }
+            .form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--gold-primary);
+        }
+
+        .docs-box {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px dashed var(--gold-primary);
+            border-radius: 14px;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .req { color: #f87171; font-weight: 800; }
+
+        .otp-verification-box {
+            display: none;
+            margin-top: 18px;
+            padding: 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--green-wa);
+            border-radius: 14px;
+            text-align: center;
+        }
+
+        .otp-input-field {
+            width: 220px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: 6px;
+            background: #000;
+            border: 2px solid var(--gold-primary);
+            color: #fff;
+            margin: 12px auto;
+            display: block;
+        }
+
+        .preview-sticky {
+            position: sticky;
+            top: 70px;
+        }
+
+        .card-perspective {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .card-3d-box {
+            width: 100%;
+            min-height: 275px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 18px;
+        }
+
+        .card-3d-box.flipped { transform: rotateY(180deg); }
+
+        .badge-face {
+            width: 100%;
+            min-height: 275px;
+            position: absolute;
+            top: 0; left: 0;
+            backface-visibility: hidden;
+            border-radius: 18px;
+            padding: 16px;
+            border: 2px solid var(--gold-primary);
+            background: #090e18;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .badge-face::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(9, 14, 24, 0.88), rgba(9, 14, 24, 0.94));
+            z-index: 1;
+        }
+
+        .badge-face.back { transform: rotateY(180deg); }
+
+        .badge-content-wrap {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .badge-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.5);
+            padding-bottom: 6px;
+        }
+
+        .badge-header-titles h4 {
+            font-size: 0.82rem;
+            color: var(--gold-light);
+            font-weight: 800;
+        }
+
+        .badge-header-titles small { font-size: 0.65rem; color: #cbd5e1; }
+
+        .badge-body {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .badge-avatar {
+            width: 82px;
+            height: 104px;
+            background: #1e293b;
+            border: 2px solid var(--gold-primary);
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .badge-info {
+            font-size: 0.74rem;
+            line-height: 1.55;
+            flex-grow: 1;
+        }
+
+        .badge-info-line {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(245, 158, 11, 0.3);
+            padding: 2px 0;
+        }
+
+        .badge-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(245, 158, 11, 0.4);
+            padding-top: 6px;
+        }
+
+        .card-actions-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn-card {
+            flex: 1;
+            padding: 11px;
+            border-radius: 9px;
+            border: none;
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-flip { background: rgba(255,255,255,0.12); color: #fff; }
+        .btn-dl { background: var(--gold-primary); color: #000; }
+        .btn-wa-card { background: var(--green-wa); color: #fff; }
+
+        .btn-disabled {
+            background: #334155 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
+        }
+
+        .directory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .bureau-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .floating-dock {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 999;
+            display: flex;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.95);
+            padding: 8px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+        }
+
+        .dock-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.1rem;
+        }
+
+        .dock-wa { background: var(--green-wa); }
+        .dock-phone { background: #2563eb; }
+        .dock-email { background: #ea4335; }
+
+        @media print {
+            body * { visibility: hidden !important; }
+            #badge3D, #badge3D .badge-face, #badge3D .badge-face * { visibility: visible !important; }
+            #badge3D {
+                position: fixed !important;
+                inset: 0 auto auto 0 !important;
+                width: 176mm !important;
+                height: 54mm !important;
+                transform: none !important;
+            }
+            #badge3D .badge-face {
+                position: absolute !important;
+                display: flex !important;
+                width: 86mm !important;
+                height: 54mm !important;
+                top: 0 !important;
+                transform: none !important;
+                backface-visibility: visible !important;
+                border: 1px solid #d97706 !important;
+                border-radius: 4mm !important;
+            }
+            #badge3D .badge-face.front { left: 0 !important; }
+            #badge3D .badge-face.back { left: 90mm !important; }
+            .card-actions-bar, .audio-assistant-bar, .floating-dock { display: none !important; }
+        }
+    .badge-face{background:linear-gradient(160deg,#0b1f4a,#050a18)!important;border:3px solid #f59e0b!important}
+.badge-face::before{background:linear-gradient(135deg,rgba(11,31,74,.35),rgba(5,10,24,.6))!important}
+.card-3d-box,.badge-face{min-height:385px!important}
+.wm{position:absolute;top:50%;left:50%;width:62%;transform:translate(-50%,-50%);opacity:.12;z-index:0;pointer-events:none}
+.badge-body{margin:4px 0!important}
+@media print{body.pr *{visibility:hidden!important}body.pr #badge3D,body.pr #badge3D *{visibility:hidden!important}body.pr #section-reports,body.pr #section-reports *{visibility:visible!important;color:#000!important}body.pr #section-reports{position:absolute;top:0;left:0;width:100%;background:#fff}}
+textarea{resize:vertical;font-family:inherit}
+.anrsh-security-tools{margin:0 auto 20px;max-width:1240px;padding:16px}
+.anrsh-security-tools .card-actions-bar{display:flex;flex-wrap:wrap}
+.anrsh-security-tools .btn-card{min-height:44px}
+#otpInput{direction:ltr}
+@media(max-width:560px){.anrsh-security-tools .btn-card{flex:1 1 100%;font-size:.82rem}}
+</style>
+</head>
+<body>
+
+    <div class="audio-assistant-bar">
+        <span id="txtAudioBar">♿ المساعد الصوتي لذوي الإعاقة البصرية:</span>
+        <button type="button" class="audio-btn" id="audioToggleBtn" onclick="toggleScreenReader()">🔊 تفعيل القارئ الصوتي</button>
+        <button type="button" class="audio-btn" id="btnVoiceTest" onclick="voiceTest()">🔈 اختبار الصوت</button>
+        <span id="srStatus" style="font-size:.7rem;max-width:45%"></span>
+    </div>
+
+    <div class="bg-cinematic"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo-box">
+                <img class="lg logo-svg" alt="ANRSH" style="border-radius:12px;object-fit:cover">
+            </div>
+            
+            <h1 class="header-title" id="t-main-title">الجمعية الوطنية لمتقاعدي سوناطراك ANRSH</h1>
+            <p class="header-welcome" id="t-welcome">
+                المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.
+            </p>
+
+            <div class="lang-strip">
+                <button type="button" class="lang-pill active" onclick="setLanguage('ar', this)">العربية</button>
+                <button type="button" class="lang-pill" onclick="setLanguage('fr', this)">Français</button>
+                <button type="button" class="lang-pill" onclick="setLanguage('en', this)">English</button>
+                <button type="button" class="lang-pill" onclick="setLanguage('ber', this)">ⵜⴰⵎⴰⵣⵉⵖⵜ</button>
+                
+            </div>
+
+            <div class="tabs-nav">
+                <button type="button" class="tab-btn active" id="tab-reg" onclick="switchMainTab('register')">📝 طلب الانخراط والبطاقة</button>
+                <button type="button" class="tab-btn" id="tab-reports" onclick="switchMainTab('reports')">📊 التقارير الأدبية والمالية</button>
+                <button type="button" class="tab-btn" id="tab-dir" onclick="switchMainTab('directory')">🏛️ دليل المكاتب ورؤساء النواحي</button>
+                <button type="button" class="tab-btn" id="tab-admin" onclick="switchMainTab('admin')">🔐 فضاء الإدارة المحمي</button>
+            </div>
+            <section class="glass-card anrsh-security-tools" aria-label="أدوات التثبيت والحماية">
+                <h2 style="color:var(--gold-light);font-size:1.05rem;margin-bottom:10px">📲 تثبيت التطبيق وأمن الحساب</h2>
+                <div class="card-actions-bar" style="margin-top:0">
+                    <button type="button" class="btn-card btn-dl" id="btnInstall" onclick="doInstall()">📥 Télécharger l’application / تثبيت التطبيق</button>
+                    <button type="button" class="btn-card btn-flip" onclick="lockANRSHSession()">🔒 قفل الجلسة الآن</button>
+                    <a class="btn-card btn-flip" style="text-decoration:none" href="mailto:anrsh1994@gmail.com?subject=طلب%20حماية%20البيانات%20ANRSH">🛡️ طلب حماية أو تصحيح البيانات</a>
+                </div>
+                <p id="installHelp" style="font-size:.8rem;color:var(--text-muted);line-height:1.7;margin-top:8px">التثبيت متاح عند نشر المنصة عبر HTTPS وإعداد ملفات PWA (manifest وservice worker). إذا لم يظهر إشعار التثبيت، افتح قائمة المتصفح واختر «إضافة إلى الشاشة الرئيسية».</p>
+                <p id="securityStatus" role="status" style="font-size:.8rem;color:#86efac;margin-top:6px">🛡️ الحماية: التحقق من رمز العضوية عبر الخادم عند تفعيل الربط الآمن.</p>
+            </section>
+        </header>
+
+        <!-- 1. استمارة الانخراط وتوليد البطاقة -->
+        <div id="section-register" class="main-grid">
+            <div class="glass-card">
+                <span class="section-header-badge" id="t-badge-session">الموسم المالي والجمعوي 2026</span>
+                <h2 style="color: var(--gold-light); font-size: 1.25rem; font-weight: 900; margin-bottom: 6px;" id="t-form-title">استمارة الانخراط واستخراج بطاقة العضوية 2026</h2>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="t-form-desc">يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.</p>
+
+                <form id="adhesionForm" oninput="syncBadgeLive()">
+                    <div class="form-section-title">👤 <span id="t-sec-civil">البيانات الشخصية والمدنية</span></div>
+                    
+                    <div class="form-row two-col">
+                        <div class="field-group">
+                            <label id="t-lbl-type">الصفة والانخراط:</label>
+                            <select id="user_type">
+                                <option value="متقاعد">متقاعد سوناطراك (رجل)</option>
+                                <option value="متقاعدة">متقاعدة سوناطراك (امرأة)</option>
+                                <option value="أرملة / ذوي الحقوق">أرملة متقاعد (ذوي الحقوق)</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-demand">نوع الطلب:</label>
+                            <select id="demand_type">
+                                <option value="جديد">انخراط جديد (2026)</option>
+                                <option value="تجديد">تجديد سنوي للاشتراك</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row two-col">
+                        <div class="field-group">
+                            <label id="t-lbl-ln">اللقب (Nom):</label>
+                            <input type="text" id="last_name" required placeholder="علاوة / ALLAOUA">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-fn">الاسم (Prénom):</label>
+                            <input type="text" id="first_name" required placeholder="العيد / LAID">
+                        </div>
+                    </div>
+
+                    <div class="form-row three-col">
+                        <div class="field-group">
+                            <label id="t-lbl-dob">تاريخ الازدياد:</label>
+                            <input type="date" id="birth_date">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-pob">مكان الازدياد:</label>
+                            <input type="text" id="birth_place" placeholder="قسنطينة">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-blood">زمرة الدم:</label>
+                            <select id="blood_group">
+                                <option value="A+">A+</option>
+                                <option value="O+">O+</option>
+                                <option value="B+">B+</option>
+                                <option value="AB+">AB+</option>
+                                <option value="A-">A-</option>
+                                <option value="O-">O-</option>
+                                <option value="B-">B-</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- العنوان الإداري -->
+                    <div class="form-section-title">📍 <span id="t-sec-geo">العنوان الجغرافي والإقامة الإدارية (التقسيم الإداري)</span></div>
+                    
+                    <div class="form-row three-col">
+                        <div class="field-group">
+                            <label id="t-lbl-wilaya">الولاية <span class="req">*</span>:</label>
+                            <select id="user_wilaya" onchange="onWilayaChange()" required>
+                                <option value="">-- اختر الولاية --</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-daira">الدائرة <span class="req">*</span>:</label>
+                            <select id="user_daira" onchange="onDairaChange()" required>
+                                <option value="">-- اختر الدائرة --</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-commune">البلدية <span class="req">*</span>:</label>
+                            <select id="user_commune" onchange="syncBadgeLive()" required>
+                                <option value="">-- اختر البلدية --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row two-col">
+                        <div class="field-group">
+                            <label id="t-lbl-address">عنوان الإقامة بالتفصيل:</label>
+                            <input type="text" id="user_address" placeholder="حي عدل CSCEC، عمارة 05">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-nin">رقم بطاقة التعريف الوطنية (CNI):</label>
+                            <input type="text" id="nin_no" placeholder="رقم بطاقة التعريف البيومترية" dir="ltr" required>
+                        </div>
+                    </div>
+
+                    <!-- المسار بسوناطراك -->
+                    <div class="form-section-title">🏭 <span id="t-sec-pro">المسار والنشاط بسوناطراك الأم ونواحيها</span></div>
+
+                    <div class="form-row two-col">
+                        <div class="field-group">
+                            <label id="t-lbl-mat">رقم التسجيل بسوناطراك (Matricule SH):</label>
+                            <input type="text" id="matricule_sh" required placeholder="24570N" dir="ltr">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-direction">النشاط أو القسم بمجمع سوناطراك:</label>
+                            <select id="user_activity" onchange="syncBadgeLive()">
+                                <option value="DP - قسم الإنتاج (Division Production)" selected>DP - قسم الإنتاج (Division Production)</option>
+                                <option value="FOR - قسم الحفر وأشغال الآبار (Division Forage)">FOR - قسم الحفر وأشغال الآبار (Division Forage)</option>
+                                <option value="DOS - قسم العمليات والتشغيل الميداني">DOS - قسم العمليات والتشغيل الميداني</option>
+                                <option value="TRC - النقل عبر الأنابيب">TRC - النقل عبر الأنابيب</option>
+                                <option value="LQS / RPI - التمييع والتكرير والبتروكيمياء">LQS / RPI - التمييع والتكرير والبتروكيمياء</option>
+                                <option value="EXPLO / DEV - الاستكشاف والتطوير">EXPLO / DEV - الاستكشاف والتطوير</option>
+                                <option value="COM - تسويق المحروقات">COM - تسويق المحروقات</option>
+                                <option value="DG / Siège - المديرية العامة والمصالح الوظيفية">DG / Siège - المديرية العامة والمصالح الوظيفية</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row three-col">
+                        <div class="field-group">
+                            <label id="t-lbl-region">ناحية العمل بسوناطراك (Région):</label>
+                            <select id="user_work_region" onchange="syncBadgeLive()">
+                                <option value="حاسي مسعود" selected>ناحية حاسي مسعود (DP)</option>
+                                <option value="حاسي الرمل">ناحية حاسي الرمل</option>
+                                <option value="سكيكدة">ناحية سكيكدة (المنطقة البتروكيماوية)</option>
+                                <option value="أرزيو">ناحية أرزيو</option>
+                                <option value="عين أمناس">ناحية عين أمناس</option>
+                                <option value="قاسي الطويل">ناحية قاسي الطويل</option>
+                                <option value="غرد الباغل">ناحية غرد الباغل</option>
+                                <option value="بركاين">ناحية بركاين</option>
+                                <option value="أوهانت / إن صالح">ناحية أوهانت / إن صالح</option>
+                                <option value="تقرت / حوض الحمراء">ناحية تقرت وحوض الحمراء</option>
+                                <option value="تين فوي تبنكورت (TFT)">ناحية TFT</option>
+                                <option value="الجزائر العاصمة والوسط">ناحية الجزائر العاصمة والوسط</option>
+                            </select>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-struct">المهنة / التخصص (Spécialité):</label>
+                            <input type="text" id="last_structure" placeholder="مهندس دولة في الميكانيك العامة">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-retireyear">سنة التقاعد:</label>
+                            <input type="number" id="retire_year" placeholder="2016">
+                        </div>
+                    </div>
+
+                    <!-- الاتصال والمكتب الجهوي -->
+                    <div class="form-section-title">📞 <span id="t-sec-contact">الاتصال والمكتب الجهوي للانتساب</span></div>
+
+                    <div class="form-row three-col">
+                        <div class="field-group">
+                            <label id="t-lbl-phone">رقم الهاتف النقال (للتواصل والواتساب):</label>
+                            <input type="tel" id="user_phone" required placeholder="06XXXXXXXX" dir="ltr">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-email">البريد الإلكتروني للمنخرط:</label>
+                            <input type="email" id="user_email" placeholder="votre.email@gmail.com" dir="ltr">
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-bureau">المكتب الجهوي المعني بالانتساب:</label>
+                            <select id="user_bureau" onchange="syncBadgeLive()">
+                                <option value="Skikda" selected>المكتب الجهوي سكيكدة (الناحية الشرقية)</option>
+                                <option value="Constantine">المكتب الجهوي قسنطينة</option>
+                                <option value="Alger">المكتب الجهوي الجزائر العاصمة والوسط</option>
+                                <option value="Oran">المكتب الجهوي وهران (الناحية الغربية)</option>
+                                <option value="Hassi Messaoud">المكتب الجهوي حاسي مسعود</option>
+                                <option value="Hassi R'Mel">المكتب الجهوي حاسي الرمل</option>
+                                <option value="In Amenas">المكتب الجهوي عين أمناس</option>
+                                <option value="Arzew">المكتب الجهوي أرزيو</option>
+                                <option value="National">المكتب التنفيذي الوطني (المقر المركزي)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- الوثائق وإثبات الدفع -->
+                    <div class="form-row two-col"><div class="field-group"><label>رقم الضمان الاجتماعي:</label><input type="text" id="nss_no" dir="ltr"></div><div class="field-group"><label>رقم التسجيل بالصندوق الوطني للتقاعد (CNR):</label><input type="text" id="cnr_no" dir="ltr"></div></div>
+                    <div class="docs-box">
+                        <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج):</h4>
+                        <div class="form-row two-col">
+                            <div class="field-group">
+                                <label id="t-lbl-photo">📸 الصورة الشمسية الرسمية (للبطاقة البيومترية):</label>
+                                <input type="file" id="user_photo_file" accept="image/*" onchange="loadPhotoPreview(event)">
+                            </div>
+                            <div class="field-group">
+                                <label id="t-lbl-cni">🪪 نسخة من بطاقة التعريف الوطنية (صورة أو PDF) *:</label>
+                                <input type="file" id="doc_cni" accept="image/*,.pdf" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col" style="margin-top: 8px;">
+                            <div class="field-group">
+                                <label id="t-lbl-retire">📄 قرار الإحالة على التقاعد بسوناطراك (صورة أو PDF) *:</label>
+                                <input type="file" id="doc_retire" accept="image/*,.pdf" required>
+                            </div>
+                            <div class="field-group">
+                                <label id="t-lbl-proof">🧾 صورة وصل الدفع الإلكتروني (بريدي موب أو تحويل بنكي) *:</label>
+                                <input type="file" id="doc_payment_proof" accept="image/*,.pdf" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
+                    <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p></div>
+                    <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
+                    <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
+                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
+                        <span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>
+                    </button>
+                </form>
+
+                <!-- نافذة التحقق OTP -->
+                <div id="otpBox" class="otp-verification-box">
+                    <h3 style="color: var(--green-wa); margin-bottom: 6px;" id="t-otp-head">🔐 تأكيد رمز الأمان لفك قفل طباعة البطاقة</h3>
+                    <p style="font-size: 0.85rem; color: #cbd5e1;" id="t-otp-desc">
+                        تم إرسال إشعار الدفع والتسجيل إلى البريد الإداري <b>irched2521@gmail.com</b>. أدخل رمز التحقق المعتمد:
+                    </p>
+                    <input type="text" id="otpInput" class="otp-input-field" maxlength="6" minlength="6" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" aria-label="رمز الأمان المكون من ستة أرقام" placeholder="000000">
+                    <button type="button" class="btn-card btn-dl" style="max-width: 280px; margin: 0 auto;" onclick="validateSecurityOTP()">
+                        <span id="t-otp-confirm">✅ تأكيد الرمز وفك قفل الطباعة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- المعاينة الحية للبطاقة -->
+            <div class="preview-sticky">
+                <div class="glass-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom:12px">
+                        <h3 style="color:var(--gold-light);font-size:1rem">🪪 معاينة البطاقة الحية</h3>
+                        <span class="section-header-badge" style="margin:0" id="liveTag">2026</span>
+                    </div>
+                    <div class="card-perspective">
+                        <div class="card-3d-box" id="badge3D">
+                            <div class="badge-face front"><div class="badge-content-wrap">
+                                <div class="badge-header"><div class="badge-header-titles"><h4>الجمعية الوطنية لمتقاعدي سوناطراك</h4><small>ANRSH · <span id="bdBureau">Skikda</span></small></div><img class="lg" alt="" style="width:40px;height:40px;border-radius:9px"></div>
+                                <div style="text-align:center;margin-top:6px"><b style="color:var(--gold-light)">بطاقة انخراط · CARTE D’ADHÉRENT</b> <span style="background:#16a34a;border-radius:6px;padding:1px 8px;font-weight:800" id="bdYear">2026</span></div>
+                                <div class="badge-body">
+                                    <img class="badge-avatar" id="bdPhoto" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
+                                    <div class="badge-info">
+                                        <div class="badge-info-line"><span>الاسم</span><b id="bdName">—</b></div>
+                                        <div class="badge-info-line"><span>Matricule</span><b id="bdMat" dir="ltr">—</b></div>
+                                        <div class="badge-info-line"><span>الصفة</span><b id="bdType">—</b></div>
+                                        <div class="badge-info-line"><span>الاختصاص</span><b id="bdSpec">—</b></div>
+                                        <div class="badge-info-line"><span>الولاية</span><b id="bdWil">—</b></div>
+                                        <div class="badge-info-line"><span>الناحية</span><b id="bdAct">—</b></div>
+                                    </div>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:2px"><svg id="bdBar" style="height:30px;max-width:55%"></svg><div style="text-align:center;font-size:.58rem"><div id="bdSig" style="font-family:'Brush Script MT','Segoe Script',cursive;font-size:1.05rem;color:#fbbf24;line-height:1">—</div><small>المسؤول الجهوي · Responsable régional</small></div></div>
+                                <div class="badge-footer"><small style="color:var(--gold-light)">معًا من أجل كرامة المتقاعد وحقوقه</small><small id="bdRef" dir="ltr">ANRSH-2026</small></div>
+                            </div></div>
+                            <div class="badge-face back"><div class="badge-content-wrap"><img class="wm lg" alt="">
+                                <div style="text-align:center;line-height:1.4"><div style="display:flex;align-items:center;justify-content:center;gap:10px"><img class="lg" alt="" style="width:44px;height:44px;border-radius:10px"><div><b style="color:#fbbf24;font-size:.8rem">الجمعية الوطنية لمتقاعدي سوناطراك</b><br><b style="font-size:.78rem">المكتب الوطني ANRSH</b></div></div><small style="color:#e2e8f0;font-size:.62rem">Association Nationale des Retraités de Sonatrach · Bureau National ANRSH</small></div>
+                                <div style="text-align:center;margin:6px 0;border-top:1px solid rgba(251,191,36,.5);border-bottom:1px solid rgba(251,191,36,.5);padding:5px 0"><b style="color:#fbbf24;font-size:1.15rem;display:block">بطاقة الانخراط الإلكترونية</b><b style="font-size:.85rem">CARTE D’ADHÉRENT ÉLECTRONIQUE</b></div>
+                                <div style="display:flex;gap:14px;align-items:center;justify-content:center;margin:6px 0"><div id="bdQR" style="background:#fff;padding:6px;border-radius:8px;min-width:100px;min-height:100px"></div><div class="badge-info"><div class="badge-info-line"><span>زمرة الدم</span><b id="bdBlood">—</b></div><div class="badge-info-line"><span>تاريخ الازدياد</span><b id="bdDob">—</b></div><div class="badge-info-line"><span>البلدية</span><b id="bdCom">—</b></div></div></div>
+                                <small style="text-align:center;color:#cbd5e1;font-size:.62rem">البطاقة سنوية: احتفظ بالرقم عند التجديد وقدّمها عند الطلب · 0657709457</small>
+                            </div></div>
+                        </div>
+                    </div>
+                    <div class="card-actions-bar">
+                        <button type="button" class="btn-card btn-flip" onclick="document.getElementById('badge3D').classList.toggle('flipped')">🔄 تدوير</button>
+                        <button type="button" class="btn-card btn-dl btn-disabled" id="btnDl" onclick="downloadCard()">⬇️ PNG</button>
+                        <button type="button" class="btn-card btn-dl btn-disabled" id="btnPr" onclick="printCard()">🖨️ طباعة</button>
+                    </div>
+                    <p id="lockMsg" style="font-size:.78rem;color:var(--text-muted);margin-top:8px">🔒 التنزيل والطباعة يُفتحان بعد إدخال رمز التحقق الذي يرسله المكتب.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-reports" class="glass-card" style="display:none">
+            <h2 style="color:var(--gold-light)">📊 التقرير الأدبي والمالي</h2>
+            <p id="dueInfo" style="margin:10px 0;padding:10px;border-radius:10px;background:rgba(245,158,11,.12);font-size:.88rem"></p>
+            <div class="form-row three-col">
+                <div class="field-group"><label>المكتب</label><select id="rp_bureau"></select></div>
+                <div class="field-group"><label>نوع التقرير</label><select id="rp_type"><option value="فصلي T1 (جانفي–مارس)">فصلي T1 (جانفي–مارس)</option><option value="فصلي T2 (أفريل–جوان)">فصلي T2 (أفريل–جوان)</option><option value="فصلي T3 (جويلية–سبتمبر)">فصلي T3 (جويلية–سبتمبر)</option><option value="فصلي T4 (أكتوبر–ديسمبر)">فصلي T4 (أكتوبر–ديسمبر)</option><option value="سنوي">سنوي (شامل)</option></select></div>
+                <div class="field-group"><label>السنة</label><input type="number" id="rp_year" value="2026"></div>
+            </div>
+            <h3 style="color:var(--gold-light);margin-top:12px">التقرير الأدبي</h3>
+            <div class="form-row two-col">
+                <div class="field-group"><label>المنتسبون الجدد خلال الفترة</label><input type="number" id="rp_members" min="0"></div>
+                <div class="field-group"><label>عدد الأنشطة المنجزة</label><input type="number" id="rp_acts" min="0"></div>
+                <div class="field-group"><label>المستفيدون من العمرة</label><input type="number" id="rp_omra" min="0"></div>
+                <div class="field-group"><label>المستفيدون من المساعدات الاجتماعية</label><input type="number" id="rp_aid" min="0"></div>
+            </div>
+            <label style="display:block;margin-top:8px">ملخص الأنشطة والإنجازات</label><textarea id="rp_lit" rows="4"></textarea>
+            <label style="display:block;margin-top:8px">الصعوبات والعراقيل</label><textarea id="rp_diff" rows="2"></textarea>
+            <label style="display:block;margin-top:8px">الآفاق والبرنامج القادم</label><textarea id="rp_persp" rows="2"></textarea>
+            <h3 style="color:var(--gold-light);margin-top:12px">التقرير المالي</h3>
+            <div class="form-row two-col">
+                <div class="field-group"><label>الاشتراكات المحصّلة (دج)</label><input type="number" id="rp_cot" oninput="rpBal()"></div>
+                <div class="field-group"><label>إيرادات أخرى: هبات وإعانات (دج)</label><input type="number" id="rp_oth" oninput="rpBal()"></div>
+                <div class="field-group"><label>مصاريف التسيير والإدارة (دج)</label><input type="number" id="rp_adm" oninput="rpBal()"></div>
+                <div class="field-group"><label>مصاريف التضامن والخدمات الاجتماعية (دج)</label><input type="number" id="rp_soc" oninput="rpBal()"></div>
+                <div class="field-group"><label>مصاريف أخرى (دج)</label><input type="number" id="rp_misc" oninput="rpBal()"></div>
+            </div>
+            <div class="form-row three-col" style="margin-top:8px">
+                <div class="field-group"><label>مجموع الإيرادات (دج)</label><input type="text" id="rp_in" readonly></div>
+                <div class="field-group"><label>مجموع المصاريف (دج)</label><input type="text" id="rp_out" readonly></div>
+                <div class="field-group"><label>الرصيد (دج)</label><input type="text" id="rp_bal" readonly></div>
+            </div>
+            <label style="display:block;margin-top:8px">ملاحظات مالية</label><textarea id="rp_note" rows="2"></textarea>
+            <div class="card-actions-bar">
+                <button type="button" class="btn-card btn-dl" id="rp_submit" style="display:none" onclick="submitReport()">📤 إرسال للمنصة</button>
+                <button type="button" class="btn-card btn-wa-card" onclick="sendReportMail()">✉️ إرسال بالبريد</button>
+                <button type="button" class="btn-card btn-flip" onclick="sendReportWA()">💬 واتساب</button>
+                <button type="button" class="btn-card btn-dl" onclick="saveReportDraft()">💾 حفظ</button>
+                <button type="button" class="btn-card btn-flip" onclick="dlReport()">⬇️ ملف</button>
+                <button type="button" class="btn-card btn-flip" onclick="printReport()">🖨️ طباعة</button>
+                <button type="button" class="btn-card btn-flip" onclick="remindCal()">⏰ تذكير فصلي</button>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-top:8px">يُرسل التقرير الموحّد (كل المكاتب) تلقائياً كل 3 أشهر والتقرير السنوي إلى irched2521@gmail.com و anrsh1994@gmail.com. للحفظ في المنصة سجّل الدخول من فضاء الإدارة.</p>
+            <div id="rp_hist" style="margin-top:10px;font-size:.85rem"></div>
+        </div>
+
+        <div id="section-directory" class="glass-card" style="display:none">
+            <h2 style="color:var(--gold-light)">🏛️ دليل المكاتب ورؤساء النواحي</h2>
+            <div class="directory-grid" id="dirGrid"></div>
+        </div>
+
+        <div id="section-admin" class="glass-card" style="display:none">
+            <h2 style="color:var(--gold-light)">🔐 فضاء مسؤول المكتب</h2>
+            <p style="margin:10px 0;font-size:.88rem;color:var(--text-muted)">بعد التحقق من وصل الدفع (500 دج): أدخل مفتاح المكتب ورقم طلب العضو لتوليد رمز التأكيد، ثم أرسله له عبر واتساب.</p>
+            <div class="form-row two-col"><div class="field-group"><label>مفتاح المكتب</label><input id="ad_key" type="password" dir="ltr"></div><div class="field-group"><label>رقم الطلب (REF)</label><input id="ad_ref" dir="ltr" placeholder="ANRSH-2026-24570N-1234"></div></div>
+            <div class="field-group"><label>هاتف العضو</label><input id="ad_tel" type="tel" dir="ltr" placeholder="06XXXXXXXX"></div>
+            <button type="button" class="btn-card btn-dl" style="width:100%;margin-top:12px" onclick="adminCode()">🔑 توليد رمز التأكيد</button>
+            <div id="ad_out" style="margin-top:12px;text-align:center"></div>
+        </div>
+    </div>
+
+    <div class="floating-dock">
+        <a class="dock-link dock-wa" href="https://wa.me/213657709457" target="_blank" rel="noopener">💬</a>
+        <a class="dock-link dock-phone" href="tel:+213657709457">📞</a>
+        <a class="dock-link" style="background:#1877f2;font-weight:900" href="https://www.facebook.com/ANRSH2026" target="_blank" rel="noopener">f</a>
+        <a class="dock-link dock-email" href="mailto:anrsh1994@gmail.com">✉️</a>
+    </div>
+
+<script src="config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+var CFG=window.ANRSH_CONFIG=window.ANRSH_CONFIG||{};
+/* السنة تتغير تلقائياً كل 1 جانفي حسب تاريخ الجهاز */
+var YEAR=new Date().getFullYear();
+(function(){var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var t=n.parentNode&&n.parentNode.nodeName;return(t==="SCRIPT"||t==="STYLE")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}}),n;
+ while(n=w.nextNode()){if(n.nodeValue.indexOf("2026")>-1)n.nodeValue=n.nodeValue.replace(/2026/g,YEAR)}
+ document.title=document.title.replace(/2026/g,YEAR);
+ var ry=document.getElementById("rp_year");if(ry)ry.value=YEAR;
+ document.querySelectorAll("[placeholder]").forEach(function(e){e.placeholder=e.placeholder.replace(/2026/g,YEAR)})})();
+var LOGO="data:image/png;base64,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";
+var $=function(i){return document.getElementById(i)};
+var WIL="أدرار,الشلف,الأغواط,أم البواقي,باتنة,بجاية,بسكرة,بشار,البليدة,البويرة,تمنراست,تبسة,تلمسان,تيارت,تيزي وزو,الجزائر,الجلفة,جيجل,سطيف,سعيدة,سكيكدة,سيدي بلعباس,عنابة,قالمة,قسنطينة,المدية,مستغانم,المسيلة,معسكر,ورقلة,وهران,البيض,إليزي,برج بوعريريج,بومرداس,الطارف,تندوف,تيسمسيلت,الوادي,خنشلة,سوق أهراس,تيبازة,ميلة,عين الدفلى,النعامة,عين تموشنت,غرداية,غليزان,تيميمون,برج باجي مختار,أولاد جلال,بني عباس,عين صالح,عين قزام,تقرت,جانت,المغير,المنيعة".split(",");
+var GEO={"سكيكدة":{"سكيكدة":["سكيكدة","فلفلة","حمادي كرومة"],"عزابة":["عزابة","جندل سعدي محمد"],"القل":["القل"],"الحروش":["الحروش"],"تمالوس":["تمالوس"]},"قسنطينة":{"قسنطينة":["قسنطينة"],"الخروب":["الخروب","علي منجلي"],"زيغود يوسف":["زيغود يوسف"],"عين عبيد":["عين عبيد"],"حامة بوزيان":["حامة بوزيان"],"ابن زياد":["ابن زياد"]}};
+var photo="",unlocked=false,otp="",lang="ar";
+function fill(id,arr,ph){var s=$(id);s.innerHTML="";var o=document.createElement("option");o.value="";o.textContent=ph;s.appendChild(o);arr.forEach(function(v){var x=document.createElement("option");x.value=v;x.textContent=v;s.appendChild(x)})}
+function onWilayaChange(){var w=$("user_wilaya").value,g=GEO[w];
+ if(g){fill("user_daira",Object.keys(g),"-- اختر الدائرة --");fill("user_commune",[],"-- اختر البلدية --")}
+ else{fill("user_daira",w?["غير مدرجة (اكتبها في العنوان)"]:[],"-- اختر الدائرة --");fill("user_commune",w?["غير مدرجة (اكتبها في العنوان)"]:[],"-- اختر البلدية --");if(w){$("user_daira").selectedIndex=1;$("user_commune").selectedIndex=1}}
+ syncBadgeLive()}
+function onDairaChange(){var g=GEO[$("user_wilaya").value];if(g&&g[$("user_daira").value])fill("user_commune",g[$("user_daira").value],"-- اختر البلدية --");syncBadgeLive()}
+function v(i){return ($(i).value||"").trim()}
+var HEADS={"Skikda":"Allaoua Laid","Constantine":"Allaoua Laid","Oran":"Touati Hassan","Hassi Messaoud":"Abdelli Abdelhamid","National":"Himmi Lachemi"};
+var curNo="";
+function drawBar(){try{JsBarcode("#bdBar",curRef||("ANRSH-"+YEAR),{height:28,displayValue:false,width:1.2,lineColor:"#fbbf24",background:"transparent"})}catch(x){}}
+function syncBadgeLive(){
+ $("bdSig").textContent=HEADS[$("user_bureau").value]||"—";
+ $("bdName").textContent=(v("first_name")+" "+v("last_name")).trim()||"—";
+ $("bdMat").textContent=v("matricule_sh").toUpperCase()||"—";
+ $("bdType").textContent=v("user_type")||"—";
+ $("bdSpec").textContent=v("last_structure")||"—";
+ $("bdWil").textContent=v("user_wilaya")||"—";
+ $("bdAct").textContent=v("user_work_region")||"—";
+ $("bdBureau").textContent=$("user_bureau").value;
+ $("bdBlood").textContent=v("blood_group");
+ $("bdDob").textContent=v("birth_date")||"—";
+ $("bdCom").textContent=v("user_commune")||"—";
+ $("bdRef").textContent=(curNo&&curRef?curNo+" | "+curRef:curRef)||("ANRSH-"+YEAR+"-"+(v("matricule_sh").toUpperCase()||"0000"));
+}
+function loadPhotoPreview(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){photo=r.result;$("bdPhoto").src=photo};r.readAsDataURL(f)}
+var OFFICE_KEY=CFG.officeKey||"ANRSH-2026-CHANGE";
+var PAY=CFG.pay||{};
+function h53(s){var a=3735928559,b=1103547991,c;for(var i=0;i<s.length;i++){c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return 4294967296*(2097151&b)+(a>>>0)}
+function mkRef(){var m=v("matricule_sh").toUpperCase();return "ANRSH-"+YEAR+"-"+m+"-"+String(h53(m+v("user_phone"))%10000).padStart(4,"0")}
+function codeFor(r){return String(h53(r+"|"+OFFICE_KEY)%1000000).padStart(6,"0")}
+var curRef="";
+function openURL(u){var w=null;try{w=window.open(u,"_blank")}catch(x){}if(!w)location.href=u}
+function wa(num,t){openURL("https://wa.me/"+num+"?text="+encodeURIComponent(t))}
+function dlBlob(name,blob){
+ var fb=function(){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()};
+ if(window.claude&&window.claude.use){return window.claude.use("downloads").then(function(d){if(d)return d.save({filename:name,data:blob});fb()}).catch(function(e){if(!e||e.code!=="declined")fb()})}
+ fb();return Promise.resolve();
+}
+function requestSecurityOTP(){
+ var f=$("adhesionForm");if(!f.reportValidity())return;
+ curRef=mkRef();syncBadgeLive();
+ var t="طلب انخراط ANRSH "+YEAR+" ("+v("demand_type")+")\nرقم الطلب: "+curRef+"\nالاسم: "+v("first_name")+" "+v("last_name")+"\nMatricule: "+v("matricule_sh")+"\nCNR: "+v("cnr_no")+" | الضمان: "+v("nss_no")+"\nالصفة: "+v("user_type")+"\nالولاية: "+v("user_wilaya")+" / "+v("user_daira")+" / "+v("user_commune")+"\nالمكتب: "+$("user_bureau").value+"\nالهاتف: "+v("user_phone")+"\nالاشتراك: 500 دج (أرفق وصل الدفع والوثائق)";
+ wa("213657709457",t);
+ $("otpBox").style.display="block";
+ otpDesc();
+ $("otpBox").scrollIntoView({behavior:"smooth"});
+}
+function validateSecurityOTP(){
+ if(!curRef){alert("أرسل الطلب أولاً.");return}
+ if(v("otpInput")===codeFor(curRef)){unlockCard()}
+ else alert("الرمز غير صحيح. يرسله مسؤول المكتب بعد التحقق من الدفع.");
+}
+function adminCode(){
+ var o=$("ad_out");
+ if(v("ad_key")!==OFFICE_KEY){o.textContent="مفتاح المكتب غير صحيح.";return}
+ var r=v("ad_ref");if(!/^ANRSH-\d{4}-/.test(r)){o.textContent="أدخل رقم الطلب كما وصلك.";return}
+ var c=codeFor(r),tel=v("ad_tel").replace(/\D/g,"").replace(/^0/,"213");
+ o.innerHTML='<div style="font-size:2rem;letter-spacing:6px;color:var(--gold-light)" dir="ltr">'+c+'</div>';
+ var b=document.createElement("button");b.type="button";b.className="btn-card btn-wa-card";b.style.marginTop="10px";b.textContent="💬 إرسال الرمز للعضو عبر واتساب";
+ b.onclick=function(){wa(tel,"ANRSH: تم تأكيد دفع الاشتراك. رمز التأكيد لطلبك "+r+" هو: "+c)};o.appendChild(b);
+}
+function N(i){return +v(i)||0}
+function rpBal(){var inc=N("rp_cot")+N("rp_oth"),out=N("rp_adm")+N("rp_soc")+N("rp_misc");$("rp_in").value=inc.toLocaleString("en");$("rp_out").value=out.toLocaleString("en");$("rp_bal").value=(inc-out).toLocaleString("en")}
+function periodOf(){var t=v("rp_type");return /T1/.test(t)?"T1":/T2/.test(t)?"T2":/T3/.test(t)?"T3":/T4/.test(t)?"T4":"annual"}
+function rpData(){return{bureau:$("rp_bureau").value,type:v("rp_type"),period:periodOf(),year:N("rp_year")||YEAR,members:N("rp_members"),acts:N("rp_acts"),omra:N("rp_omra"),aid:N("rp_aid"),lit:v("rp_lit"),diff:v("rp_diff"),persp:v("rp_persp"),cot:N("rp_cot"),oth:N("rp_oth"),adm:N("rp_adm"),soc:N("rp_soc"),misc:N("rp_misc"),income:N("rp_cot")+N("rp_oth"),expenses:N("rp_adm")+N("rp_soc")+N("rp_misc"),note:v("rp_note")}}
+function reportText(){var d=rpData(),bl=$("rp_bureau").selectedOptions[0]?$("rp_bureau").selectedOptions[0].textContent:d.bureau;return "ANRSH – تقرير "+d.type+" "+d.year+"\nالمكتب: "+bl+"\n\n— التقرير الأدبي —\nمنتسبون جدد: "+d.members+"\nأنشطة منجزة: "+d.acts+"\nمستفيدو العمرة: "+d.omra+"\nمستفيدو المساعدات الاجتماعية: "+d.aid+"\n\nالأنشطة والإنجازات:\n"+d.lit+"\n\nالصعوبات:\n"+d.diff+"\n\nالآفاق:\n"+d.persp+"\n\n— التقرير المالي —\nالاشتراكات: "+d.cot+" دج\nإيرادات أخرى: "+d.oth+" دج\nمجموع الإيرادات: "+d.income+" دج\nمصاريف التسيير: "+d.adm+" دج\nمصاريف التضامن والاجتماعية: "+d.soc+" دج\nمصاريف أخرى: "+d.misc+" دج\nمجموع المصاريف: "+d.expenses+" دج\nالرصيد: "+(d.income-d.expenses)+" دج\nملاحظات: "+d.note+"\n\nالتاريخ: "+new Date().toLocaleDateString("fr-DZ")}
+function sendReportMail(){if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}saveReportDraft(true);openURL("mailto:irched2521@gmail.com,anrsh1994@gmail.com?subject="+encodeURIComponent("ANRSH – تقرير "+v("rp_type")+" "+v("rp_year")+" – "+$("rp_bureau").value)+"&body="+encodeURIComponent(reportText()))}
+function sendReportWA(){wa("213657709457",reportText())}
+function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'</body></html>'],{type:"text/html"}))}
+function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
+function saveReportDraft(q){try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");L.unshift({d:new Date().toLocaleDateString("fr-DZ"),t:v("rp_type")+" "+v("rp_year"),b:$("rp_bureau").value,txt:reportText()});localStorage.setItem("anrsh_rp",JSON.stringify(L.slice(0,20)));rpHist();if(!q)alert("تم الحفظ على هذا الجهاز.")}catch(x){if(!q)alert("تعذر الحفظ على هذا المتصفح.")}}
+function rpHist(){var h=$("rp_hist");try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");h.innerHTML=L.length?"<b>التقارير المحفوظة:</b><br>"+L.map(function(r){return r.d+" · "+r.t+" · "+r.b}).join("<br>"):""}catch(x){}}
+function nextDue(){var d=new Date(),y=d.getFullYear(),c=[[2,31],[5,30],[8,30],[11,31]].map(function(x){return new Date(y,x[0],x[1],23,59)});return c.find(function(x){return x>=d})||new Date(y+1,2,31,23,59)}
+function dueInfo(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5);$("dueInfo").innerHTML="⏰ موعد التقرير الفصلي القادم: <b>"+n.toLocaleDateString("fr-DZ")+"</b> (بعد "+k+" يوماً)"+(k<=15?" ⚠️ اقترب الموعد":"")+"<br>📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى العنوانين أدناه."}
+function remindCal(){var n=nextDue(),p=function(x){return String(x).padStart(2,"0")},f=n.getFullYear()+p(n.getMonth()+1)+p(n.getDate());openURL("https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("ANRSH: تسليم التقرير الأدبي والمالي الفصلي")+"&dates="+f+"/"+f+"&recur="+encodeURIComponent("RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=-1"))}
+function snap(face,name){
+ var host=document.createElement("div");host.style.cssText="position:fixed;left:-9999px;top:0;width:420px";
+ var c=face.cloneNode(true);c.style.cssText="position:relative;transform:none;width:420px;min-height:385px;display:flex;backface-visibility:visible";
+ host.appendChild(c);document.body.appendChild(host);
+ return html2canvas(c,{backgroundColor:"#090e18",scale:2,useCORS:true}).then(function(cv){host.remove();return new Promise(function(ok){cv.toBlob(function(b){dlBlob(name,b).then(ok)},"image/png")})}).catch(function(){host.remove();alert("تعذر إنشاء الصورة، التقط لقطة شاشة.")});
+}
+function downloadCard(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}if(!window.html2canvas){alert("تحقق من الاتصال بالإنترنت.");return}
+ var m=v("matricule_sh");snap(document.querySelector(".badge-face.front"),"ANRSH-"+m+"-recto.png").then(function(){return snap(document.querySelector(".badge-face.back"),"ANRSH-"+m+"-verso.png")})}
+function printCard(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}window.print()}
+function switchMainTab(n){
+ var map={register:["section-register","tab-reg"],reports:["section-reports","tab-reports"],directory:["section-directory","tab-dir"],admin:["section-admin","tab-admin"]};
+ Object.keys(map).forEach(function(k){$(map[k][0]).style.display=(k===n?(k==="register"?"grid":"block"):"none");$(map[k][1]).classList.toggle("active",k===n)});
+}
+var DIR=[["المكتب الوطني – الجزائر العاصمة","Himmi Lachemi","","رئيس الجمعية"],["سكيكدة والناحية الشرقية","علاوة العيد","","رئيس المكتب الجهوي"],["ورقلة","صخري محمد","","رئيس المكتب الجهوي"],["حاسي مسعود","عبدلي عبد الحميد","","رئيس المكتب الجهوي"],["بومرداس","بوسري عمار","","رئيس المكتب الجهوي"],["وهران","تواتي حسان","","رئيس المكتب الجهوي"]];
+if(CFG.offices&&CFG.offices.length)DIR=CFG.offices.map(function(o){return[o.name,o.head,o.tel,o.role]});
+function renderDir(){$("dirGrid").innerHTML=DIR.map(function(d){return '<div class="bureau-card"><b style="color:var(--gold-light)">'+d[0]+'</b><p style="margin-top:6px">'+d[1]+'</p>'+(d[3]?'<small>'+d[3]+'</small>':'')+(d[4]&&d[4].length?'<p style="margin-top:8px;font-size:.82rem"><b>الولايات التابعة:</b> '+d[4].join('، ')+'</p>':'')+(d[2]?'<p dir="ltr"><a href="tel:'+d[2]+'" style="color:var(--gold-light)">'+d[2]+'</a></p>':'')+dirExtra(d[5])+'</div>'}).join("");}
+function dirEsc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function dirCopy(btn,t){var done=function(){var o=btn.textContent;btn.textContent="✅";setTimeout(function(){btn.textContent=o},1500)};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(function(){window.prompt("Copy",t)})}else{window.prompt("Copy",t)}}
+function dirAcc(label,val){if(!val)return"";return'<div style="margin-top:8px;display:flex;gap:6px;align-items:center"><div style="flex:1;min-width:0;font-size:.8rem"><small style="display:block;opacity:.75">'+dirEsc(label)+'</small><span dir="ltr" style="unicode-bidi:plaintext;word-break:break-all">'+dirEsc(val)+'</span></div><button type="button" class="btn-card btn-flip" style="padding:6px 10px" data-copy="'+dirEsc(val)+'" onclick="dirCopy(this,this.getAttribute(\'data-copy\'))">📋</button></div>'}
+function dirExtra(x){if(!x)return"";var h="",wa=String(x.wa||"").replace(/\D/g,"");if(wa)h+='<a class="btn-card btn-wa-card" style="display:inline-block;margin:8px 6px 0 0;padding:6px 10px;text-decoration:none" href="https://wa.me/'+wa.replace(/^0/,"213")+'" target="_blank" rel="noopener">💬 واتساب</a>';if(x.mail)h+='<a class="btn-card btn-flip" style="display:inline-block;margin:8px 0 0;padding:6px 10px;text-decoration:none" href="mailto:'+dirEsc(x.mail)+'">✉️</a>';h+=dirAcc("الحساب البنكي"+(x.bank?" — "+x.bank:""),x.acc);h+=dirAcc("الحساب البريدي CCP"+(x.ccpk?" (المفتاح "+x.ccpk+")":""),x.ccp);return h}
+renderDir();
+var ROWS=`المساعد الصوتي لذوي الإعاقة البصرية|Assistant vocal pour malvoyants|Voice assistant for visually impaired
+تفعيل القارئ الصوتي|Activer la lecture vocale|Enable screen reader
+إيقاف القارئ الصوتي|Arrêter la lecture vocale|Stop screen reader
+الجمعية الوطنية لمتقاعدي سوناطراك ANRSH|Association Nationale des Retraités de Sonatrach ANRSH|Sonatrach Retirees National Association ANRSH|ⵜⴰⵎⵙⵙⵓⵔⵜ ⵜⴰⵏⴰⵎⵓⵔⵜⵉⵏⵜ ⵏ ⵉⵎⵙⴽⴰⵔⴰⵏ ⵏ ⵙⵓⵏⴰⵜⵔⴰⴽ ANRSH
+المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.|Plateforme numérique officielle d’adhésion et de rapports périodiques 2026. Bienvenue à tous les retraités, retraitées et ayants droit sur l’ensemble du territoire.|Official digital platform for membership and periodic reports 2026. Welcome to all retirees and beneficiaries across the country.
+طلب الانخراط والبطاقة|Adhésion et carte|Membership & card
+التقارير الأدبية والمالية|Rapports moraux et financiers|Narrative & financial reports
+دليل المكاتب ورؤساء النواحي|Annuaire des bureaux et responsables|Offices & regional heads
+فضاء الإدارة المحمي|Espace administration protégé|Protected admin area
+الموسم المالي والجمعوي 2026|Exercice financier et associatif 2026|Financial and association year 2026
+استمارة الانخراط واستخراج بطاقة العضوية 2026|Formulaire d’adhésion et carte de membre 2026|Membership form and 2026 member card|ⴰⵙⵙⵓⴼⵖ ⵏ ⵜⵓⵜⵍⴰⵢⵜ 2026
+يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.|Veuillez saisir les données avec précision et joindre les documents demandés pour confirmer le paiement et recevoir le code d’impression.|Please enter your data accurately and attach the required documents to confirm payment and receive the print code.
+البيانات الشخصية والمدنية|Données personnelles et civiles|Personal and civil data
+الصفة والانخراط|Statut|Status
+متقاعد سوناطراك (رجل)|Retraité Sonatrach (homme)|Sonatrach retiree (male)
+متقاعدة سوناطراك (امرأة)|Retraitée Sonatrach (femme)|Sonatrach retiree (female)
+أرملة متقاعد (ذوي الحقوق)|Veuve de retraité (ayant droit)|Retiree’s widow (beneficiary)
+نوع الطلب|Type de demande|Request type
+انخراط جديد (2026)|Nouvelle adhésion (2026)|New membership (2026)
+تجديد سنوي للاشتراك|Renouvellement annuel|Annual renewal
+اللقب (Nom)|Nom|Last name
+الاسم (Prénom)|Prénom|First name
+تاريخ الازدياد|Date de naissance|Date of birth
+مكان الازدياد|Lieu de naissance|Place of birth
+زمرة الدم|Groupe sanguin|Blood group
+العنوان الجغرافي والإقامة الإدارية (التقسيم الإداري)|Adresse et résidence administrative|Address and administrative residence
+الولاية|Wilaya|Wilaya
+-- اختر الولاية --|-- Choisir la wilaya --|-- Select wilaya --
+الدائرة|Daïra|Daira
+-- اختر الدائرة --|-- Choisir la daïra --|-- Select daira --
+البلدية|Commune|Commune
+-- اختر البلدية --|-- Choisir la commune --|-- Select commune --
+غير مدرجة (اكتبها في العنوان)|Non listée (à saisir dans l’adresse)|Not listed (write it in the address)
+عنوان الإقامة بالتفصيل|Adresse détaillée|Detailed address
+رقم بطاقة التعريف الوطنية (CNI)|N° de carte d’identité nationale (CNI)|National ID number (CNI)
+المسار والنشاط بسوناطراك الأم ونواحيها|Parcours professionnel à Sonatrach|Career at Sonatrach
+رقم التسجيل بسوناطراك (Matricule SH)|Matricule Sonatrach (SH)|Sonatrach ID (SH)
+النشاط أو القسم بمجمع سوناطراك|Activité ou division à Sonatrach|Activity or division at Sonatrach
+DP - قسم الإنتاج (Division Production)|DP - Division Production|DP - Production Division
+FOR - قسم الحفر وأشغال الآبار (Division Forage)|FOR - Division Forage|FOR - Drilling & Wells Division
+DOS - قسم العمليات والتشغيل الميداني|DOS - Opérations et exploitation terrain|DOS - Field operations
+TRC - النقل عبر الأنابيب|TRC - Transport par canalisations|TRC - Pipeline transport
+LQS / RPI - التمييع والتكرير والبتروكيمياء|LQS / RPI - Liquéfaction, raffinage, pétrochimie|LQS / RPI - Liquefaction, refining, petrochemicals
+EXPLO / DEV - الاستكشاف والتطوير|EXPLO / DEV - Exploration et développement|EXPLO / DEV - Exploration & development
+COM - تسويق المحروقات|COM - Commercialisation des hydrocarbures|COM - Hydrocarbon marketing
+DG / Siège - المديرية العامة والمصالح الوظيفية|DG / Siège - Direction générale et services|HQ - General management & support
+ناحية العمل بسوناطراك (Région)|Région de travail (Sonatrach)|Work region (Sonatrach)
+المهنة / التخصص (Spécialité)|Spécialité / métier|Specialty / occupation
+سنة التقاعد|Année de départ en retraite|Retirement year
+الاتصال والمكتب الجهوي للانتساب|Contact et bureau régional|Contact and regional office
+رقم الهاتف النقال (للتواصل والواتساب)|Téléphone mobile (WhatsApp)|Mobile phone (WhatsApp)
+البريد الإلكتروني للمنخرط|E-mail de l’adhérent|Member e-mail
+المكتب الجهوي المعني بالانتساب|Bureau régional concerné|Concerned regional office
+المكتب الجهوي سكيكدة (الناحية الشرقية)|Bureau régional Skikda (zone Est)|Skikda regional office (East zone)
+المكتب الجهوي وهران (الناحية الغربية)|Bureau régional Oran (zone Ouest)|Oran regional office (West zone)
+المكتب التنفيذي الوطني (المقر المركزي)|Bureau exécutif national (siège)|National executive office (HQ)
+رقم الضمان الاجتماعي|N° de sécurité sociale|Social security number
+رقم التسجيل بالصندوق الوطني للتقاعد (CNR)|N° d’immatriculation CNR|CNR registration number
+الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج)|Documents obligatoires et preuve de paiement (500 DA)|Required documents and payment proof (500 DZD)
+الصورة الشمسية الرسمية (للبطاقة البيومترية)|Photo d’identité officielle|Official passport photo
+نسخة من بطاقة التعريف الوطنية (صورة أو PDF)|Copie de la carte d’identité (image ou PDF)|Copy of national ID (image or PDF)
+قرار الإحالة على التقاعد بسوناطراك (صورة أو PDF)|Décision de mise à la retraite (image ou PDF)|Retirement decision (image or PDF)
+صورة وصل الدفع الإلكتروني (بريدي موب أو تحويل بنكي)|Reçu de paiement (BaridiMob ou virement)|Payment receipt (BaridiMob or bank transfer)
+بطاقة التعريف (الوجه الخلفي)|Carte d’identité (verso)|National ID (back)
+الاشتراك السنوي: 500 دج|Cotisation annuelle : 500 DA|Annual fee: 500 DZD
+رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.|Le numéro de compte postal ou bancaire de votre bureau vous est communiqué par WhatsApp (0657709457). Paiement par Edahabia, CIB ou BaridiMob.|Your office will send you its postal or bank account number via WhatsApp (0657709457). Pay by Edahabia, CIB or BaridiMob.
+أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية|Je certifie l’exactitude des informations et respecte le règlement intérieur|I certify the information and accept the association’s bylaws
+تأكيد التسجيل والدفع وطلب رمز التحقق الأمني|Confirmer l’inscription et demander le code de vérification|Confirm registration and request verification code
+تأكيد رمز الأمان لفك قفل طباعة البطاقة|Code de sécurité pour débloquer l’impression|Security code to unlock card printing
+تأكيد الرمز وفك قفل الطباعة|Valider le code et débloquer l’impression|Validate code and unlock printing
+معاينة البطاقة الحية|Aperçu de la carte|Live card preview
+الجمعية الوطنية لمتقاعدي سوناطراك|Association Nationale des Retraités de Sonatrach|Sonatrach Retirees National Association
+بطاقة انخراط · CARTE D’ADHÉRENT|CARTE D’ADHÉRENT|MEMBERSHIP CARD
+الاسم|Nom|Name
+الصفة|Statut|Status
+الاختصاص|Spécialité|Specialty
+الناحية|Région|Region
+معًا من أجل كرامة المتقاعد وحقوقه|Ensemble pour la dignité et les droits du retraité|Together for retirees’ dignity and rights
+المكتب الوطني ANRSH|Bureau National ANRSH|National Office ANRSH
+بطاقة الانخراط الإلكترونية|Carte d’adhérent électronique|Electronic membership card
+البطاقة سنوية: احتفظ بالرقم عند التجديد وقدّمها عند الطلب · 0657709457|Carte annuelle : gardez le numéro pour le renouvellement et présentez-la sur demande · 0657709457|Annual card: keep the number for renewal and show it on request · 0657709457
+تدوير|Retourner|Flip
+طباعة|Imprimer|Print
+التنزيل والطباعة يُفتحان بعد إدخال رمز التحقق الذي يرسله المكتب.|Le téléchargement et l’impression s’ouvrent après saisie du code envoyé par le bureau.|Download and printing unlock after entering the code sent by the office.
+تم تأكيد الدفع من المكتب: التنزيل والطباعة مفتوحان.|Paiement confirmé par le bureau : téléchargement et impression ouverts.|Payment confirmed by the office: download and printing unlocked.
+التقرير الأدبي والمالي|Rapport moral et financier|Narrative and financial report
+المكتب|Bureau|Office
+نوع التقرير|Type de rapport|Report type
+فصلي T1 (جانفي–مارس)|Trimestriel T1 (janv.–mars)|Quarterly T1 (Jan–Mar)
+فصلي T2 (أفريل–جوان)|Trimestriel T2 (avril–juin)|Quarterly T2 (Apr–Jun)
+فصلي T3 (جويلية–سبتمبر)|Trimestriel T3 (juil.–sept.)|Quarterly T3 (Jul–Sep)
+فصلي T4 (أكتوبر–ديسمبر)|Trimestriel T4 (oct.–déc.)|Quarterly T4 (Oct–Dec)
+سنوي (شامل)|Annuel (global)|Annual (full)
+السنة|Année|Year
+التقرير الأدبي (الأنشطة والإنجازات)|Rapport moral (activités et réalisations)|Narrative report (activities and achievements)
+الإيرادات (دج)|Recettes (DA)|Revenue (DZD)
+المصاريف (دج)|Dépenses (DA)|Expenses (DZD)
+الرصيد (دج)|Solde (DA)|Balance (DZD)
+ملاحظات مالية|Notes financières|Financial notes
+إرسال بالبريد|Envoyer par e-mail|Send by e-mail
+واتساب|WhatsApp|WhatsApp
+حفظ|Enregistrer|Save
+ملف|Fichier|File
+تذكير فصلي|Rappel trimestriel|Quarterly reminder
+يُرسل التقرير إلى irched2521@gmail.com و anrsh1994@gmail.com. البريد لا يقبل مرفقات تلقائية: إن لزم أرفق ملف التقرير يدوياً|Le rapport est envoyé à irched2521@gmail.com et anrsh1994@gmail.com. Le courriel n’ajoute pas de pièce jointe automatiquement : joignez le fichier si nécessaire.|The report is sent to irched2521@gmail.com and anrsh1994@gmail.com. E-mail cannot attach files automatically: attach the report file manually if needed.
+فضاء مسؤول المكتب|Espace du responsable de bureau|Office manager area
+بعد التحقق من وصل الدفع (500 دج): أدخل مفتاح المكتب ورقم طلب العضو لتوليد رمز التأكيد، ثم أرسله له عبر واتساب.|Après vérification du reçu (500 DA) : saisissez la clé du bureau et le n° de demande du membre pour générer le code, puis envoyez-le par WhatsApp.|After checking the payment receipt (500 DZD): enter the office key and the member’s request number to generate the code, then send it via WhatsApp.
+مفتاح المكتب|Clé du bureau|Office key
+رقم الطلب (REF)|N° de demande (REF)|Request no. (REF)
+هاتف العضو|Téléphone du membre|Member phone
+توليد رمز التأكيد|Générer le code de confirmation|Generate confirmation code
+حي عدل CSCEC، عمارة 05|Cité AADL CSCEC, bât. 05|AADL CSCEC estate, building 05
+رقم بطاقة التعريف البيومترية|N° de la carte biométrique|Biometric ID number
+مهندس دولة في الميكانيك العامة|Ingénieur en mécanique générale|Engineer in general mechanics
+سكيكدة والناحية الشرقية|Skikda et zone Est|Skikda and East zone
+الجزائر والوسط|Alger et Centre|Algiers and Centre
+علاوة العيد|Allaoua Laid|Allaoua Laid
+صخري محمد|Sakhri Mohamed|Sakhri Mohamed
+عبدلي عبد الحميد|Abdelli Abdelhamid|Abdelli Abdelhamid
+همي لهاشمي|Himmi Lachemi|Himmi Lachemi
+بوسري عمار|Bousri Amar|Bousri Amar
+تواتي حسان|Touati Hassan|Touati Hassan
+أرسل الطلب أولاً.|Envoyez d’abord la demande.|Send the request first.
+الرمز غير صحيح. يرسله مسؤول المكتب بعد التحقق من الدفع.|Code incorrect. Le responsable du bureau l’envoie après vérification du paiement.|Incorrect code. The office manager sends it after verifying payment.
+أدخل رمز التحقق أولاً.|Saisissez d’abord le code de vérification.|Enter the verification code first.
+مفتاح المكتب غير صحيح.|Clé du bureau incorrecte.|Incorrect office key.
+اكتب التقرير الأدبي أولاً.|Rédigez d’abord le rapport moral.|Write the narrative report first.
+تم الحفظ على هذا الجهاز.|Enregistré sur cet appareil.|Saved on this device.
+المنتسبون الجدد خلال الفترة|Nouveaux adhérents sur la période|New members this period
+عدد الأنشطة المنجزة|Nombre d’activités réalisées|Number of activities held
+المستفيدون من العمرة|Bénéficiaires de la Omra|Omra beneficiaries
+المستفيدون من المساعدات الاجتماعية|Bénéficiaires d’aides sociales|Social aid beneficiaries
+التقرير الأدبي|Rapport moral|Narrative report
+التقرير المالي|Rapport financier|Financial report
+ملخص الأنشطة والإنجازات|Résumé des activités et réalisations|Summary of activities and achievements
+الصعوبات والعراقيل|Difficultés rencontrées|Difficulties encountered
+الآفاق والبرنامج القادم|Perspectives et programme à venir|Outlook and upcoming programme
+الاشتراكات المحصّلة (دج)|Cotisations encaissées (DA)|Dues collected (DZD)
+إيرادات أخرى: هبات وإعانات (دج)|Autres recettes : dons et subventions (DA)|Other income: donations and grants (DZD)
+مصاريف التسيير والإدارة (دج)|Frais de fonctionnement (DA)|Administration costs (DZD)
+مصاريف التضامن والخدمات الاجتماعية (دج)|Dépenses de solidarité et services sociaux (DA)|Solidarity and social spending (DZD)
+مصاريف أخرى (دج)|Autres dépenses (DA)|Other expenses (DZD)
+مجموع الإيرادات (دج)|Total recettes (DA)|Total income (DZD)
+مجموع المصاريف (دج)|Total dépenses (DA)|Total expenses (DZD)
+إرسال للمنصة|Envoyer à la plateforme|Submit to platform
+يُرسل التقرير الموحّد (كل المكاتب) تلقائياً كل 3 أشهر والتقرير السنوي إلى irched2521@gmail.com و anrsh1994@gmail.com. للحفظ في المنصة سجّل الدخول من فضاء الإدارة|Le rapport consolidé (tous les bureaux) est envoyé automatiquement chaque trimestre, ainsi que le rapport annuel, à irched2521@gmail.com et anrsh1994@gmail.com. Pour enregistrer sur la plateforme, connectez-vous depuis l’espace administration.|The consolidated report (all offices) is sent automatically every 3 months, plus the annual report, to irched2521@gmail.com and anrsh1994@gmail.com. To save on the platform, log in from the admin area.
+المكتب الوطني – الجزائر العاصمة|Bureau national – Alger|National office – Algiers
+رئيس الجمعية|Président de l’association|Association president
+رئيس المكتب الجهوي|Président du bureau régional|Regional office president
+اختبار الصوت|Tester la voix|Test voice
+أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com|J’accepte le traitement de mes données personnelles (identité, photos, documents de retraite) pour la seule gestion de mon adhésion, conformément à la loi 18-07 ; j’ai un droit d’accès, de rectification et de suppression via anrsh1994@gmail.com|I agree to the processing of my personal data (identity, photos, retirement documents) solely to manage my membership, under Law 18-07; I may access, correct or delete it by writing to anrsh1994@gmail.com
+تثبيت التطبيق|Installer l’application|Install the app
+المسؤول الجهوي · Responsable régional|Responsable régional|Regional manager`;
+ROWS=ROWS.replace(/2026/g,YEAR);
+var WIL_L="Adrar,Chlef,Laghouat,Oum El Bouaghi,Batna,Béjaïa,Biskra,Béchar,Blida,Bouira,Tamanrasset,Tébessa,Tlemcen,Tiaret,Tizi Ouzou,Alger,Djelfa,Jijel,Sétif,Saïda,Skikda,Sidi Bel Abbès,Annaba,Guelma,Constantine,Médéa,Mostaganem,M’Sila,Mascara,Ouargla,Oran,El Bayadh,Illizi,Bordj Bou Arréridj,Boumerdès,El Tarf,Tindouf,Tissemsilt,El Oued,Khenchela,Souk Ahras,Tipaza,Mila,Aïn Defla,Naâma,Aïn Témouchent,Ghardaïa,Relizane,Timimoun,Bordj Badji Mokhtar,Ouled Djellal,Béni Abbès,In Salah,In Guezzam,Touggourt,Djanet,El M’Ghair,El Meniaa".split(",");
+var PL={"سكيكدة":"Skikda","عزابة":"Azzaba","القل":"Collo","الحروش":"El Harrouch","تمالوس":"Tamalous","فلفلة":"Filfila","حمادي كرومة":"Hamadi Krouma","جندل سعدي محمد":"Djendel Saadi Mohamed","قسنطينة":"Constantine","الخروب":"El Khroub","علي منجلي":"Ali Mendjeli","زيغود يوسف":"Zighoud Youcef","عين عبيد":"Aïn Abid","حامة بوزيان":"Hamma Bouziane","ابن زياد":"Ibn Ziad","حاسي مسعود":"Hassi Messaoud","حاسي الرمل":"Hassi R’Mel","أرزيو":"Arzew","عين أمناس":"In Amenas","بركاين":"Berkine","قاسي الطويل":"Gassi Touil"};
+Object.assign(PL,CFG.geoLatin||{});Object.keys(CFG.geo||{}).forEach(function(w){GEO[w]=CFG.geo[w]});
+var D={},ORI=new WeakMap(),IDX={fr:0,en:1,ber:2},lang="ar";
+ROWS.split("\n").forEach(function(r){var p=r.split("|");D[p[0]]=[p[1],p[2],p[3]||p[1]]});
+WIL.forEach(function(n,i){D[n]=[WIL_L[i],WIL_L[i],WIL_L[i]]});
+Object.keys(PL).forEach(function(k){if(!D[k])D[k]=[PL[k],PL[k],PL[k]]});
+[["ناحية","Région ","region"],["المكتب الجهوي","Bureau régional ","regional office"]].forEach(function(g){Object.keys(PL).forEach(function(k){D[g[0]+" "+k]=[g[1]+PL[k],PL[k]+" "+g[2],g[1]+PL[k]]})});
+D["ناحية حاسي مسعود (DP)"]=["Région Hassi Messaoud (DP)","Hassi Messaoud region (DP)"];D["ناحية سكيكدة (المنطقة البتروكيماوية)"]=["Région Skikda (zone pétrochimique)","Skikda region (petrochemical zone)"];D["ناحية أوهانت / إن صالح"]=["Région Ohanet / In Salah","Ohanet / In Salah region"];D["ناحية تقرت وحوض الحمراء"]=["Région Touggourt et Hamra","Touggourt & Hamra region"];D["ناحية TFT"]=["Région TFT","TFT region"];D["ناحية الجزائر العاصمة والوسط"]=["Région Alger et Centre","Algiers & Centre region"];D["ناحية غرد الباغل"]=["Région Gourd El Baghel","Gourd El Baghel region"];D["المكتب الجهوي الجزائر العاصمة والوسط"]=["Bureau régional Alger et Centre","Algiers & Centre regional office"];
+for(var k in D){if(D[k].length<3)D[k][2]=D[k][0]}
+Object.keys(CFG.ber||{}).forEach(function(k){if(!D[k])D[k]=[k,k,k];D[k][2]=CFG.ber[k]});
+function trS(s,l){var m=s.match(/^([^\u0600-\u06FFA-Za-z0-9(\-]*)([\s\S]*?)([\s:*.]*)$/);if(!m||!m[2])return s;var c=m[2].trim(),d=D[c],e=m[3];if(!d){d=D[c+"."];if(d)e=e.replace(".","")}return d?m[1]+d[IDX[l]]+e:s}
+window.tr=function(s){return lang==="ar"?s:trS(s,lang)};
+var _al=window.alert;window.alert=function(m){_al(tr(String(m)))};
+var obs=new MutationObserver(function(){if(lang!=="ar")sched()}),tm=0;
+function sched(){clearTimeout(tm);tm=setTimeout(applyLang,30)}
+function applyLang(){
+ obs.disconnect();
+ var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var t=n.parentNode&&n.parentNode.nodeName;return(t==="SCRIPT"||t==="STYLE"||t==="TEXTAREA")?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}}),n;
+ while(n=w.nextNode()){var o=ORI.get(n);if(!o||n.nodeValue!==o.t){o={a:n.nodeValue,t:n.nodeValue};ORI.set(n,o)}
+  var t=lang==="ar"?o.a:trS(o.a,lang);if(n.nodeValue!==t)n.nodeValue=t;o.t=t}
+ document.querySelectorAll("[placeholder]").forEach(function(e){if(!e.dataset.p0)e.dataset.p0=e.placeholder;e.placeholder=lang==="ar"?e.dataset.p0:trS(e.dataset.p0,lang)});
+ var h=document.documentElement;h.lang=lang==="ber"?"zgh":lang;h.dir=lang==="ar"?"rtl":"ltr";
+ try{dueInfo();if(curRef)otpDesc()}catch(x){}
+ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
+}
+function setLanguage(l,btn){
+ document.querySelectorAll(".lang-pill").forEach(function(b){b.classList.remove("active")});if(btn)btn.classList.add("active");
+ lang=l;applyLang();if(sr)setTimeout(readPage,200);
+}
+var _ow=onWilayaChange,_od=onDairaChange;onWilayaChange=function(){_ow();applyLang()};onDairaChange=function(){_od();applyLang()};
+var _sm=switchMainTab;switchMainTab=function(n){_sm(n);if(sr)setTimeout(readPage,150)};
+var DUE={ar:["⏰ موعد التقرير الفصلي القادم:","(بعد "," يوماً)"," ⚠️ اقترب الموعد","📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى irched2521@gmail.com و anrsh1994@gmail.com."],fr:["⏰ Prochain rapport trimestriel :","(dans "," jours)"," ⚠️ Échéance proche","📅 Rapport moral et financier annuel : avant le 31 janvier, envoyé par e-mail à irched2521@gmail.com et anrsh1994@gmail.com."],en:["⏰ Next quarterly report due:","(in "," days)"," ⚠️ Deadline close","📅 Annual narrative and financial report: before 31 January, e-mailed to irched2521@gmail.com and anrsh1994@gmail.com."]};
+dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang==="ber"?"fr":lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
+var OT={ar:["رقم طلبك:","أرسل وصل دفع 500 دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة."],fr:["Votre n° de demande :","Envoyez le reçu de 500 DA et les documents par WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres par WhatsApp ; saisissez-le ici pour débloquer l’impression."],en:["Your request no.:","Send the 500 DZD receipt and documents via WhatsApp. After verification the office manager sends you a 6-digit code via WhatsApp; enter it here to unlock printing."]};
+function otpDesc(){var o=OT[lang==="ber"?"fr":lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
+var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US",ber:"zgh"},VP={ar:["ar"],fr:["fr"],en:["en"],ber:["zgh","kab","tzm","shi","ber"]},warned=false;
+function voiceFor(){if(!window.speechSynthesis)return null;var vs=window.speechSynthesis.getVoices(),p=VP[lang];var best=null;for(var i=0;i<vs.length;i++){var c=vs[i].lang.toLowerCase().replace("_","-");if(p.some(function(x){return c.indexOf(x)===0})){if(!best||vs[i].localService&&!best.localService||c==="ar-dz"||c==="fr-dz")best=vs[i]}}return best}
+var SH={ar:"لم يبدأ الصوت. تأكد من رفع صوت الهاتف، وثبّت صوت اللغة من إعدادات الهاتف ← تحويل النص إلى كلام (Google).",fr:"La voix n’a pas démarré. Vérifiez le volume et installez la voix de la langue dans Paramètres → Synthèse vocale (Google).",en:"Speech did not start. Check the volume and install the language voice in Settings → Text-to-speech (Google)."};
+function st(m){var e=$("srStatus");if(e)e.textContent=m||""}
+function pack(t){var out=[],cur="";t.split(/(?:[.!?؟]\s+|\n)/).forEach(function(x){x=x.trim();if(!x)return;if((cur+" "+x).length>150&&cur){out.push(cur);cur=x}else cur=cur?cur+". "+x:x});if(cur)out.push(cur);return out.map(function(x){return x.slice(0,200)})}
+var AU=null,TL={ar:"ar",fr:"fr",en:"en"};
+function gtts(parts,i){
+ if(!sr||i>=parts.length){if(sr)st("");return}
+ var a=AU||(AU=new Audio()),L=TL[lang]||"fr";
+ a.src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl="+L+"&q="+encodeURIComponent(parts[i]);
+ a.onended=function(){gtts(parts,i+1)};
+ var bad=function(){st("⚠️ "+SH[lang==="ber"?"fr":lang])};
+ a.onerror=bad;var pr=a.play();if(pr&&pr.catch)pr.catch(bad);if(i===0)st("🔊")}
+function stopAll(){try{window.speechSynthesis&&window.speechSynthesis.cancel()}catch(x){}if(AU){AU.onended=null;AU.pause()}}
+function speak(t){
+ if(!sr||!t)return;
+ var ss=window.speechSynthesis,busy=!!(ss&&(ss.speaking||ss.pending));
+ stopAll();
+ if(lang==="ber"&&!(ss&&voiceFor())){if(!warned){warned=true;_al("Aucune voix tamazight n’est disponible / لا يوجد صوت أمازيغي.")}return}
+ var parts=pack(t);
+ if(!ss){gtts(parts,0);return}
+ var vo=voiceFor(),started=false,fell=false;
+ var fb=function(){if(fell||!sr)return;fell=true;try{ss.cancel()}catch(x){}gtts(parts,0)};
+ var run=function(){
+  try{ss.resume()}catch(x){}
+  parts.forEach(function(p,i){var u=new SpeechSynthesisUtterance(p);u.lang=vo?vo.lang:LC[lang];if(vo)u.voice=vo;u.rate=.95;
+   u.onstart=function(){started=true;st("🔊 "+(vo?vo.name:LC[lang]))};
+   u.onend=function(){if(i===parts.length-1)st("")};
+   u.onerror=function(e){if(e.error!=="canceled"&&e.error!=="interrupted")fb()};
+   ss.speak(u)});
+  setTimeout(function(){if(sr&&!started)fb()},2500)};
+ if(busy)setTimeout(run,150);else run();
+}
+var TEST={ar:"مرحباً بكم في منصة الجمعية الوطنية لمتقاعدي سوناطراك",fr:"Bienvenue sur la plateforme de l’Association Nationale des Retraités de Sonatrach",en:"Welcome to the Sonatrach Retirees National Association platform"};
+function voiceTest(){var o=sr;sr=true;var n=window.speechSynthesis?window.speechSynthesis.getVoices().length:0;speak(TEST[lang]||TEST.fr);if(!o)setTimeout(function(){sr=false},400);if(!window.speechSynthesis)st("⚠️ no speechSynthesis");else if(!n)st("ℹ️ 0 voices")}
+function readPage(){var sec=["section-register","section-reports","section-directory","section-admin"].map($).filter(function(e){return e.style.display!=="none"})[0]||document.body;
+ var t=[$("t-main-title").textContent];sec.querySelectorAll("h2,h3,.form-section-title,label,button").forEach(function(e){var x=e.textContent.replace(/\s+/g," ").trim();if(x)t.push(x)});speak(t.join(". ").slice(0,1500))}
+function toggleScreenReader(){
+ sr=!sr;var b=$("audioToggleBtn");
+ if(sr){b.textContent="🔇 إيقاف القارئ الصوتي";readPage()}else{stopAll();st("");b.textContent="🔊 تفعيل القارئ الصوتي"}
+}
+document.addEventListener("focusin",function(e){if(!sr)return;var el=e.target,l=(el.labels&&el.labels[0])||(el.closest&&el.closest(".field-group")&&el.closest(".field-group").querySelector("label"));var t=(l?l.textContent:el.textContent||"").replace(/\s+/g," ").trim();speak(t)});
+
+
+
+function unlockCard(){unlocked=true;resetANRSHIdle();["btnDl","btnPr"].forEach(function(i){$(i).classList.remove("btn-disabled")});$("lockMsg").textContent="✅ تم تأكيد الدفع من المكتب: التنزيل والطباعة مفتوحان.";$("bdQR").innerHTML="";try{new QRCode($("bdQR"),{text:curRef,width:96,height:96})}catch(x){}drawBar();applyLang()}
+var SB=!!(CFG.supabaseUrl&&CFG.supabaseKey),JWT=null,ROWSM=[];
+function sbFetch(path,o){o=o||{};o.headers=Object.assign({apikey:CFG.supabaseKey},(JWT||!/^sb_/.test(CFG.supabaseKey))?{Authorization:"Bearer "+(JWT||CFG.supabaseKey)}:{},o.headers||{});return fetch(CFG.supabaseUrl+path,o).then(function(r){return r.text().then(function(t){var j;try{j=t?JSON.parse(t):null}catch(x){j=t}if(!r.ok)throw new Error(typeof j==="string"?j:(j&&(j.message||j.msg||j.error_description))||r.status);return j})})}
+function rpc(n,a){return sbFetch("/rest/v1/rpc/"+n,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)})}
+function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),nin:v("nin_no"),matricule:v("matricule_sh"),activity:v("user_activity"),work_region:v("user_work_region"),specialty:v("last_structure"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),nss:v("nss_no"),cnr:v("cnr_no"),files:F}}
+function submitBackend(){
+ var id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.floor(Math.random()*1e6),F={},map={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
+ var ups=Object.keys(map).map(function(k){var f=$(map[k]).files[0];if(!f)return null;var path=id+"/"+k+"-"+f.name.replace(/[^\w.\-]/g,"_");F[k]=path;return sbFetch("/storage/v1/object/docs/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream"},body:f})}).filter(Boolean);
+ return Promise.all(ups).then(function(){return rpc("submit_request",{p:payload(F)})});
+}
+if(SB){
+ var _req=requestSecurityOTP,_val=validateSecurityOTP;
+ requestSecurityOTP=function(){var f=$("adhesionForm");if(!f.reportValidity())return;var b=document.querySelector(".btn-wa-card[onclick*=requestSecurityOTP]");if(b)b.disabled=true;
+  submitBackend().then(function(r){curRef=r.ref;curNo=r.member_no;syncBadgeLive();$("otpBox").style.display="block";otpDesc();$("otpBox").scrollIntoView({behavior:"smooth"});alert("تم تسجيل طلبك ووثائقك. رقم العضوية: "+curNo)}).catch(function(e){alert("تعذر إرسال الطلب: "+e.message)}).then(function(){if(b)b.disabled=false})};
+ validateSecurityOTP=function(){if(!curRef){alert("أرسل الطلب أولاً.");return}
+  rpc("verify_code",{p_ref:curRef,p_code:v("otpInput")}).then(function(ok){if(ok===true)unlockCard();else alert("الرمز غير صحيح. يرسله مسؤول المكتب بعد التحقق من الدفع.")}).catch(function(e){alert("خطأ: "+e.message)})};
+ $("section-admin").innerHTML='<h2 style="color:var(--gold-light)">🔐 فضاء الإدارة</h2><div id="adLogin"><div class="form-row two-col"><div class="field-group"><label>البريد</label><input id="ad_mail" type="email" dir="ltr"></div><div class="field-group"><label>كلمة السر</label><input id="ad_pw" type="password" dir="ltr"></div></div><button type="button" class="btn-card btn-dl" style="width:100%;margin-top:10px" onclick="adLogin()">دخول</button></div><div id="adPanel" style="display:none"><div class="card-actions-bar"><input id="ad_q" placeholder="بحث بالاسم أو الرقم أو المكتب" oninput="adRender()"><button type="button" class="btn-card btn-flip" onclick="adLoad()">🔄</button><button type="button" class="btn-card btn-dl" onclick="adCsv()">CSV</button></div><div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div><section style="margin-top:22px;padding:16px;border:1px solid var(--gold-primary);border-radius:14px;background:rgba(245,158,11,.06)"><h3 style="color:var(--gold-light);margin-bottom:8px">🏛️ إدارة المكاتب الجهوية والولايات</h3><p style="font-size:.82rem;color:#cbd5e1;margin-bottom:12px">المكتب الوطني يدير جميع المكاتب. الرئيس الجهوي يعدّل مكتبه فقط. كل تعديل يُسجّل في سجل المراقبة.</p><div class="form-row two-col"><div class="field-group"><label>اختر المكتب</label><select id="of_select" onchange="ofChoose()"><option value="">-- اختر المكتب --</option></select></div><div class="field-group"><label>رمز المكتب (لاتيني، ثابت)</label><input id="of_code" dir="ltr" placeholder="SKIKDA"></div></div><div class="form-row two-col"><div class="field-group"><label>اسم المكتب الجهوي</label><input id="of_name" placeholder="مكتب سكيكدة"></div><div class="field-group"><label>رئيس المكتب</label><input id="of_head"></div></div><div class="form-row two-col"><div class="field-group"><label>الهاتف</label><input id="of_tel" dir="ltr"></div><div class="field-group"><label>واتساب المكتب</label><input id="of_wa" dir="ltr"></div></div><div class="form-row two-col"><div class="field-group"><label>البريد الإلكتروني</label><input id="of_email" type="email" dir="ltr"></div><div class="field-group"><label>صفة المسؤول</label><input id="of_role" placeholder="رئيس المكتب الجهوي"></div></div><div class="form-row two-col"><div class="field-group"><label>اسم البنك</label><input id="of_bank"></div><div class="field-group"><label>رقم الحساب البنكي / RIB</label><input id="of_bank_account" dir="ltr"></div></div><div class="form-row two-col"><div class="field-group"><label>رقم حساب CCP</label><input id="of_ccp" dir="ltr"></div><div class="field-group"><label>مفتاح CCP</label><input id="of_ccp_key" dir="ltr"></div></div><div class="field-group"><label>الولايات التي يختارها المكتب الجهوي لنطاق اختصاصه</label><textarea id="of_wilayas" rows="3" placeholder="يكتب رئيس المكتب الولايات التي يتكفل بها، مثال: سكيكدة، قسنطينة، ميلة"></textarea><small style="color:#fbbf24;line-height:1.7">حرية كاملة لكل مكتب جهوي في إدخال الولايات التابعة له وتعديلها لاحقاً. لا توجد قائمة ثابتة أو توزيع مفروض مسبقاً. افصل بين أسماء الولايات بفاصلة.</small></div><div class="field-group" style="margin-top:10px"><label>الدوائر والبلديات (اختياري، اكتبها بالتنسيق: الولاية: الدائرة: البلدية)</label><textarea id="of_localities" rows="3"></textarea></div><div class="card-actions-bar"><button type="button" class="btn-card btn-dl" onclick="ofSave()">💾 حفظ التعديلات</button><button type="button" class="btn-card btn-flip" onclick="ofNew()">＋ مكتب جديد</button><button type="button" class="btn-card btn-flip" onclick="ofLogs()">📋 سجل التعديلات</button></div><div id="of_msg" style="font-size:.85rem;margin-top:8px"></div><div id="of_logs" style="margin-top:12px;overflow-x:auto"></div></section></div><div id="ad_out" style="margin-top:12px;font-size:.9rem"></div>';
+}
+var OFROWS=[],OF_CURRENT=null;
+function ofVal(id){return (document.getElementById(id).value||"").trim()}
+function ofSet(id,val){var e=document.getElementById(id);if(e)e.value=val||""}
+function ofCanEdit(o){return !!ME&&((ME.role==="national")||(ME.role==="regional"&&ME.bureau&&o&&String(ME.bureau)===String(o.code||o.name_ar)))}
+function ofLoad(){
+ sbFetch("/rest/v1/offices?select=*&order=sort.asc").then(function(rows){OFROWS=rows||[];var sel=$("of_select"),keep=sel.value;sel.innerHTML='<option value="">-- اختر المكتب --</option>';OFROWS.forEach(function(o){var x=document.createElement("option");x.value=o.code||o.name_ar;x.textContent=o.name_ar||o.name_fr||o.code;sel.appendChild(x)});if(keep)sel.value=keep;if(ME.role==="regional"){sel.disabled=true;var own=OFROWS.find(function(o){return String(o.code||o.name_ar)===String(ME.bureau)||String(o.name_ar)===String(ME.bureau)});if(own){sel.value=own.code||own.name_ar;ofChoose()}}else sel.disabled=false;}).catch(function(e){$("of_msg").textContent="تعذر تحميل المكاتب: "+e.message})
+}
+function ofChoose(){var k=$("of_select").value,o=OFROWS.find(function(x){return String(x.code||x.name_ar)===String(k)});OF_CURRENT=o||null;if(!o){ofNew();return}ofSet("of_code",o.code);ofSet("of_name",o.name_ar);ofSet("of_head",o.head_ar||o.head_fr);ofSet("of_tel",o.tel);ofSet("of_wa",o.whatsapp);ofSet("of_email",o.email);ofSet("of_role",o.role_ar);ofSet("of_bank",o.bank_name);ofSet("of_bank_account",o.bank_account);ofSet("of_ccp",o.ccp);ofSet("of_ccp_key",o.ccp_key);ofSet("of_wilayas",Array.isArray(o.wilayas)?o.wilayas.join("، "):o.wilayas);ofSet("of_localities",Array.isArray(o.localities)?o.localities.join("\n"):o.localities);var editable=ofCanEdit(o);["of_code","of_name"].forEach(function(id){$(id).disabled=!editable||ME.role!=="national"});["of_head","of_tel","of_wa","of_email","of_role","of_bank","of_bank_account","of_ccp","of_ccp_key","of_wilayas","of_localities"].forEach(function(id){$(id).disabled=!editable});$("of_msg").textContent=editable?"يمكنك تعديل البيانات المسموح بها لهذا المكتب.":"ليس لديك صلاحية تعديل هذا المكتب."}
+function ofNew(){if(ME.role!=="national"){$("of_msg").textContent="إضافة مكتب جديد من صلاحية المكتب الوطني فقط.";return}OF_CURRENT=null;$("of_select").value="";["of_code","of_name","of_head","of_tel","of_wa","of_email","of_role","of_bank","of_bank_account","of_ccp","of_ccp_key","of_wilayas","of_localities"].forEach(function(id){ofSet(id,"");$(id).disabled=false});$("of_msg").textContent="أدخل بيانات المكتب الجديد ثم احفظ."}
+function ofSave(){
+ var code=ofVal("of_code").toUpperCase().replace(/[^A-Z0-9_-]/g,"");if(!code||!ofVal("of_name")){alert("رمز المكتب واسمه مطلوبان.");return}if(OF_CURRENT&&!ofCanEdit(OF_CURRENT)){alert("لا تملك صلاحية تعديل هذا المكتب.");return}if(!OF_CURRENT&&ME.role!=="national"){alert("إضافة المكاتب من صلاحية المكتب الوطني فقط.");return}
+ var old=OF_CURRENT||{},p={code:code,name_ar:ofVal("of_name"),head_ar:ofVal("of_head"),tel:ofVal("of_tel"),whatsapp:ofVal("of_wa"),email:ofVal("of_email"),role_ar:ofVal("of_role"),bank_name:ofVal("of_bank"),bank_account:ofVal("of_bank_account"),ccp:ofVal("of_ccp"),ccp_key:ofVal("of_ccp_key"),wilayas:ofVal("of_wilayas").split(/[،,]/).map(function(x){return x.trim()}).filter(Boolean),localities:ofVal("of_localities").split(/\n/).map(function(x){return x.trim()}).filter(Boolean)};
+ var req=OF_CURRENT?sbFetch("/rest/v1/offices?code=eq."+encodeURIComponent(OF_CURRENT.code),{method:"PATCH",headers:{"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify(p)}):sbFetch("/rest/v1/offices",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify(p)});
+ $("of_msg").textContent="جارٍ حفظ التعديل…";req.then(function(rows){var saved=Array.isArray(rows)?rows[0]:rows;if(!saved&&OF_CURRENT)saved=Object.assign({},old,p);var diff={};Object.keys(p).forEach(function(k){if(JSON.stringify(old[k]??null)!==JSON.stringify(p[k]??null))diff[k]={before:old[k]??null,after:p[k]}});return sbFetch("/functions/v1/notify-office-change",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({office_code:code,office_name:p.name_ar,actor_bureau:ME.bureau,actor_role:ME.role,changes:diff,changed_at:new Date().toISOString()})}).catch(function(e){return{notification_error:e.message}}).then(function(n){$("of_msg").textContent="✅ تم حفظ بيانات المكتب. "+(n&&n.notification_error?"تعذر إرسال الإشعار الآن: "+n.notification_error:"تم طلب إرسال إشعار التعديل.");ofLoad();if(ME.role==="national")$("of_select").value=code;loadOffices();ofLogs()})}).catch(function(e){$("of_msg").textContent="❌ لم يتم الحفظ: "+e.message+". تحقق من تطبيق ملف SQL وسياسات الصلاحيات."})
+}
+function ofLogs(){sbFetch("/rest/v1/office_change_logs?select=id,office_code,office_name,actor_email,actor_role,changed_at,changes&order=changed_at.desc&limit=100").then(function(rows){var box=$("of_logs");box.innerHTML="<b>سجل آخر التعديلات</b>";var t=document.createElement("table");t.style.cssText="width:100%;font-size:.78rem;border-collapse:collapse;margin-top:8px";var h=document.createElement("tr");["المكتب","المستخدم","الصلاحية","التاريخ","تفاصيل"].forEach(function(x){cell(h,x)});t.appendChild(h);(rows||[]).forEach(function(r){if(ME.role!=="national"&&String(r.office_code)!==String(ME.bureau)&&String(r.office_name)!==String(ME.bureau))return;var tr=document.createElement("tr");cell(tr,r.office_name||r.office_code);cell(tr,r.actor_email||"");cell(tr,r.actor_role||"");cell(tr,new Date(r.changed_at).toLocaleString("ar-DZ"));var b=btn("عرض",function(){alert(JSON.stringify(r.changes||{},null,2))});cell(tr,b);t.appendChild(tr)});box.appendChild(t)}).catch(function(e){$("of_logs").textContent="تعذر قراءة سجل التعديلات: "+e.message})
+}
+function adLogin(){sbFetch("/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:v("ad_mail"),password:$("ad_pw").value})}).then(function(r){JWT=r.access_token;var uid=r.user&&r.user.id;if(!uid)throw new Error("تعذر تحديد حساب المستخدم");return sbFetch("/rest/v1/office_admins?select=role,bureau_code&user_id=eq."+encodeURIComponent(uid)+"&limit=1")}).then(function(a){if(!a||!a[0])throw new Error("هذا الحساب غير مسجل ضمن صلاحيات إدارة المكاتب. اطلب من مسؤول قاعدة البيانات إضافته إلى office_admins.");ME={role:a[0].role,bureau:a[0].bureau_code};$("adLogin").style.display="none";$("adPanel").style.display="block";$("rp_submit").style.display="";if(ME.role!=="national"&&ME.bureau){$("rp_bureau").value=ME.bureau;$("rp_bureau").disabled=true}adLoad();loadReports();ofLoad()}).catch(function(e){JWT=null;$("ad_out").textContent="تعذر الدخول: "+e.message})}
+function adLoad(){sbFetch("/rest/v1/members?select=ref,member_no,bureau,status,created_at,data,files&order=created_at.desc&limit=500").then(function(r){ROWSM=r;adRender()}).catch(function(e){$("ad_out").textContent="خطأ: "+e.message})}
+function cell(tr,t){var td=document.createElement("td");td.style.cssText="padding:6px;border-bottom:1px solid rgba(255,255,255,.12)";if(typeof t==="string")td.textContent=t;else td.appendChild(t);tr.appendChild(td)}
+function btn(t,f){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.padding="6px";b.textContent=t;b.onclick=f;return b}
+function adRender(){var q=($("ad_q")?v("ad_q"):"").toLowerCase(),T=$("adTbl");T.innerHTML="";
+ ROWSM.forEach(function(r,i){var d=r.data||{},nm=(d.first_name||"")+" "+(d.last_name||"");if(q&&(r.member_no+nm+r.bureau+(d.matricule||"")+r.ref).toLowerCase().indexOf(q)<0)return;
+  var tr=document.createElement("tr");cell(tr,r.member_no||"");cell(tr,nm);cell(tr,r.bureau||"");cell(tr,d.phone||"");cell(tr,r.status==="paid"?"✅ مدفوع":"⏳ بانتظار الدفع");
+  var box=document.createElement("div");box.appendChild(btn("📎",function(){adDocs(i)}));if(r.status!=="paid")box.appendChild(btn("✅ رمز",function(){adApprove(i)}));cell(tr,box);T.appendChild(tr)})}
+function adDocs(i){var r=ROWSM[i],o=$("ad_out");o.textContent="";Object.keys(r.files||{}).forEach(function(k){sbFetch("/storage/v1/object/sign/docs/"+r.files[k],{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expiresIn:600})}).then(function(x){var a=document.createElement("a");a.href=CFG.supabaseUrl+"/storage/v1"+x.signedURL;a.target="_blank";a.rel="noopener";a.textContent=k+" ";a.style.color="var(--gold-light)";o.appendChild(a)}).catch(function(e){o.textContent="خطأ: "+e.message})})}
+function adApprove(i){var r=ROWSM[i],o=$("ad_out");rpc("approve_request",{p_ref:r.ref}).then(function(c){var tel=String((r.data||{}).phone||"").replace(/\D/g,"").replace(/^0/,"213");o.innerHTML="";var d=document.createElement("div");d.dir="ltr";d.style.cssText="font-size:2rem;letter-spacing:6px;color:var(--gold-light);text-align:center";d.textContent=c;o.appendChild(d);o.appendChild(btn("💬 إرسال الرمز للعضو عبر واتساب",function(){wa(tel,"ANRSH: تم تأكيد دفع اشتراكك. رمز التأكيد لطلبك "+r.ref+" هو: "+c)}));adLoad()}).catch(function(e){o.textContent="خطأ: "+e.message})}
+function adCsv(){var L=[["member_no","ref","bureau","status","first_name","last_name","matricule","phone","email","wilaya","commune","created_at"]];ROWSM.forEach(function(r){var d=r.data||{};L.push([r.member_no,r.ref,r.bureau,r.status,d.first_name,d.last_name,d.matricule,d.phone,d.email,d.wilaya,d.commune,r.created_at])});
+ dlBlob("anrsh-membres.csv",new Blob(["\ufeff"+L.map(function(x){return x.map(function(c){return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\n")],{type:"text/csv"}))}
+var ME={role:"",bureau:""},RPS=[];
+function submitReport(){if(!JWT){alert("سجّل الدخول من فضاء الإدارة أولاً.");return}if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}
+ var d=rpData();sbFetch("/rest/v1/reports",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({bureau:d.bureau,kind:d.type,year:d.year,period:d.period,literary:d.lit,income:d.income,expenses:d.expenses,note:d.note,data:Object.assign(d,{text:reportText()})})}).then(function(){alert("تم إرسال التقرير إلى المنصة.");loadReports()}).catch(function(e){alert("خطأ: "+e.message)})}
+function loadReports(){sbFetch("/rest/v1/reports?select=id,created_at,bureau,kind,year,period,consolidated,literary,data&order=created_at.desc&limit=100").then(function(r){RPS=r||[];var h=$("rp_hist");h.innerHTML="";var t=document.createElement("b");t.textContent="التقارير المحفوظة في المنصة";h.appendChild(t);RPS.forEach(function(x,i){var row=document.createElement("div");row.style.margin="6px 0";row.appendChild(document.createTextNode((x.consolidated?"📌 موحّد · ":"")+x.year+" · "+x.kind+" · "+x.bureau+" · "+new Date(x.created_at).toLocaleDateString("fr-DZ")+" "));row.appendChild(btn("عرض",function(){showRp(i)}));h.appendChild(row)});var pre=document.createElement("pre");pre.id="rp_view";pre.style.cssText="white-space:pre-wrap;margin-top:8px";h.appendChild(pre)}).catch(function(){})}
+function showRp(i){var x=RPS[i];$("rp_view").textContent=(x.data&&x.data.text)||x.literary||""}
+function loadOffices(){sbFetch("/rest/v1/offices?select=*&order=sort").then(function(r){if(!r||!r.length)return;DIR=r.map(function(o){return[o.name_ar,o.head_ar||o.head_fr||"",o.tel||"",o.role_ar||"",Array.isArray(o.wilayas)?o.wilayas:(o.wilayas?String(o.wilayas).split(/[،,]/).map(function(x){return x.trim()}).filter(Boolean):[]),{bank:o.bank_name||"",acc:o.bank_account||"",ccp:o.ccp||"",ccpk:o.ccp_key||"",wa:o.whatsapp||"",mail:o.email||""}]});r.forEach(function(o){if(o.code&&o.head_fr)HEADS[o.code]=o.head_fr});renderDir();syncBadgeLive();applyLang()}).catch(function(){})}
+/* ===== ANRSH : mode serveur sécurisé (CFG.apiUrl) ===== */
+var API=(CFG.apiUrl||"").replace(/\/+$/,""),TOKEN="",ADMKEY="";
+function jf(url,o){return fetch(url,o).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error(j.detail||j.error||r.status);return j})})}
+if(!SB&&!API){
+ var NA=function(){alert("الخدمة غير مفعّلة: اربط الخادم الآمن بإضافة apiUrl في ملف config.js.")};
+ requestSecurityOTP=NA;validateSecurityOTP=NA;adminCode=NA;
+}
+if(API){
+ requestSecurityOTP=function(){
+  var f=$("adhesionForm");if(!f.reportValidity())return;
+  var b=document.querySelector(".btn-wa-card[onclick*=requestSecurityOTP]");if(b)b.disabled=true;
+  var fd=new FormData(),p=payload({});delete p.files;p.consent=$("accept_privacy").checked&&$("accept_rules").checked;
+  fd.append("profile",JSON.stringify(p));
+  var map={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
+  Object.keys(map).forEach(function(k){var x=$(map[k]).files[0];if(x)fd.append(k,x,x.name)});
+  jf(API+"/api/requests",{method:"POST",body:fd}).then(function(j){
+   curRef=j.requestNumber;curNo="";syncBadgeLive();
+   $("otpBox").style.display="block";otpDesc();$("otpBox").scrollIntoView({behavior:"smooth"});
+   alert("تم تسجيل طلبك ووثائقك. رقم طلبك: "+curRef+"\nبعد التحقق من وصل الدفع يصلك رمز التأكيد تلقائياً على واتساب.");
+  }).catch(function(e){alert("تعذر إرسال الطلب: "+e.message)}).then(function(){if(b)b.disabled=false});
+ };
+ validateSecurityOTP=function(){
+  if(!curRef){alert("أرسل الطلب أولاً.");return}
+  jf(API+"/api/requests/"+encodeURIComponent(curRef)+"/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:v("otpInput")})})
+   .then(function(j){TOKEN=j.unlockToken;$("otpInput").value="";unlockCard()})
+   .catch(function(){alert("الرمز غير صحيح أو منتهي الصلاحية. يصلك الرمز على واتساب بعد التحقق من الدفع.")});
+ };
+ var apiCanPrint=function(){return fetch(API+"/api/print-check?t="+encodeURIComponent(TOKEN)).then(function(r){return r.ok}).catch(function(){return false})};
+ var _dl=downloadCard,_pr=printCard;
+ downloadCard=function(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}apiCanPrint().then(function(ok){if(ok)_dl();else alert("انتهت صلاحية الفتح (15 دقيقة). اطلب رمزاً جديداً من المكتب.")})};
+ printCard=function(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}apiCanPrint().then(function(ok){if(ok)_pr();else alert("انتهت صلاحية الفتح (15 دقيقة). اطلب رمزاً جديداً من المكتب.")})};
+
+ $("section-admin").innerHTML='<h2 style="color:var(--gold-light)">🔐 فضاء مسؤول المكتب</h2><p style="margin:10px 0;font-size:.88rem;color:var(--text-muted)">تحقق من وصل الدفع (500 دج) في الوثائق، ثم اضغط «تأكيد الدفع»: يُرسل الرمز ورسالة التأكيد تلقائياً إلى واتساب العضو.</p><div class="field-group"><label>مفتاح المكتب</label><input id="ad_key" type="password" dir="ltr" autocomplete="off"></div><button type="button" class="btn-card btn-dl" style="width:100%;margin-top:10px" onclick="apLoad()">دخول وعرض الطلبات</button><div id="apPanel" style="display:none;margin-top:12px"><div style="overflow-x:auto"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div><div id="ad_out" style="margin-top:12px;font-size:.9rem;word-break:break-word"></div>';
+ var AH=function(){return{"x-admin-key":ADMKEY}};
+ window.apLoad=function(){
+  if(v("ad_key"))ADMKEY=v("ad_key");$("ad_key").value="";
+  var o=$("ad_out");o.textContent="";
+  jf(API+"/api/admin/requests",{headers:AH()}).then(function(L){
+   $("apPanel").style.display="block";var T=$("adTbl");T.innerHTML="";
+   var ST={pending_payment:"⏳ بانتظار الدفع",code_sent:"📨 أُرسل الرمز",unlocked:"✅ مفتوح"};
+   L.forEach(function(r){var tr=document.createElement("tr");
+    cell(tr,r.id);cell(tr,r.name);cell(tr,r.bureau||"");cell(tr,r.phone||"");cell(tr,ST[r.status]||r.status);
+    var box=document.createElement("div");
+    box.appendChild(btn("📎 الوثائق",function(){apDocs(r)}));
+    box.appendChild(btn(r.status==="pending_payment"?"✅ تأكيد الدفع":"🔁 إعادة الإرسال",function(){apApprove(r)}));
+    box.appendChild(btn("🗑",function(){apDel(r)}));
+    cell(tr,box);T.appendChild(tr)});
+  }).catch(function(e){ADMKEY="";o.textContent="خطأ: "+e.message});
+ };
+ window.apDocs=function(r){
+  var o=$("ad_out");o.textContent="";
+  r.files.forEach(function(k){fetch(API+"/api/admin/requests/"+encodeURIComponent(r.id)+"/files/"+k,{headers:AH()})
+   .then(function(x){if(!x.ok)throw new Error(x.status);return x.blob()})
+   .then(function(bl){var a=document.createElement("a");a.href=URL.createObjectURL(bl);a.target="_blank";a.rel="noopener";a.textContent=k;a.style.cssText="color:var(--gold-light);margin:0 8px;font-weight:800";o.appendChild(a)})
+   .catch(function(e){o.textContent="خطأ: "+e.message})});
+ };
+ window.apApprove=function(r){
+  if(!confirm("هل تحققت من وصل الدفع؟ سيُرسل الرمز الآن إلى واتساب العضو."))return;
+  var o=$("ad_out");o.textContent="…";
+  jf(API+"/api/admin/requests/"+encodeURIComponent(r.id)+"/approve",{method:"POST",headers:AH()})
+   .then(function(){o.textContent="✅ أُرسل رمز التأكيد ورسالة التأكيد تلقائياً إلى واتساب "+r.name;apLoad()})
+   .catch(function(e){o.textContent="تعذر الإرسال: "+e.message});
+ };
+ window.apDel=function(r){
+  if(!confirm("حذف نهائي لملف هذا العضو ووثائقه (حق الحذف – القانون 18-07)؟"))return;
+  jf(API+"/api/admin/members/"+encodeURIComponent(r.memberId),{method:"DELETE",headers:AH()}).then(function(){apLoad()}).catch(function(e){$("ad_out").textContent="خطأ: "+e.message});
+ };
+}
+
+var _inst=null,ANRSH_IDLE_MS=15*60*1000,ANRSH_IDLE_TIMER=null;
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_inst=e;var h=$("installHelp");if(h)h.textContent="✅ التطبيق قابل للتثبيت على هذا الجهاز. اضغط زر Télécharger l’application."});
+window.addEventListener("appinstalled",function(){var h=$("installHelp");if(h)h.textContent="✅ تم تثبيت تطبيق ANRSH على الجهاز."});
+function doInstall(){
+ if(_inst){_inst.prompt();_inst.userChoice.then(function(c){if(c&&c.outcome==="accepted")$("installHelp").textContent="✅ تم قبول تثبيت التطبيق."});_inst=null;return}
+ var ios=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches;
+ if(standalone){alert("تطبيق ANRSH مثبت بالفعل على هذا الجهاز.");return}
+ alert(ios?"لتثبيت ANRSH على iPhone: افتح الصفحة في Safari، اضغط زر المشاركة، ثم اختر Ajouter à l’écran d’accueil / إضافة إلى الشاشة الرئيسية.":"لتثبيت ANRSH على Android: افتح الصفحة في Chrome، اضغط ⋮، ثم اختر تثبيت التطبيق أو إضافة إلى الشاشة الرئيسية. إذا لم يظهر الخيار، يجب نشر المنصة عبر HTTPS وإعداد manifest.webmanifest وsw.js.");
+}
+function lockANRSHSession(){
+ unlocked=false;TOKEN="";$("btnDl").classList.add("btn-disabled");$("btnPr").classList.add("btn-disabled");
+ $("lockMsg").textContent="🔒 الجلسة مقفلة. أعد التحقق من رمز الأمان بعد تأكيد المكتب.";
+ $("otpInput").value="";$("otpBox").style.display="none";
+ var st=$("securityStatus");if(st)st.textContent="🔒 تم قفل جلسة البطاقة على هذا الجهاز.";
+}
+function resetANRSHIdle(){
+ if(ANRSH_IDLE_TIMER)clearTimeout(ANRSH_IDLE_TIMER);
+ if(unlocked)ANRSH_IDLE_TIMER=setTimeout(lockANRSHSession,ANRSH_IDLE_MS);
+}
+["click","keydown","touchstart","scroll"].forEach(function(ev){document.addEventListener(ev,resetANRSHIdle,{passive:true})});
+document.addEventListener("visibilitychange",function(){if(document.hidden&&unlocked)resetANRSHIdle()});
+if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)&&!/claude\\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register("sw.js").catch(function(){var h=$("installHelp");if(h)h.textContent="تعذر تسجيل service worker. تحقق من وجود ملف sw.js في جذر الموقع بعد النشر."})}
+else if(location.protocol!=="https:"&&location.hostname!=="localhost")$("installHelp").textContent="التثبيت يتطلب رابط HTTPS. انشر المنصة أولاً على GitHub Pages أو استضافة HTTPS.";
+$("otpInput").addEventListener("input",function(){this.value=this.value.replace(/\\D/g,"").slice(0,6)});
+$("rp_bureau").innerHTML=$("user_bureau").innerHTML;if(SB)loadOffices();rpBal();rpHist();dueInfo();
+$("payInfo").innerHTML=(PAY[$("user_bureau").value]||"رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.");
+document.querySelectorAll(".lg").forEach(function(i){i.src=LOGO});
+fill("user_wilaya",WIL,"-- اختر الولاية --");$("user_wilaya").value="سكيكدة";onWilayaChange();syncBadgeLive();
+obs.observe(document.body,{childList:true,characterData:true,subtree:true});
+</script>
+</body>
+</html>
