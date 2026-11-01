@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<!-- ANRSH – المنصة الرقمية | نسخة العيد | أعد تسمية الملف إلى index.html عند الرفع -->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANRSH – المنصة الرقمية</title>
+<style>
+:root{--bg:#fff1de;--card:#fffaf2;--ink:#2a1d12;--mut:#6f5a46;--pri:#1c1410;--gold:#c8962c;--red:#b3261e;--ok:#2b7a3d;--bd:#ecd3b0}
+@media (prefers-color-scheme:dark){:root{--bg:#1b130d;--card:#2a1e15;--ink:#f7ebdc;--mut:#cdb89f;--pri:#0e0a07;--gold:#e0b04a;--red:#ff7a6e;--ok:#7bd88f;--bd:#4b3a2a}}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;font-family:Tahoma,"Noto Naskh Arabic",Arial,sans-serif;color:var(--ink);line-height:1.7;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+header{background:var(--pri);color:#fff;padding:22px 16px;border-bottom:4px solid var(--gold)}
+header h1{margin:0;font-size:1.35rem}
+header p{margin:4px 0 0;color:#e8d7bd;font-size:.95rem}
+main{max-width:640px;margin:0 auto;padding:16px}
+nav{display:flex;gap:8px;margin-bottom:14px}
+nav button{flex:1;padding:12px;border:2px solid var(--pri);background:transparent;color:var(--ink);font:inherit;font-weight:700;border-radius:8px;cursor:pointer}
+nav button[aria-pressed=true]{background:var(--pri);color:#fff}
+section{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:1.15rem}
+label{display:block;margin:12px 0 4px;font-weight:700}
+input,select{width:100%;padding:12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--bd);border-radius:8px}
+button.act{padding:12px 16px;border:0;border-radius:8px;background:var(--red);color:#fff;font:inherit;font-weight:700;cursor:pointer;margin-top:14px}
+button.sec{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.msg{margin-top:12px;padding:10px;border-radius:8px;font-weight:700}
+.msg:empty{display:none}
+.ok{background:#e3f4e7;color:#1f5d2d}.err{background:#fde6e3;color:#8c1d15}
+.hint{color:var(--mut);font-size:.9rem}
+.row{border-top:1px solid var(--bd);padding:10px 0}
+.row .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.row button{padding:8px 12px;font-size:.9rem;margin:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{border:1px solid var(--bd);padding:6px 8px;text-align:center;white-space:nowrap}
+.code{font-size:2rem;letter-spacing:6px;font-weight:700;text-align:center;direction:ltr;padding:10px;background:var(--bg);border-radius:8px}
+footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>الجمعية الوطنية لمتقاعدي سوناطراك</h1>
+  <p>المنصة الرقمية ANRSH – دفع الاشتراك السنوي (500 دج)</p>
+</header>
+<main>
+  <nav>
+    <button id="tabPay" aria-pressed="true">دفع الاشتراك</button>
+    <button id="tabOff" aria-pressed="false">فضاء المكاتب</button>
+  </nav>
+  <div id="cfgWarn" class="msg err" hidden>لم يُضبط مفتاح Supabase. افتح الملف وضع المفتاح العام في CFG.KEY.</div>
+
+  <section id="pay">
+    <h2>دفع الاشتراك السنوي</h2>
+    <label for="mref">الاسم واللقب ورقم الهاتف</label>
+    <input id="mref" autocomplete="name" placeholder="مثال: أحمد بن علي – 0550000000">
+    <label for="wil">مكتب الولاية</label>
+    <select id="wil"></select>
+    <label for="meth">وسيلة الدفع</label>
+    <select id="meth">
+      <option value="baridimob">بريدي موب</option>
+      <option value="ccp">حساب بريدي جاري (CCP)</option>
+      <option value="bank">حساب بنكي</option>
+      <option value="edahabia">البطاقة الذهبية (Edahabia)</option>
+      <option value="cib">البطاقة البنكية (CIB)</option>
+    </select>
+    <div id="linkBox"></div>
+    <p class="hint">بعد الدفع ارفع صورة الوصل وأدخل رقم العملية ليؤكدها مكتب ولايتك.</p>
+    <label for="rno">رقم العملية</label>
+    <input id="rno" inputmode="numeric" dir="ltr" autocomplete="off">
+    <label for="rfile">صورة الوصل (صورة أو PDF، حتى 5 ميغابايت)</label>
+    <input id="rfile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
+    <button class="act" id="send">إرسال الدفعة للتأكيد</button>
+    <div id="payMsg" class="msg" role="status"></div>
+  </section>
+
+  <section id="off" hidden></section>
+</main>
+<footer>ANRSH – المنصة الرقمية</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+// ===== الإعدادات: عدّل هنا فقط =====
+const CFG = {
+  URL: 'https://ehhxpfqtmhnnubpoxyhb.supabase.co',
+  KEY: 'ضع_المفتاح_العام_هنا',            // المفتاح العام (publishable/anon) فقط، وليس مفتاح service_role
+  ADMIN: 'irched2521@gmail.com',
+  WILAYAS: ['Skikda'],                    // أضف الولايات بنفس الاسم الموجود في جدول regional_offices (حروف لاتينية بلا مسافات خاصة)
+  LINKS: { baridimob:'', ccp:'', bank:'', edahabia:'', cib:'' }  // ضع روابط منصات الدفع الرسمية
+};
+const METHOD_NAMES = {baridimob:'بريدي موب',ccp:'CCP',bank:'حساب بنكي',edahabia:'Edahabia',cib:'CIB'};
+const MAX = 5242880, TYPES = {'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'};
+
+const $ = s => document.querySelector(s);
+const h = (t, a = {}, ...k) => {
+  const e = document.createElement(t);
+  for (const [x, v] of Object.entries(a)) {
+    if (x === 'on') for (const [ev, f] of Object.entries(v)) e.addEventListener(ev, f);
+    else if (x === 'text') e.textContent = v;
+    else e.setAttribute(x, v);
+  }
+  k.flat().forEach(c => e.append(c));
+  return e;
+};
+const say = (box, t, ok) => { box.textContent = t; box.className = 'msg ' + (ok ? 'ok' : 'err'); };
+
+const keyMissing = CFG.KEY.includes('ضع_');
+if (keyMissing) $('#cfgWarn').hidden = false;
+const sb = supabase.createClient(CFG.URL, keyMissing ? 'missing' : CFG.KEY);
+
+// ===== التبويبات =====
+function show(tab) {
+  const off = tab === 'off';
+  $('#pay').hidden = off; $('#off').hidden = !off;
+  $('#tabPay').setAttribute('aria-pressed', String(!off));
+  $('#tabOff').setAttribute('aria-pressed', String(off));
+  if (off) { history.replaceState(null, '', '#officer'); loadOffice(); } else history.replaceState(null, '', location.pathname);
+}
+$('#tabPay').onclick = () => show('pay');
+$('#tabOff').onclick = () => show('off');
+
+// ===== دفع المنخرط =====
+CFG.WILAYAS.forEach(w => $('#wil').append(h('option', { value: w, text: w })));
+function showLink() {
+  const m = $('#meth').value, u = CFG.LINKS[m], box = $('#linkBox');
+  box.replaceChildren();
+  if (u) box.append(h('a', { href: u, target: '_blank', rel: 'noopener' }, h('button', { class: 'act sec', type: 'button', text: 'افتح منصة ' + METHOD_NAMES[m] + ' للدفع' })));
+}
+$('#meth').onchange = showLink; showLink();
+
+$('#send').onclick = async () => {
+  const box = $('#payMsg'), btn = $('#send');
+  const mref = $('#mref').value.trim(), wil = $('#wil').value, meth = $('#meth').value;
+  const rno = $('#rno').value.trim(), f = $('#rfile').files[0];
+  if (mref.length < 5) return say(box, 'أدخل الاسم واللقب ورقم الهاتف.');
+  if (!rno) return say(box, 'أدخل رقم العملية الموجود في الوصل.');
+  if (!f) return say(box, 'ارفع صورة الوصل.');
+  if (!TYPES[f.type]) return say(box, 'نوع الملف غير مقبول. المسموح: JPG وPNG وWebP وPDF.');
+  if (f.size > MAX) return say(box, 'حجم الملف يتجاوز 5 ميغابايت.');
+  btn.disabled = true; say(box, 'جارٍ الإرسال…', true);
+  try {
+    const path = `${wil}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${TYPES[f.type]}`;
+    const up = await sb.storage.from('docs').upload(path, f, { contentType: f.type });
+    if (up.error) throw up.error;
+    const ins = await sb.from('payments').insert({
+      member_ref: mref, wilaya: wil, year: new Date().getFullYear(), amount: CFG_FEE(),
+      method: meth, reference_no: rno, receipt_path: path, status: 'pending'
+    });
+    if (ins.error) throw ins.error;
+    say(box, 'تم الإرسال. سيؤكد مكتب ولايتك الدفعة ثم تصلك بطاقتك.', true);
+    $('#rno').value = ''; $('#rfile').value = '';
+  } catch (e) {
+    say(box, e.code === '23505' ? 'رقم العملية هذا مسجَّل من قبل.' : 'تعذّر الإرسال. تحقق من الاتصال وحاول مجددًا.');
+  }
+  btn.disabled = false;
+};
+function CFG_FEE() { return 500; }
+
+// ===== فضاء المكاتب =====
+async function loadOffice() {
+  const box = $('#off'); box.replaceChildren();
+  if (keyMissing) return box.append(h('p', { text: 'أضف المفتاح العام أولًا.' }));
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return renderLogin(box);
+
+  const user = session.user, isAdmin = user.email === CFG.ADMIN;
+  let acc = null;
+  if (!isAdmin) {
+    const r = await sb.from('officer_accounts').select('wilaya,edit_until').eq('user_id', user.id).maybeSingle();
+    acc = r.data;
+    if (!acc) { box.append(h('p', { text: 'هذا الحساب غير مرتبط بمكتب جهوي. راسل الأدمن.' }), logoutBtn()); return; }
+  }
+  const canEdit = () => isAdmin || (acc && acc.edit_until && new Date(acc.edit_until) > new Date());
+
+  box.append(h('h2', { text: isAdmin ? 'لوحة الأدمن' : 'مكتب ولاية ' + acc.wilaya }), logoutBtn());
+
+  if (!isAdmin) {
+    const st = h('p', { class: 'hint', text: canEdit() ? 'صلاحية التعديل مفتوحة حتى ' + new Date(acc.edit_until).toLocaleTimeString('ar-DZ') : 'التعديل مقفل. أدخل رمز OTP الذي أرسله لك الأدمن.' });
+    const inp = h('input', { inputmode: 'numeric', dir: 'ltr', maxlength: '6', placeholder: '000000', 'aria-label': 'رمز OTP' });
+    const msg = h('div', { class: 'msg', role: 'status' });
+    const go = h('button', { class: 'act', type: 'button', text: 'فتح التعديل', on: { click: async () => {
+      const r = await sb.rpc('officer_verify_otp', { p_wilaya: acc.wilaya, p_code: inp.value.trim() });
+      if (r.data === true) loadOffice(); else say(msg, 'الرمز غير صحيح أو منتهي.');
+    } } });
+    box.append(st, inp, go, msg);
+  } else {
+    await adminTools(box);
+  }
+
+  box.append(h('h2', { text: 'الدفعات قيد التحقق' }));
+  const list = h('div'); box.append(list);
+  await pending(list, canEdit());
+
+  box.append(h('h2', { text: 'المستحقات الفصلية (80% / 20%)' }));
+  const tb = h('div', { class: 'scroll' }); box.append(tb);
+  await dues(tb);
+}
+
+function renderLogin(box) {
+  const em = h('input', { type: 'email', dir: 'ltr', autocomplete: 'username', 'aria-label': 'البريد' });
+  const pw = h('input', { type: 'password', dir: 'ltr', autocomplete: 'current-password', 'aria-label': 'كلمة السر' });
+  const msg = h('div', { class: 'msg', role: 'status' });
+  box.append(
+    h('h2', { text: 'دخول المكاتب' }),
+    h('label', { text: 'البريد الإلكتروني' }), em,
+    h('label', { text: 'كلمة السر' }), pw,
+    h('button', { class: 'act', type: 'button', text: 'دخول', on: { click: async () => {
+      const r = await sb.auth.signInWithPassword({ email: em.value.trim(), password: pw.value });
+      if (r.error) say(msg, 'البريد أو كلمة السر غير صحيحة.'); else loadOffice();
+    } } }), msg);
+}
+function logoutBtn() {
+  return h('button', { class: 'act sec', type: 'button', text: 'خروج', on: { click: async () => { await sb.auth.signOut(); loadOffice(); } } });
+}
+
+async function adminTools(box) {
+  const r = await sb.from('regional_offices').select('wilaya').order('wilaya');
+  const sel = h('select', { 'aria-label': 'الولاية' });
+  (r.data || []).forEach(o => sel.append(h('option', { value: o.wilaya, text: o.wilaya })));
+  const out = h('div'), msg = h('div', { class: 'msg', role: 'status' });
+  box.append(h('h2', { text: 'إصدار رمز OTP لرئيس مكتب' }), sel,
+    h('button', { class: 'act', type: 'button', text: 'إصدار الرمز', on: { click: async () => {
+      out.replaceChildren();
+      const g = await sb.rpc('admin_generate_otp', { p_wilaya: sel.value });
+      if (g.error) return say(msg, 'تعذّر إصدار الرمز.');
+      msg.className = 'msg'; msg.textContent = '';
+      out.append(h('div', { class: 'code', text: g.data }), h('p', { class: 'hint', text: 'صالح 10 دقائق ولمرة واحدة. أرسله لرئيس ' + sel.value + ' عبر واتساب.' }));
+    } } }), out, msg);
+}
+
+async function pending(list, canEdit) {
+  const r = await sb.from('payments').select('id,member_ref,wilaya,method,reference_no,receipt_path,created_at')
+    .eq('status', 'pending').order('created_at');
+  list.replaceChildren();
+  if (r.error) return list.append(h('p', { class: 'hint', text: 'تعذّر تحميل الدفعات.' }));
+  if (!r.data.length) return list.append(h('p', { class: 'hint', text: 'لا توجد دفعات قيد التحقق.' }));
+  r.data.forEach(p => {
+    const msg = h('span', { class: 'hint' });
+    const act = (status, label) => h('button', { class: 'act', type: 'button', text: label, on: { click: async () => {
+      if (!canEdit) return say2(msg, 'التعديل مقفل. أدخل رمز OTP أولًا.');
+      const u = await sb.from('payments').update({ status }).eq('id', p.id).select('id');
+      if (u.error || !u.data.length) return say2(msg, 'لم يتم التنفيذ.');
+      loadOffice();
+    } } });
+    list.append(h('div', { class: 'row' },
+      h('strong', { text: p.member_ref }),
+      h('div', { class: 'hint', text: `${p.wilaya} · ${METHOD_NAMES[p.method] || p.method} · رقم العملية ${p.reference_no || '—'}` }),
+      h('div', { class: 'btns' },
+        h('button', { class: 'act sec', type: 'button', text: 'عرض الوصل', on: { click: async () => {
+          const s = await sb.storage.from('docs').createSignedUrl(p.receipt_path, 120);
+          if (s.data) window.open(s.data.signedUrl, '_blank', 'noopener'); else say2(msg, 'تعذّر فتح الوصل.');
+        } } }),
+        act('confirmed', 'تأكيد'), act('rejected', 'رفض'), msg)));
+  });
+}
+function say2(el, t) { el.textContent = t; }
+
+async function dues(box) {
+  const r = await sb.from('quarterly_dues').select('*').order('year', { ascending: false });
+  box.replaceChildren();
+  if (r.error || !r.data.length) return box.append(h('p', { class: 'hint', text: 'لا توجد دفعات مؤكدة بعد.' }));
+  const cols = [['wilaya', 'الولاية'], ['year', 'السنة'], ['period', 'الفصل'], ['cards', 'البطاقات'], ['total', 'المجموع'], ['national_due', '20% وطني'], ['national_sent', 'المحوَّل'], ['balance_due', 'المتبقي']];
+  const t = h('table', {}, h('tr', {}, cols.map(c => h('th', { text: c[1] }))));
+  r.data.forEach(x => t.append(h('tr', {}, cols.map(c => h('td', { text: String(x[c[0]]) })))));
+  box.append(t);
+}
+
+if (location.hash === '#officer') show('off');
+</script>
+</body>
+</html>
