@@ -80,12 +80,13 @@ footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
 </main>
 <footer>ANRSH – المنصة الرقمية</footer>
 
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 // ===== الإعدادات: عدّل هنا فقط =====
 const CFG = {
-  URL: 'https://ehhxpfqtmhnnubpoxyhb.supabase.co',
-  KEY: 'ضع_المفتاح_العام_هنا',            // المفتاح العام (publishable/anon) فقط، وليس مفتاح service_role
+  URL: (window.ANRSH_CONFIG || {}).supabaseUrl || 'https://ehhxpfqtmhnnubpoxyhb.supabase.co',
+  KEY: (window.ANRSH_CONFIG || {}).supabaseKey || 'ضع_المفتاح_العام_هنا',  // يُقرأ تلقائيًا من config.js
   ADMIN: 'irched2521@gmail.com',
   WILAYAS: ['Skikda'],                    // أضف الولايات بنفس الاسم الموجود في جدول regional_offices (حروف لاتينية بلا مسافات خاصة)
   LINKS: { baridimob:'', ccp:'', bank:'', edahabia:'', cib:'' }  // ضع روابط منصات الدفع الرسمية
