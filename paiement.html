@@ -134,11 +134,14 @@ $('#meth').onchange = showLink; showLink();
 $('#send').onclick = async () => {
   const box = $('#payMsg'), btn = $('#send');
   const mref = $('#mref').value.trim(), wil = $('#wil').value, meth = $('#meth').value;
-  const rno = $('#rno').value.trim(), f = $('#rfile').files[0];
+  const rno = $('#rno').value.trim(); let f = $('#rfile').files[0];
   if (mref.length < 5) return say(box, 'أدخل الاسم واللقب ورقم الهاتف.');
   if (!rno) return say(box, 'أدخل رقم العملية الموجود في الوصل.');
   if (!f) return say(box, 'ارفع صورة الوصل.');
   if (!TYPES[f.type]) return say(box, 'نوع الملف غير مقبول. المسموح: JPG وPNG وWebP وPDF.');
+  if (f.type !== 'application/pdf') {
+    try { f = await shrink(f); } catch (e) { return say(box, 'تعذّر تصغير الصورة. جرّب صورة أخرى.'); }
+  }
   if (f.size > MAX) return say(box, 'حجم الملف يتجاوز 5 ميغابايت.');
   btn.disabled = true; say(box, 'جارٍ الإرسال…', true);
   try {
@@ -158,6 +161,16 @@ $('#send').onclick = async () => {
   btn.disabled = false;
 };
 function CFG_FEE() { return 500; }
+async function shrink(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  if (!blob) throw new Error('shrink');
+  return new File([blob], 'receipt.jpg', { type: 'image/jpeg' });
+}
 
 // ===== فضاء المكاتب =====
 async function loadOffice() {
