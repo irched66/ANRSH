@@ -1033,37 +1033,7 @@ function rpData(){return{bureau:$("rp_bureau").value,type:v("rp_type"),period:pe
 function reportText(){var d=rpData(),bl=$("rp_bureau").selectedOptions[0]?$("rp_bureau").selectedOptions[0].textContent:d.bureau;return "ANRSH – تقرير "+d.type+" "+d.year+"\nالمكتب: "+bl+"\n\n— التقرير الأدبي —\nمنتسبون جدد: "+d.members+"\nأنشطة منجزة: "+d.acts+"\nمستفيدو العمرة: "+d.omra+"\nمستفيدو المساعدات الاجتماعية: "+d.aid+"\n\nالأنشطة والإنجازات:\n"+d.lit+"\n\nالصعوبات:\n"+d.diff+"\n\nالآفاق:\n"+d.persp+"\n\n— التقرير المالي —\nالاشتراكات: "+d.cot+" دج\nإيرادات أخرى: "+d.oth+" دج\nمجموع الإيرادات: "+d.income+" دج\nمصاريف التسيير: "+d.adm+" دج\nمصاريف التضامن والاجتماعية: "+d.soc+" دج\nمصاريف أخرى: "+d.misc+" دج\nمجموع المصاريف: "+d.expenses+" دج\nالرصيد: "+(d.income-d.expenses)+" دج\nملاحظات: "+d.note+"\n\nالتاريخ: "+new Date().toLocaleDateString("fr-DZ")}
 function sendReportMail(){if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}saveReportDraft(true);openURL("mailto:irched2521@gmail.com,anrsh1994@gmail.com?subject="+encodeURIComponent("ANRSH – تقرير "+v("rp_type")+" "+v("rp_year")+" – "+$("rp_bureau").value)+"&body="+encodeURIComponent(reportText()))}
 function sendReportWA(){wa("213657709457",reportText())}
-function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'
-<script>
-(function(){
- const clock=document.getElementById('anrshClock'),date=document.getElementById('anrshDate');
- function tick(){
-  const now=new Date();
-  if(clock) clock.textContent=new Intl.DateTimeFormat('ar-DZ',{timeZone:'Africa/Algiers',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
-  if(date) date.textContent=new Intl.DateTimeFormat('ar-DZ',{timeZone:'Africa/Algiers',weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(now)+' · الجزائر';
- }
- tick();setInterval(tick,1000);
- const ayat=[
-  ['فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا','سورة الشرح، الآيتان ٥–٦'],
-  ['وَقُلْ رَبِّ زِدْنِي عِلْمًا','سورة طه، الآية ١١٤'],
-  ['وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ','سورة الطلاق، الآية ٣']
- ];
- const hadith=[
-  ['المؤمن للمؤمن كالبنيان يشد بعضه بعضًا.','متفق عليه'],
-  ['لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه.','متفق عليه'],
-  ['الكلمة الطيبة صدقة.','متفق عليه']
- ];
- let ai=0,hi=0;
- setInterval(()=>{ai=(ai+1)%ayat.length;const a=document.getElementById('anrshAyah');if(a)a.textContent=ayat[ai][0];const q=a&&a.parentElement.querySelector('small');if(q)q.textContent=ayat[ai][1]},12000);
- setInterval(()=>{hi=(hi+1)%hadith.length;const h=document.getElementById('anrshHadith');if(h)h.textContent=hadith[hi][0];const q=h&&h.parentElement.querySelector('small');if(q)q.textContent=hadith[hi][1]},15000);
- const overlay=document.getElementById('anrshIntroOverlay'),video=document.getElementById('anrshIntroVideo'),skip=document.getElementById('anrshSkipIntro');
- function closeIntro(){if(overlay)overlay.style.display='none';if(video){video.pause();video.currentTime=0}}
- if(skip)skip.addEventListener('click',closeIntro);
- if(video){video.addEventListener('ended',closeIntro);const p=video.play();if(p&&p.catch)p.catch(()=>{});}
-})();
-</script>
-
-</body></html>'],{type:"text/html"}))}
+function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'</body></html>'],{type:"text/html"}))}
 function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
 function saveReportDraft(q){try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");L.unshift({d:new Date().toLocaleDateString("fr-DZ"),t:v("rp_type")+" "+v("rp_year"),b:$("rp_bureau").value,txt:reportText()});localStorage.setItem("anrsh_rp",JSON.stringify(L.slice(0,20)));rpHist();if(!q)alert("تم الحفظ على هذا الجهاز.")}catch(x){if(!q)alert("تعذر الحفظ على هذا المتصفح.")}}
 function rpHist(){var h=$("rp_hist");try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");h.innerHTML=L.length?"<b>التقارير المحفوظة:</b><br>"+L.map(function(r){return r.d+" · "+r.t+" · "+r.b}).join("<br>"):""}catch(x){}}
@@ -1457,5 +1427,35 @@ document.querySelectorAll(".lg").forEach(function(i){i.src=LOGO});
 fill("user_wilaya",WIL,"-- اختر الولاية --");$("user_wilaya").value="سكيكدة";onWilayaChange();syncBadgeLive();
 obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 </script>
+
+<script>
+(function(){
+ const clock=document.getElementById('anrshClock'),date=document.getElementById('anrshDate');
+ function tick(){
+  const now=new Date();
+  if(clock) clock.textContent=new Intl.DateTimeFormat('ar-DZ',{timeZone:'Africa/Algiers',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+  if(date) date.textContent=new Intl.DateTimeFormat('ar-DZ',{timeZone:'Africa/Algiers',weekday:'long',year:'numeric',month:'long',day:'numeric'}).format(now)+' · الجزائر';
+ }
+ tick();setInterval(tick,1000);
+ const ayat=[
+  ['فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا','سورة الشرح، الآيتان ٥–٦'],
+  ['وَقُلْ رَبِّ زِدْنِي عِلْمًا','سورة طه، الآية ١١٤'],
+  ['وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ','سورة الطلاق، الآية ٣']
+ ];
+ const hadith=[
+  ['المؤمن للمؤمن كالبنيان يشد بعضه بعضًا.','متفق عليه'],
+  ['لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه.','متفق عليه'],
+  ['الكلمة الطيبة صدقة.','متفق عليه']
+ ];
+ let ai=0,hi=0;
+ setInterval(()=>{ai=(ai+1)%ayat.length;const a=document.getElementById('anrshAyah');if(a)a.textContent=ayat[ai][0];const q=a&&a.parentElement.querySelector('small');if(q)q.textContent=ayat[ai][1]},12000);
+ setInterval(()=>{hi=(hi+1)%hadith.length;const h=document.getElementById('anrshHadith');if(h)h.textContent=hadith[hi][0];const q=h&&h.parentElement.querySelector('small');if(q)q.textContent=hadith[hi][1]},15000);
+ const overlay=document.getElementById('anrshIntroOverlay'),video=document.getElementById('anrshIntroVideo'),skip=document.getElementById('anrshSkipIntro');
+ function closeIntro(){if(overlay)overlay.style.display='none';if(video){video.pause();video.currentTime=0}}
+ if(skip)skip.addEventListener('click',closeIntro);
+ if(video){video.addEventListener('ended',closeIntro);const p=video.play();if(p&&p.catch)p.catch(()=>{});}
+})();
+</script>
+
 </body>
 </html>
