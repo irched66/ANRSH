@@ -38,7 +38,7 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "application/pdf"
 ]);
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
-const OTP_TTL_MS = 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
 const MAX_OTP_TRIES = 5;
 
@@ -378,18 +378,27 @@ async function handleVerify(ref, request, env) {
     "SELECT ref, otp_hash, otp_exp, otp_tries, status FROM members WHERE ref = ?"
   ).bind(ref).first();
   if (!row || !row.otp_hash || !row.otp_exp) return json({ error: "code_not_issued" }, 400);
-  if (row.status !== "code_sent" && row.status !== "unlocked") return json({ error: "payment_not_approved" }, 403);
+  if (row.status !== "code_sent") return json({ error: "payment_not_approved" }, 403);
   if (Number(row.otp_exp) < Date.now()) return json({ error: "code_expired" }, 410);
   if (Number(row.otp_tries || 0) >= MAX_OTP_TRIES) return json({ error: "too_many_attempts" }, 429);
 
   const candidate = await sha256(ref + ":" + code);
   if (!safeEqual(candidate, row.otp_hash)) {
-    await env.DB.prepare("UPDATE members SET otp_tries = otp_tries + 1 WHERE ref = ?").bind(ref).run();
+    await env.DB.prepare("UPDATE members SET otp_tries = otp_tries + 1 WHERE ref = ? AND status = 'code_sent' AND otp_tries < ?").bind(ref, MAX_OTP_TRIES).run();
     return json({ error: "invalid_code" }, 401);
   }
 
+  // Consume the OTP atomically: only one successful verification can use this code.
+  const consumed = await env.DB.prepare(`
+    UPDATE members
+    SET status = 'unlocked', otp_hash = NULL, otp_exp = NULL, otp_tries = ?
+    WHERE ref = ? AND status = 'code_sent' AND otp_hash = ? AND otp_exp >= ? AND otp_tries < ?
+  `).bind(MAX_OTP_TRIES, ref, candidate, Date.now(), MAX_OTP_TRIES).run();
+  if (!consumed.meta || consumed.meta.changes !== 1) {
+    return json({ error: "invalid_or_already_used_code" }, 409);
+  }
+
   const token = await makePrintToken(ref, env);
-  await env.DB.prepare("UPDATE members SET status = 'unlocked' WHERE ref = ?").bind(ref).run();
   return json({ ok: true, unlockToken: token, expiresIn: PRINT_TTL_SECONDS });
 }
 
@@ -459,7 +468,7 @@ async function handleAdminApprove(id, request, env) {
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
-    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 24 heures.`
+    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 10 minutes.`
   );
 
   // The current frontend does not yet display this code or send WhatsApp automatically.
