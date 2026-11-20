@@ -1,10 +1,12 @@
 {
+  "id": "./",
   "name": "الجمعية الوطنية لمتقاعدي سوناطراك ANRSH",
   "short_name": "ANRSH",
-  "description": "المنصة الرقمية الرسمية للانخراط والتقارير",
+  "description": "المنصة الرقمية للجمعية الوطنية لمتقاعدي سوناطراك",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "lang": "ar",
   "dir": "rtl",
