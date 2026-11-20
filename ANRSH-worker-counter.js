@@ -196,16 +196,18 @@ function algeriaDay() {
   return `${p.year}-${p.month}-${p.day}`;
 }
 async function readPublicStats(env) {
-  const [visitors, today, members] = await Promise.all([
+  const [visitors, today, members, applications] = await Promise.all([
     env.DB.prepare("SELECT COUNT(*) AS n FROM anrsh_site_visitors").first(),
     env.DB.prepare("SELECT COUNT(*) AS n FROM anrsh_site_daily_visitors WHERE visit_day = ?").bind(algeriaDay()).first(),
-    env.DB.prepare("SELECT COUNT(*) AS n FROM members WHERE status = 'unlocked'").first()
+    env.DB.prepare("SELECT COUNT(*) AS n FROM members WHERE status = 'unlocked'").first(),
+    env.DB.prepare("SELECT COUNT(*) AS n FROM members").first()
   ]);
   return {
     ok: true,
     totalVisitors: Number(visitors?.n || 0),
     todayVisitors: Number(today?.n || 0),
     approvedMembers: Number(members?.n || 0),
+    totalApplications: Number(applications?.n || 0),
     day: algeriaDay()
   };
 }
