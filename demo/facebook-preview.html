@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b32"><title>ANRSH DIGITAL | نسخة تجريبية</title>
+<style>
+:root{--green:#123b32;--gold:#c6a45b;--paper:#f5f3ed;--ink:#1c2b27;--muted:#66756f}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Tahoma,Arial,sans-serif}
+header{background:linear-gradient(120deg,#0d2d27,#1c5144);color:#fff;padding:22px 16px 30px;text-align:center}
+.brand{display:inline-flex;align-items:center;gap:10px}.mark{width:54px;height:54px;border:2px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:var(--gold);font-weight:bold;font-size:17px}
+h1{font-size:24px;margin:10px 0 4px}header p{margin:4px 0;color:#e3e9e5;font-size:14px}
+.notice{background:#fff4d8;color:#70551a;border:1px solid #ead49b;padding:11px 14px;margin:14px auto;border-radius:12px;max-width:920px;font-size:13px;text-align:center}
+main{max-width:980px;margin:0 auto;padding:0 14px 34px}.tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:18px 0}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--green);color:white}
+.tabs button{background:#e2e7e2;color:var(--green)}.tabs button.active{background:var(--green);color:white}
+.panel{display:none;background:white;border:1px solid #e2e5df;border-radius:16px;padding:18px;box-shadow:0 8px 24px #102c2210}.panel.active{display:block}
+h2{font-size:19px;margin:0 0 14px;color:var(--green)}h3{font-size:16px;color:var(--green)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:5px}input,select{width:100%;padding:12px;border:1px solid #d9dfd9;border-radius:9px;background:#fff;font:inherit}
+.field{margin-bottom:12px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.secondary{background:#e9eee9;color:var(--green)}
+.result{display:none;margin-top:16px;padding:14px;border:1px dashed var(--gold);border-radius:12px;background:#fffdf7}
+.carddemo{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:2px solid var(--gold);border-radius:14px;padding:16px;background:linear-gradient(120deg,#fff,#f4f0e4)}
+.qr{width:94px;height:94px;background:repeating-conic-gradient(#172c25 0 25%,#fff 0 50%) 0/12px 12px;border:7px solid white;outline:1px solid #ddd}
+.pill{display:inline-block;background:#edf3ed;color:var(--green);padding:5px 9px;border-radius:30px;font-size:12px}
+.stat{background:#f4f7f3;border-radius:12px;padding:16px}.stat strong{display:block;font-size:24px;color:var(--green);margin-bottom:5px}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px}
+.small{font-size:12px;color:var(--muted);line-height:1.8}
+</style></head>
+<body>
+<header><div class="brand"><div class="mark">ANRSH</div><div><strong>الجمعية الوطنية لمتقاعدي سوناطراك</strong><div style="font-size:12px;color:#e4d3a9">Association Nationale des Retraités de Sonatrach</div></div></div>
+<h1>ANRSH DIGITAL</h1><p>فضاؤكم الرقمي لخدمات المنخرطين والمكاتب الجهوية</p></header>
+<div class="notice"><strong>نسخة تجريبية للعرض فقط</strong> — التسجيل والدفع والاعتماد الرسمي غير مفعّلين. لا تُدخلوا بيانات شخصية حقيقية.</div>
+<main>
+<div class="tabs" role="tablist"><button class="active" data-tab="member">فضاء المنخرطين</button><button data-tab="regional">فضاء المكاتب الجهوية</button><button data-tab="national">فضاء المكتب الوطني</button></div>
+<section id="member" class="panel active"><h2>طلب انخراط تجريبي</h2><p class="small">يمكنكم تجربة النموذج ببيانات افتراضية. لا يتم إرسال أي معلومات إلى خادم أو قاعدة بيانات.</p>
+<div class="grid">
+<div class="field"><label>الاسم واللقب (تجريبي)</label><input id="fullName" placeholder="مثال: أحمد بن صالح"></div>
+<div class="field"><label>صفة صاحب الطلب</label><select id="kind"><option>متقاعد</option><option>متقاعدة</option><option>أرملة</option><option>من ذوي الحقوق</option></select></div>
+<div class="field"><label>الولاية</label><select><option>اختر ولاية تجريبية</option><option>الجزائر</option><option>وهران</option><option>سكيكدة</option><option>ورقلة</option><option>الوادي</option></select></div>
+<div class="field"><label>المكتب الجهوي</label><select><option>اختر المكتب</option><option>الجزائر العاصمة وبومرداس</option><option>وهران</option><option>سكيكدة</option><option>غرداية</option><option>الوادي</option></select></div>
+<div class="field"><label>البريد الإلكتروني (اختياري تجريبي)</label><input type="email" placeholder="demo@example.com"></div>
+<div class="field"><label>رقم الهاتف (تجريبي)</label><input placeholder="05 xx xx xx xx"></div></div>
+<div class="actions"><button id="previewBtn">معاينة طلب تجريبي</button><button class="secondary" id="resetBtn">مسح النموذج</button></div>
+<div class="result" id="previewResult"><span class="pill">طلب تجريبي — غير مرسل</span><p id="previewText"></p><p class="small">الاشتراك السنوي المعتمد: <strong>500 دج</strong>. لا يوجد دفع في هذه النسخة.</p><button id="cardBtn">عرض بطاقة تجريبية</button></div>
+<div class="result" id="cardResult"><div class="carddemo"><div><span class="pill">بطاقة نموذجية غير رسمية</span><h3>بطاقة انخراط / Carte d’adhérent</h3><strong id="cardName">اسم تجريبي</strong><p class="small">ANRSH — المكتب الوطني<br>سنة الانخراط: 2026</p></div><div class="qr" aria-label="رمز زخرفي غير قابل للتحقق"></div></div><p class="small">هذا الرمز شكل توضيحي فقط، وليس QR للتحقق من العضوية.</p></div>
+</section>
+<section id="regional" class="panel"><h2>فضاء رؤساء المكاتب الجهوية</h2><p class="small">واجهة توضيحية لصلاحيات المكتب الجهوي، دون تسجيل دخول فعلي أو الوصول إلى بيانات حقيقية.</p><div class="grid"><div class="stat"><strong>طلبات تجريبية</strong>معاينة الملفات الواردة للمكتب</div><div class="stat"><strong>الولايات التابعة</strong>عرض الولايات المعتمدة من المكتب الوطني</div><div class="stat"><strong>الملف المالي</strong>إدخال بيانات المكتب في النسخة الرسمية بعد الاعتماد</div></div><div class="notice">تسجيل الرؤساء واعتماد حساباتهم غير متاح في العرض التجريبي.</div></section>
+<section id="national" class="panel"><h2>فضاء المكتب الوطني</h2><p class="small">لوحة عرض شكلية للصلاحيات الوطنية. جميع الأرقام أدناه أمثلة غير حقيقية.</p><div class="grid"><div class="stat"><strong>69</strong>ولاية مستهدفة</div><div class="stat"><strong>11</strong>مكتبًا جهويًا — عرض توضيحي</div><div class="stat"><strong>500 دج</strong>قيمة الاشتراك السنوي</div><div class="stat"><strong>20% / 80%</strong>توزيع المداخيل: المكتب الوطني / المكاتب الجهوية</div></div><p class="small">إنشاء المكاتب وإعادة توزيع الولايات واعتماد الحسابات تبقى من صلاحيات المكتب الوطني في المنصة الرسمية.</p></section>
+</main><footer>ANRSH DIGITAL © 2026 — نسخة تجريبية للعرض والتعريف فقط</footer>
+<script>
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab));}));
+const result=document.getElementById('previewResult'),card=document.getElementById('cardResult');
+document.getElementById('previewBtn').onclick=()=>{const n=document.getElementById('fullName').value.trim()||'زائر تجريبي';document.getElementById('previewText').textContent='تم إنشاء معاينة محلية للطلب باسم: '+n+' — لم يتم الإرسال أو الحفظ.';document.getElementById('cardName').textContent=n;result.style.display='block';card.style.display='none';};
+document.getElementById('cardBtn').onclick=()=>card.style.display='block';
+document.getElementById('resetBtn').onclick=()=>{document.querySelectorAll('input').forEach(x=>x.value='');result.style.display='none';card.style.display='none';};
+</script></body></html>
