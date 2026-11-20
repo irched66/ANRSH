@@ -1464,12 +1464,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     if(!host || el("anrsh-public-counters")) return;
     var box=document.createElement("div");box.id="anrsh-public-counters";
     box.style.cssText="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:12px auto 4px;max-width:760px";
-    var labels=[["approvedMembers","👥 المنخرطون المعتمدون"],["totalVisitors","🌐 إجمالي الزوار"],["todayVisitors","📅 زوار اليوم"]];
+    var labels=[["totalApplications","📝 طلبات الانخراط"],["approvedMembers","👥 المنخرطون المعتمدون"],["totalVisitors","🌐 إجمالي الزوار"],["todayVisitors","📅 زوار اليوم"]];
     labels.forEach(function(item){var card=document.createElement("div");card.style.cssText="min-width:135px;padding:8px 12px;border:1px solid rgba(255,255,255,.35);border-radius:12px;background:rgba(0,0,0,.16);font-size:.82rem";var title=document.createElement("div");title.textContent=item[1];var number=document.createElement("strong");number.id="anrsh-stat-"+item[0];number.textContent="—";number.style.cssText="display:block;font-size:1.25rem;direction:ltr";card.appendChild(title);card.appendChild(number);box.appendChild(card)});
     host.appendChild(box);
   }
   function showPublicStats(data){
-    ["approvedMembers","totalVisitors","todayVisitors"].forEach(function(k){var n=el("anrsh-stat-"+k);if(n)n.textContent=Number(data[k]||0).toLocaleString("fr-FR")});
+    ["totalApplications","approvedMembers","totalVisitors","todayVisitors"].forEach(function(k){var n=el("anrsh-stat-"+k);if(n)n.textContent=Number(data[k]||0).toLocaleString("fr-FR")});
   }
   async function loadPublicStats(){
     try{var id=localStorage.getItem("anrsh_visitor_id");if(!id){id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():("v-"+Date.now().toString(16)+"-"+Math.random().toString(16).slice(2)+"-"+Math.random().toString(16).slice(2));localStorage.setItem("anrsh_visitor_id",id)}
