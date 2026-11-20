@@ -553,7 +553,7 @@ textarea{resize:vertical;font-family:inherit}
                 <button type="button" class="lang-pill" onclick="setLanguage('fr', this)">Français</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('en', this)">English</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('ber', this)">ⵜⴰⵎⴰⵣⵉⵖⵜ</button>
-                <button type="button" class="lang-pill" id="btnInstall" style="display:none" onclick="doInstall()">📲 تثبيت التطبيق</button>
+                <button type="button" class="lang-pill" id="btnInstall" onclick="doInstall()">📲 تثبيت التطبيق</button>
             </div>
 
             <div class="tabs-nav">
@@ -564,16 +564,7 @@ textarea{resize:vertical;font-family:inherit}
             </div>
         </header>
 
-        <section class="install-guide" id="install-guide" aria-label="كيفية تثبيت المنصة">
-          <h2 id="install-title">📲 كيفية تثبيت منصة ANRSH على الهاتف والحاسوب</h2>
-          <h3 id="install-android">📱 هاتف Android</h3>
-          <p id="install-android-steps">افتح رابط المنصة بمتصفح Google Chrome، ثم اضغط على ⋮ أعلى الشاشة، واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»، ثم أكّد الإضافة. ستظهر أيقونة ANRSH على هاتفك.</p>
-          <h3 id="install-iphone">🍎 هاتف iPhone</h3>
-          <p id="install-iphone-steps">افتح المنصة بمتصفح Safari، اضغط زر المشاركة، ثم اختر «إضافة إلى الشاشة الرئيسية» واضغط «إضافة».</p>
-          <h3 id="install-computer">💻 حاسوب Windows أو Mac</h3>
-          <p id="install-computer-steps">افتح المنصة بمتصفح Google Chrome أو Microsoft Edge. اضغط رمز التثبيت بجانب شريط العنوان إن ظهر، أو افتح قائمة المتصفح واختر «تثبيت الصفحة كتطبيق» أو «Install this site as an app».</p>
-          <p id="install-note">التثبيت مجاني ولا يحتاج إلى متجر التطبيقات أو ملف APK. بعد التثبيت افتح المنصة من أيقونتها مباشرة. رابط المنصة: <a href="https://irched66.github.io/ANRSH/" target="_blank" rel="noopener">ANRSH</a>.</p>
-        </section>
+        
 
         <!-- 1. استمارة الانخراط وتوليد البطاقة -->
         <div id="section-register" class="main-grid">
@@ -1284,7 +1275,12 @@ function loadReports(){sbFetch("/rest/v1/reports?select=id,created_at,bureau,kin
 function showRp(i){var x=RPS[i];$("rp_view").textContent=(x.data&&x.data.text)||x.literary||""}
 function loadOffices(){sbFetch("/rest/v1/offices?select=*&order=sort").then(function(r){if(!r||!r.length)return;DIR=r.map(function(o){return[o.name_ar,o.head_ar||o.head_fr||"",o.tel||"",o.role_ar||""]});r.forEach(function(o){if(o.code&&o.head_fr)HEADS[o.code]=o.head_fr});renderDir();syncBadgeLive();applyLang()}).catch(function(){})}
 var _inst=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_inst=e;$("btnInstall").style.display=""});
-function doInstall(){if(_inst){_inst.prompt();_inst=null;$("btnInstall").style.display="none"}}
+function doInstall(){
+ if(_inst){_inst.prompt();_inst=null;return}
+ var ua=navigator.userAgent||"";
+ var msg=/iPhone|iPad|iPod/i.test(ua)?"افتح المنصة في Safari، ثم اضغط مشاركة واختر «إضافة إلى الشاشة الرئيسية».":/Android/i.test(ua)?"افتح المنصة في Google Chrome، ثم قائمة ⋮ واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».":"افتح المنصة في Chrome أو Edge، ثم قائمة المتصفح واختر «تثبيت الصفحة كتطبيق».";
+ alert(msg);
+}
 if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register("sw.js").catch(function(){})}
 $("rp_bureau").innerHTML=$("user_bureau").innerHTML;if(SB)loadOffices();rpBal();rpHist();dueInfo();
 $("payInfo").innerHTML=(PAY[$("user_bureau").value]||"رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.");
