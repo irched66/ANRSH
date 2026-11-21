@@ -1531,7 +1531,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   function selectedFile(id){var x=el(id);return x&&x.files&&x.files[0]||null}
   async function compressImageFile(file){
-    if(!file||file.size<=220*1024||!/^image\\/(jpeg|png|webp)$/.test(file.type))return file;
+    if(!file||file.size<=220*1024||!/^image\/(jpeg|png|webp)$/.test(file.type))return file;
     if(!window.createImageBitmap)throw new Error("تعذر ضغط الصورة تلقائياً في هذا المتصفح. اختر صورة أصغر أو PDF.");
     var bitmap=await createImageBitmap(file),canvas=document.createElement("canvas"),ctx;
     var scales=[1,.9,.8,.7,.6],qualities=[.84,.78,.72,.66,.58];
@@ -1545,7 +1545,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
         ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
         var blob=await new Promise(function(resolve){canvas.toBlob(resolve,"image/jpeg",qualities[i])});
         if(blob&&blob.size<=220*1024){
-          var name=file.name.replace(/\\.[^.]+$/,"")+".jpg";
+          var name=file.name.replace(/\.[^.]+$/,"")+".jpg";
           return new File([blob],name,{type:"image/jpeg",lastModified:Date.now()});
         }
       }
