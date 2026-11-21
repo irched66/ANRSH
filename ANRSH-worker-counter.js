@@ -406,11 +406,17 @@ async function handlePrintCheck(url, env) {
 
 async function handleAdminList(request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
-  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
-  const r = await env.DB.prepare(`
-    SELECT id, ref, bureau, name, phone, profile, files, status, created_at
-    FROM members ORDER BY created_at DESC LIMIT 500
-  `).all();
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
+  const r = actor.role === "national"
+    ? await env.DB.prepare(`
+        SELECT id, ref, bureau, name, phone, profile, files, status, created_at
+        FROM members ORDER BY created_at DESC LIMIT 500
+      `).all()
+    : await env.DB.prepare(`
+        SELECT id, ref, bureau, name, phone, profile, files, status, created_at
+        FROM members WHERE bureau = ? ORDER BY created_at DESC LIMIT 500
+      `).bind(actor.bureau).all();
   const requests = r.results.map(row => ({
     id: row.id, memberId: row.id, requestNumber: row.ref,
     name: row.name, phone: row.phone, bureau: row.bureau,
@@ -423,9 +429,11 @@ async function handleAdminList(request, env) {
 
 async function handleAdminFile(id, type, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
-  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
   if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
-  const row = await env.DB.prepare("SELECT files FROM members WHERE id = ?").bind(id).first();
+  const row = await env.DB.prepare("SELECT bureau, files FROM members WHERE id = ?").bind(id).first();
+  if (row && actor.role !== "national" && row.bureau !== actor.bureau) return json({ error: "forbidden" }, 403);
   if (!row) return json({ error: "member_not_found" }, 404);
   const files = parseJson(row.files, {});
   const file = files[type];
@@ -446,11 +454,14 @@ async function handleAdminFile(id, type, request, env) {
 
 async function handleAdminApprove(id, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
-  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
   const row = await env.DB.prepare(
-    "SELECT id, ref, name, phone, profile, status FROM members WHERE id = ?"
+    "SELECT id, ref, bureau, name, phone, profile, status FROM members WHERE id = ?"
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
+  if (actor.role !== "national" && row.bureau !== actor.bureau) return json({ error: "forbidden" }, 403);
+  return json({ error: "payment_verification_required" }, 409);
 
   const code = randomDigits(6);
   const hash = await sha256(row.ref + ":" + code);
@@ -483,11 +494,10 @@ async function handleAdminApprove(id, request, env) {
 
 async function handleAdminDelete(id, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
-  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
-  const row = await env.DB.prepare("SELECT id FROM members WHERE id = ?").bind(id).first();
-  if (!row) return json({ error: "member_not_found" }, 404);
-  await env.DB.prepare("DELETE FROM members WHERE id = ?").bind(id).run();
-  return json({ ok: true, deleted: true });
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
+  // Permanent deletion is disabled pending an approved retention policy.
+  return json({ error: "deletion_disabled_retention_policy" }, 403);
 }
 
 
@@ -608,6 +618,7 @@ async function authMe(request, env) {
   return actor ? json({ok:true,user:{id:actor.id,email:actor.email,role:actor.role,bureau:actor.bureau}}) : json({error:"unauthorized"},401);
 }
 async function authLogout(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const token = bearer(request);
   if (token) await env.DB.prepare("UPDATE admin_sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL").bind(Date.now(),await sha256(token)).run();
   return json({ok:true});
