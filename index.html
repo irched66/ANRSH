@@ -1060,85 +1060,10 @@ function rpData(){return{bureau:$("rp_bureau").value,type:v("rp_type"),period:pe
 function reportText(){var d=rpData(),bl=$("rp_bureau").selectedOptions[0]?$("rp_bureau").selectedOptions[0].textContent:d.bureau;return "ANRSH – تقرير "+d.type+" "+d.year+"\nالمكتب: "+bl+"\n\n— التقرير الأدبي —\nمنتسبون جدد: "+d.members+"\nأنشطة منجزة: "+d.acts+"\nمستفيدو العمرة: "+d.omra+"\nمستفيدو المساعدات الاجتماعية: "+d.aid+"\n\nالأنشطة والإنجازات:\n"+d.lit+"\n\nالصعوبات:\n"+d.diff+"\n\nالآفاق:\n"+d.persp+"\n\n— التقرير المالي —\nالاشتراكات: "+d.cot+" دج\nإيرادات أخرى: "+d.oth+" دج\nمجموع الإيرادات: "+d.income+" دج\nمصاريف التسيير: "+d.adm+" دج\nمصاريف التضامن والاجتماعية: "+d.soc+" دج\nمصاريف أخرى: "+d.misc+" دج\nمجموع المصاريف: "+d.expenses+" دج\nالرصيد: "+(d.income-d.expenses)+" دج\nملاحظات: "+d.note+"\n\nالتاريخ: "+new Date().toLocaleDateString("fr-DZ")}
 function sendReportMail(){if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}saveReportDraft(true);openURL("mailto:irched2521@gmail.com,anrsh1994@gmail.com?subject="+encodeURIComponent("ANRSH – تقرير "+v("rp_type")+" "+v("rp_year")+" – "+$("rp_bureau").value)+"&body="+encodeURIComponent(reportText()))}
 function sendReportWA(){wa("213657709457",reportText())}
-function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'
-<script>
-(function(){
-  var texts={
-    ar:{clock:"🕰️ توقيت الجزائر",verseTitle:"📖 آية اليوم",hadithTitle:"🌿 حديث اليوم",verseLabel:"سورة",ayah:"الآية",hijri:"التاريخ الهجري",greg:"التاريخ الميلادي",hadithGrade:"حديث صحيح"},
-    fr:{clock:"🕰️ Heure d’Algérie",verseTitle:"📖 Verset du jour",hadithTitle:"🌿 Hadith du jour",verseLabel:"Sourate",ayah:"Verset",hijri:"Date hégirienne",greg:"Date grégorienne",hadithGrade:"Hadith authentique"},
-    en:{clock:"🕰️ Algeria time",verseTitle:"📖 Verse of the day",hadithTitle:"🌿 Hadith of the day",verseLabel:"Surah",ayah:"Verse",hijri:"Hijri date",greg:"Gregorian date",hadithGrade:"Authentic hadith"},
-  };
-  var verses=[
-    {ar:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",fr:"À côté de la difficulté est, certes, une facilité.",en:"Indeed, with hardship comes ease.",s:"الشرح",n:"6"},
-    {ar:"وَقُل رَّبِّ زِدْنِي عِلْمًا",fr:"Et dis : Seigneur, accrois mes connaissances !",en:"And say: My Lord, increase me in knowledge.",s:"طه",n:"114"},
-    {ar:"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ",fr:"Souvenez-vous de Moi donc. Je me souviendrai de vous. Remerciez-Moi et ne soyez pas ingrats envers Moi.",en:"So remember Me; I will remember you. Be grateful to Me and do not deny Me.",s:"البقرة",n:"152"}
-  ];
-  var hadiths=[
-    {ar:"إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى.",fr:"Les actes ne valent que par les intentions, et chacun n’aura que ce qu’il a eu l’intention de faire.",en:"Actions are judged by intentions, and each person will have only what they intended.",src:"صحيح البخاري، حديث 1؛ صحيح مسلم، حديث 1907"},
-    {ar:"مَنْ لَا يَرْحَمُ لَا يُرْحَمُ.",fr:"Celui qui ne fait pas miséricorde ne recevra pas de miséricorde.",en:"Whoever does not show mercy will not be shown mercy.",src:"صحيح البخاري، حديث 5997؛ صحيح مسلم، حديث 2318"},
-    {ar:"الكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ.",fr:"Une bonne parole est une aumône.",en:"A good word is charity.",src:"صحيح البخاري، حديث 2989؛ صحيح مسلم، حديث 1009"}
-  ];
-  function getLang(){var l=window.lang||document.documentElement.lang||"ar";return texts[l]?l:"ar"}
-  function dayIndex(len){var d=new Date();var start=Date.UTC(d.getFullYear(),0,0);return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-start)/86400000)%len}
-  function refresh(){
-    var l=getLang(),t=texts[l],now=new Date();
-    var clock=document.getElementById("anrsh-clock");if(!clock)return;
-    document.getElementById("anrsh-clock-title").textContent=t.clock;
-    document.getElementById("anrsh-verse-title").textContent=t.verseTitle;
-    document.getElementById("anrsh-hadith-title").textContent=t.hadithTitle;
-    clock.textContent=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Algiers",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now);
-    var g=new Intl.DateTimeFormat(l==="ar"?"ar-DZ":l==="fr"?"fr-FR":l==="en"?"en-GB":"ar-DZ",{timeZone:"Africa/Algiers",dateStyle:"full"}).format(now);
-    var h;try{h=new Intl.DateTimeFormat(l==="ar"?"ar-DZ":l==="fr"?"fr-FR":l==="en"?"en-GB":"ar-DZ-u-ca-islamic-umalqura",{calendar:"islamic-umalqura",timeZone:"Africa/Algiers",dateStyle:"full"}).format(now)}catch(e){h=new Intl.DateTimeFormat("ar-DZ-u-ca-islamic",{timeZone:"Africa/Algiers",dateStyle:"full"}).format(now)}
-    document.getElementById("anrsh-dates").textContent=t.greg+": "+g+"\n"+t.hijri+": "+h;
-    var v=verses[dayIndex(verses.length)],hd=hadiths[dayIndex(hadiths.length)];
-    document.getElementById("anrsh-verse").textContent=v[l]||v.ar;
-    document.getElementById("anrsh-verse-source").textContent=t.verseLabel+" "+v.s+" · "+t.ayah+" "+v.n;
-    document.getElementById("anrsh-hadith").textContent=hd[l]||hd.ar;
-    document.getElementById("anrsh-hadith-source").textContent=hd.src+" · "+t.hadithGrade;
-  }
-  var old=window.setLanguage;
-  if(typeof old==="function")window.setLanguage=function(){var r=old.apply(this,arguments);refresh();return r};
-  document.addEventListener("DOMContentLoaded",function(){refresh();setInterval(refresh,1000)});
-  if(document.readyState!=="loading"){refresh();setInterval(refresh,1000)}
-})();
-</script>
-
-
-<script>
-(function(){
-  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
-  window.previewApplication=function(){
-    var form=document.getElementById("adhesionForm");
-    if(form&&!form.reportValidity())return;
-    var nodes=form.querySelectorAll("input,select,textarea"),rows=[];
-    nodes.forEach(function(el){
-      if(["button","submit","reset","hidden"].includes(el.type))return;
-      var label="";
-      var group=el.closest(".field-group");
-      if(group){var lab=group.querySelector("label");if(lab)label=lab.innerText.trim()}
-      if(!label&&el.id){var by=document.querySelector('label[for="'+el.id+'"]');if(by)label=by.innerText.trim()}
-      if(!label)label=el.id||"بيان";
-      var value="";
-      if(el.type==="file")value=el.files&&el.files.length?Array.from(el.files).map(function(f){return f.name}).join("، "):"لم يتم اختيار ملف";
-      else if(el.type==="checkbox")value=el.checked?"موافق":"غير موافق";
-      else if(el.tagName==="SELECT")value=el.selectedOptions.length?el.selectedOptions[0].text:"";
-      else value=el.value;
-      if(value)rows.push('<div class="anrsh-preview-item"><span class="anrsh-preview-label">'+esc(label)+'</span><div class="anrsh-preview-value">'+esc(value)+'</div></div>');
-    });
-    var box=document.getElementById("anrshPreviewContent");box.innerHTML=rows.join("");
-    document.getElementById("anrshPreviewOverlay").style.display="flex";
-    document.body.style.overflow="hidden";
-  };
-  window.closeApplicationPreview=function(){document.getElementById("anrshPreviewOverlay").style.display="none";document.body.style.overflow=""};
-  window.confirmApplicationPreview=function(){
-    closeApplicationPreview();
-    if(typeof window.requestSecurityOTP==="function")window.requestSecurityOTP();
-  };
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"){var x=document.getElementById("anrshPreviewOverlay");if(x&&x.style.display==="flex")closeApplicationPreview()}});
-})();
-</script>
-
-</body></html>'],{type:"text/html"}))}
+function dlReport(){
+ var html='<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'</body></html>';
+ dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob([html],{type:"text/html"}));
+}
 function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
 function saveReportDraft(q){try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");L.unshift({d:new Date().toLocaleDateString("fr-DZ"),t:v("rp_type")+" "+v("rp_year"),b:$("rp_bureau").value,txt:reportText()});localStorage.setItem("anrsh_rp",JSON.stringify(L.slice(0,20)));rpHist();if(!q)alert("تم الحفظ على هذا الجهاز.")}catch(x){if(!q)alert("تعذر الحفظ على هذا المتصفح.")}}
 function rpHist(){var h=$("rp_hist");try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");h.innerHTML=L.length?"<b>التقارير المحفوظة:</b><br>"+L.map(function(r){return r.d+" · "+r.t+" · "+r.b}).join("<br>"):""}catch(x){}}
@@ -1741,5 +1666,89 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 /* ===== end D1 integration ===== */
 
 </script>
+
+<script>
+(function(){
+  var texts={
+    ar:{clock:"🕰️ توقيت الجزائر",verseTitle:"📖 آية اليوم",hadithTitle:"🌿 حديث اليوم",verseLabel:"سورة",ayah:"الآية",hijri:"التاريخ الهجري",greg:"التاريخ الميلادي",hadithGrade:"حديث صحيح"},
+    fr:{clock:"🕰️ Heure d’Algérie",verseTitle:"📖 Verset du jour",hadithTitle:"🌿 Hadith du jour",verseLabel:"Sourate",ayah:"Verset",hijri:"Date hégirienne",greg:"Date grégorienne",hadithGrade:"Hadith authentique"},
+    en:{clock:"🕰️ Algeria time",verseTitle:"📖 Verse of the day",hadithTitle:"🌿 Hadith of the day",verseLabel:"Surah",ayah:"Verse",hijri:"Hijri date",greg:"Gregorian date",hadithGrade:"Authentic hadith"}
+  };
+  var verses=[
+    {ar:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",fr:"À côté de la difficulté est, certes, une facilité.",en:"Indeed, with hardship comes ease.",s:"الشرح",n:"6"},
+    {ar:"وَقُل رَّبِّ زِدْنِي عِلْمًا",fr:"Et dis : Seigneur, accrois mes connaissances !",en:"And say: My Lord, increase me in knowledge.",s:"طه",n:"114"},
+    {ar:"فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ",fr:"Souvenez-vous de Moi donc. Je me souviendrai de vous. Remerciez-Moi et ne soyez pas ingrats envers Moi.",en:"So remember Me; I will remember you. Be grateful to Me and do not deny Me.",s:"البقرة",n:"152"}
+  ];
+  var hadiths=[
+    {ar:"إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى.",fr:"Les actes ne valent que par les intentions, et chacun n’aura que ce qu’il a eu l’intention de faire.",en:"Actions are judged by intentions, and each person will have only what they intended.",src:"صحيح البخاري، حديث 1؛ صحيح مسلم، حديث 1907"},
+    {ar:"مَنْ لَا يَرْحَمُ لَا يُرْحَمُ.",fr:"Celui qui ne fait pas miséricorde ne recevra pas de miséricorde.",en:"Whoever does not show mercy will not be shown mercy.",src:"صحيح البخاري، حديث 5997؛ صحيح مسلم، حديث 2318"},
+    {ar:"الكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ.",fr:"Une bonne parole est une aumône.",en:"A good word is charity.",src:"صحيح البخاري، حديث 2989؛ صحيح مسلم، حديث 1009"}
+  ];
+  function currentLang(){var l=window.lang||document.documentElement.lang||"ar";return texts[l]?l:"ar";}
+  function dayIndex(length){var d=new Date();var start=Date.UTC(d.getFullYear(),0,0);return Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-start)/86400000)%length;}
+  function refresh(){
+    var l=currentLang(),t=texts[l],now=new Date();
+    var clock=document.getElementById("anrsh-clock");
+    if(!clock)return;
+    document.getElementById("anrsh-clock-title").textContent=t.clock;
+    document.getElementById("anrsh-verse-title").textContent=t.verseTitle;
+    document.getElementById("anrsh-hadith-title").textContent=t.hadithTitle;
+    clock.textContent=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Algiers",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now);
+    var locale=l==="ar"?"ar-DZ":l==="fr"?"fr-FR":"en-GB";
+    var greg=new Intl.DateTimeFormat(locale,{timeZone:"Africa/Algiers",dateStyle:"full"}).format(now);
+    var hijri;
+    try{hijri=new Intl.DateTimeFormat(locale+"-u-ca-islamic-umalqura",{timeZone:"Africa/Algiers",dateStyle:"full"}).format(now);}
+    catch(e){hijri=new Intl.DateTimeFormat("ar-DZ-u-ca-islamic",{timeZone:"Africa/Algiers",dateStyle:"full"}).format(now);}
+    document.getElementById("anrsh-dates").textContent=t.greg+": "+greg+"\n"+t.hijri+": "+hijri;
+    var v=verses[dayIndex(verses.length)],hd=hadiths[dayIndex(hadiths.length)];
+    document.getElementById("anrsh-verse").textContent=v[l]||v.ar;
+    document.getElementById("anrsh-verse-source").textContent=t.verseLabel+" "+v.s+" · "+t.ayah+" "+v.n;
+    document.getElementById("anrsh-hadith").textContent=hd[l]||hd.ar;
+    document.getElementById("anrsh-hadith-source").textContent=hd.src+" · "+t.hadithGrade;
+  }
+  var originalSetLanguage=window.setLanguage;
+  if(typeof originalSetLanguage==="function"){
+    window.setLanguage=function(){var result=originalSetLanguage.apply(this,arguments);refresh();return result;};
+  }
+  refresh();
+  window.setInterval(refresh,1000);
+})();
+</script>
+
+<script>
+(function(){
+  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  window.previewApplication=function(){
+    var form=document.getElementById("adhesionForm");
+    if(form&&!form.reportValidity())return;
+    var nodes=form.querySelectorAll("input,select,textarea"),rows=[];
+    nodes.forEach(function(el){
+      if(["button","submit","reset","hidden"].includes(el.type))return;
+      var label="";
+      var group=el.closest(".field-group");
+      if(group){var lab=group.querySelector("label");if(lab)label=lab.innerText.trim()}
+      if(!label&&el.id){var by=document.querySelector('label[for="'+el.id+'"]');if(by)label=by.innerText.trim()}
+      if(!label)label=el.id||"بيان";
+      var value="";
+      if(el.type==="file")value=el.files&&el.files.length?Array.from(el.files).map(function(f){return f.name}).join("، "):"لم يتم اختيار ملف";
+      else if(el.type==="checkbox")value=el.checked?"موافق":"غير موافق";
+      else if(el.tagName==="SELECT")value=el.selectedOptions.length?el.selectedOptions[0].text:"";
+      else value=el.value;
+      if(value)rows.push('<div class="anrsh-preview-item"><span class="anrsh-preview-label">'+esc(label)+'</span><div class="anrsh-preview-value">'+esc(value)+'</div></div>');
+    });
+    var box=document.getElementById("anrshPreviewContent");box.innerHTML=rows.join("");
+    document.getElementById("anrshPreviewOverlay").style.display="flex";
+    document.body.style.overflow="hidden";
+  };
+  window.closeApplicationPreview=function(){document.getElementById("anrshPreviewOverlay").style.display="none";document.body.style.overflow=""};
+  window.confirmApplicationPreview=function(){
+    closeApplicationPreview();
+    if(typeof window.requestSecurityOTP==="function")window.requestSecurityOTP();
+  };
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){var x=document.getElementById("anrshPreviewOverlay");if(x&&x.style.display==="flex")closeApplicationPreview()}});
+})();
+</script>
+
+
 </body>
 </html>
