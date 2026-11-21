@@ -1,0 +1,23 @@
+name: ANRSH candidate syntax checks
+
+on:
+  push:
+    branches:
+      - security/payment-otp-hardening
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check Worker JavaScript syntax
+        run: node --check ANRSH-worker-candidate.js
+      - name: Check frontend JavaScript syntax
+        run: |
+          node -e "const fs=require('fs');const s=fs.readFileSync('index-security-candidate.html','utf8');const blocks=[...s.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m=>m[1]).filter(x=>x.trim());for(let i=0;i<blocks.length;i++){new Function(blocks[i]);}console.log('Inline scripts parsed:',blocks.length)"
