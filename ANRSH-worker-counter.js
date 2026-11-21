@@ -367,6 +367,30 @@ async function handleCreateRequest(request, env) {
   }
 }
 
+async function handleRequestStatus(ref, url, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!validRef(ref)) return json({ error: "invalid_request_number" }, 400);
+  const phone = normalizePhone(url.searchParams.get("phone") || "");
+  if (phone.length < 8) return json({ error: "phone_required" }, 400);
+
+  const row = await env.DB.prepare(
+    "SELECT ref, bureau, phone, status, created_at, profile FROM members WHERE ref = ?"
+  ).bind(ref).first();
+  // Require both the private request number and the registered phone number.
+  if (!row || normalizePhone(row.phone) !== phone) {
+    return json({ error: "request_not_found" }, 404);
+  }
+  const profile = parseJson(row.profile, {});
+  return json({
+    ok: true,
+    requestNumber: row.ref,
+    bureau: row.bureau,
+    status: row.status,
+    createdAt: row.created_at,
+    rejectionReason: row.status === "rejected" ? cleanText(profile.rejection_reason, 500) : ""
+  });
+}
+
 async function handleVerify(ref, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!validRef(ref)) return json({ error: "invalid_request_number" }, 400);
@@ -476,6 +500,24 @@ async function handleAdminApprove(id, request, env) {
   });
 }
 
+async function handleAdminReject(id, request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const reason = cleanText(body.reason, 500);
+  if (!reason) return json({ error: "rejection_reason_required" }, 400);
+  const row = await env.DB.prepare(
+    "SELECT id, profile FROM members WHERE id = ?"
+  ).bind(id).first();
+  if (!row) return json({ error: "member_not_found" }, 404);
+  const profile = parseJson(row.profile, {});
+  profile.rejection_reason = reason;
+  await env.DB.prepare(
+    "UPDATE members SET profile = ?, status = 'rejected', otp_hash = NULL, otp_exp = NULL, otp_tries = 0 WHERE id = ?"
+  ).bind(JSON.stringify(profile), id).run();
+  return json({ ok: true, status: "rejected" });
+}
+
 async function handleAdminDelete(id, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
@@ -508,6 +550,11 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/offices") return handleOffices(env);
   if (request.method === "POST" && path === "/api/requests") return handleCreateRequest(request, env);
 
+  const statusMatch = path.match(/^\\/api\\/requests\\/([^/]+)\\/status$/);
+  if (request.method === "GET" && statusMatch) {
+    return handleRequestStatus(decodeURIComponent(statusMatch[1]), url, env);
+  }
+
   const verifyMatch = path.match(/^\/api\/requests\/([^/]+)\/verify$/);
   if (request.method === "POST" && verifyMatch) return handleVerify(decodeURIComponent(verifyMatch[1]), request, env);
 
@@ -523,6 +570,11 @@ async function route(request, env) {
   const approveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/approve$/);
   if (request.method === "POST" && approveMatch) {
     return handleAdminApprove(decodeURIComponent(approveMatch[1]), request, env);
+  }
+
+  const rejectMatch = path.match(/^\\/api\\/admin\\/requests\\/([^/]+)\\/reject$/);
+  if (request.method === "POST" && rejectMatch) {
+    return handleAdminReject(decodeURIComponent(rejectMatch[1]), request, env);
   }
 
   const deleteMatch = path.match(/^\/api\/admin\/members\/([^/]+)$/);
