@@ -611,9 +611,14 @@ textarea{resize:vertical;font-family:inherit}
                             <input type="date" id="birth_date">
                         </div>
                         <div class="field-group">
-                            <label id="t-lbl-pob">مكان الازدياد:</label>
-                            <input type="text" id="birth_place" placeholder="قسنطينة">
-                        </div>
+<label id="t-lbl-pob">ولاية الازدياد:</label>
+<select id="birth_wilaya" onchange="onBirthWilayaChange()"><option value="">-- اختر ولاية الازدياد --</option></select>
+</div>
+</div>
+<div class="form-row three-col">
+<div class="field-group"><label>دائرة الازدياد:</label><select id="birth_daira" onchange="onBirthDairaChange()"><option value="">-- اختر دائرة الازدياد --</option></select></div>
+<div class="field-group"><label>بلدية الازدياد:</label><select id="birth_commune" onchange="onBirthCommuneChange()"><option value="">-- اختر بلدية الازدياد --</option></select></div>
+<input type="hidden" id="birth_place" value="">
                         <div class="field-group">
                             <label id="t-lbl-blood">زمرة الدم:</label>
                             <select id="blood_group">
@@ -652,8 +657,8 @@ textarea{resize:vertical;font-family:inherit}
                             </select>
                         </div>
                     </div>
-
                     <div class="form-row two-col">
+                        <div class="field-group"><label>الرمز البريدي:</label><input type="text" id="user_postal_code" readonly placeholder="يظهر تلقائياً بعد اختيار البلدية"></div>
                         <div class="field-group">
                             <label id="t-lbl-address">عنوان الإقامة بالتفصيل:</label>
                             <input type="text" id="user_address" placeholder="حي عدل CSCEC، عمارة 05">
@@ -1285,7 +1290,7 @@ if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)&&!/claude\.a
 $("rp_bureau").innerHTML=$("user_bureau").innerHTML;if(SB)loadOffices();rpBal();rpHist();dueInfo();
 $("payInfo").innerHTML=(PAY[$("user_bureau").value]||"رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.");
 document.querySelectorAll(".lg").forEach(function(i){i.src=LOGO});
-fill("user_wilaya",WIL,"-- اختر الولاية --");$("user_wilaya").value="سكيكدة";onWilayaChange();syncBadgeLive();
+loadAdminGeo().then(function(){syncBadgeLive()}).catch(function(e){console.error("ANRSH geo data:",e);var s=$("user_wilaya");if(s&&s.options.length<=1)fill("user_wilaya",WIL,"-- اختر الولاية --");});syncBadgeLive();
 obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
@@ -1334,9 +1339,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   function profile(){
     return {
       bureau:val("user_bureau"), first_name:val("first_name"), last_name:val("last_name"),
-      birth_date:val("birth_date"), birth_place:val("birth_place"), blood_group:val("blood_group"),
-      user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"),
-      daira:val("user_daira"), commune:val("user_commune"), address:val("user_address"),
+      birth_date:val("birth_date"), birth_place:val("birth_place"), birth_wilaya:val("birth_wilaya"), birth_daira:val("birth_daira"), birth_commune:val("birth_commune"), blood_group:val("blood_group"),
+      user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"), wilaya_name:el("user_wilaya")&&el("user_wilaya").selectedOptions[0]?el("user_wilaya").selectedOptions[0].textContent:"",
+      daira:val("user_daira"), commune:val("user_commune"), postal_code:val("user_postal_code"), address:val("user_address"),
       nin:val("nin_no"), matricule:val("matricule_sh"), activity:val("user_activity"),
       work_region:val("user_work_region"), specialty:val("last_structure"), retire_year:val("retire_year"),
       phone:val("user_phone"), email:val("user_email"), nss:val("nss_no"), cnr:val("cnr_no"),
