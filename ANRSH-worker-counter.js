@@ -921,7 +921,38 @@ async function route(request, env) {
   return json({ error: "not_found" }, 404);
 }
 
+async function generateQuarterlyReports(env,nowDate=new Date()) {
+  if(!env.DB) throw new Error("database_unavailable");
+  const month=nowDate.getUTCMonth(), currentQuarter=Math.floor(month/3)+1;
+  const quarter=currentQuarter===1?4:currentQuarter-1;
+  const year=currentQuarter===1?nowDate.getUTCFullYear()-1:nowDate.getUTCFullYear();
+  const startMonth=(quarter-1)*3;
+  const start=new Date(Date.UTC(year,startMonth,1));
+  const end=new Date(Date.UTC(year,startMonth+3,0,23,59,59,999));
+  const startMs=start.getTime(),endMs=end.getTime();
+  const offices=await env.DB.prepare("SELECT bureau,office_name FROM regional_offices WHERE active=1").all();
+  let created=0;
+  for(const office of offices.results||[]) {
+    const totals=await env.DB.prepare("SELECT COUNT(*) AS n,COALESCE(SUM(amount_dzd),0) AS gross FROM member_payments WHERE bureau=? AND status='verified' AND membership_year=? AND reviewed_at BETWEEN ? AND ?")
+      .bind(office.bureau,year,startMs,endMs).first();
+    const gross=Number(totals?.gross||0),national=Math.floor(gross*0.2);
+    const payload={source:"scheduled",officeName:office.office_name,financialSummary:{verifiedPayments:Number(totals?.n||0),grossDzd:gross,nationalShareDzd:national,regionalShareDzd:gross-national}};
+    const result=await env.DB.prepare("INSERT OR IGNORE INTO quarterly_reports (id,bureau,report_year,quarter,generated_by,generated_at,period_start,period_end,payload_json,status) VALUES (?,?,?,?,NULL,?,?,?,?,'generated')")
+      .bind(crypto.randomUUID(),office.bureau,year,quarter,Date.now(),start.toISOString().slice(0,10),end.toISOString().slice(0,10),JSON.stringify(payload)).run();
+    if(result.meta&&result.meta.changes===1) created++;
+  }
+  const summary="تم إنشاء تقارير ANRSH الفصلية للفترة "+quarter+"/"+year+". عدد المكاتب: "+created+".";
+  for(const email of ["irched2521@gmail.com","anrsh1994@gmail.com"]) {
+    const sent=await sendEmail(env,email,"ANRSH — التقارير الفصلية",summary);
+    await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,error_code,created_at,sent_at) VALUES (?,NULL,?,'email','quarterly_report',?,?,?,?)")
+      .bind(crypto.randomUUID(),email,sent.sent?"sent":"failed",sent.reason||null,Date.now(),sent.sent?Date.now():null).run();
+  }
+  return {year,quarter,created};
+}
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(generateQuarterlyReports(env).catch(e => console.error("quarterly report cron failed")));
+  },
   async fetch(request, env) {
     try {
       const response = await route(request, env);
