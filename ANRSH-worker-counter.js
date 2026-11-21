@@ -417,17 +417,22 @@ async function handleAdminList(request, env) {
   if (!actor) return json({ error: "unauthorized" }, 401);
   const r = actor.role === "national"
     ? await env.DB.prepare(`
-        SELECT id, ref, bureau, name, phone, profile, files, status, created_at
-        FROM members ORDER BY created_at DESC LIMIT 500
+        SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
+               p.id AS payment_id, p.status AS payment_status
+        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id
+        ORDER BY m.created_at DESC LIMIT 500
       `).all()
     : await env.DB.prepare(`
-        SELECT id, ref, bureau, name, phone, profile, files, status, created_at
-        FROM members WHERE bureau = ? ORDER BY created_at DESC LIMIT 500
+        SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
+               p.id AS payment_id, p.status AS payment_status
+        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id
+        WHERE m.bureau = ? ORDER BY m.created_at DESC LIMIT 500
       `).bind(actor.bureau).all();
   const requests = r.results.map(row => ({
     id: row.id, memberId: row.id, requestNumber: row.ref,
     name: row.name, phone: row.phone, bureau: row.bureau,
     status: row.status, createdAt: row.created_at,
+    paymentId: row.payment_id || null, paymentStatus: row.payment_status || "pending_review",
     profile: parseJson(row.profile, {}),
     files: Object.keys(parseJson(row.files, {}))
   }));
