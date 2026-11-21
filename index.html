@@ -1420,6 +1420,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       too_many_attempts:"تم تجاوز عدد المحاولات المسموح بها.",
       unauthorized:"مفتاح الإدارة غير صحيح أو غير مصرح به.",
       not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي.",
+      request_not_found:"لم نعثر على الطلب. تحقق من رقم الطلب ورقم الهاتف.",
+      phone_required:"أدخل رقم الهاتف المسجل في الطلب.",
+      rejection_reason_required:"يرجى كتابة سبب الرفض.",
       multipart_form_required:"تعذر تجهيز ملفات الطلب. أعد المحاولة.",
       invalid_profile:"بيانات الاستمارة غير صالحة. راجع الحقول.",
       invalid_profile_json:"تعذر قراءة بيانات الاستمارة.",
@@ -1506,6 +1509,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       if(submitButton){submitButton.disabled=true;if(submitLabel)submitLabel.textContent="⏳ جارٍ حفظ الطلب والوثائق...";}
       var result=await api("/api/requests",{method:"POST",body:fd});
       curRef=result.requestNumber; curNo=result.requestNumber; unlockToken="";
+      if(el("anrsh-status-ref"))el("anrsh-status-ref").value=curRef;
+      if(el("anrsh-status-phone"))el("anrsh-status-phone").value=p.phone;
       if(typeof syncBadgeLive==="function")syncBadgeLive();
       if(el("otpBox"))el("otpBox").style.display="block";
       if(el("otpDesc"))otpDesc();
@@ -1543,6 +1548,32 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     }catch(e){console.warn("ANRSH offices",e);}
   };
 
+  function addRequestStatusLookup(){
+    var otp=el("otpBox"),host=otp?otp.parentNode:el("section-register");
+    if(!host||el("anrshRequestStatus"))return;
+    var box=document.createElement("section");box.id="anrshRequestStatus";
+    box.style.cssText="margin:14px 0;padding:16px;border:1px solid rgba(245,158,11,.4);border-radius:14px;background:rgba(2,6,23,.45)";
+    box.innerHTML='<h3 style="color:var(--gold-light);margin-bottom:8px">🔎 متابعة حالة طلب الانخراط</h3>'+
+      '<p style="font-size:.84rem;color:var(--text-muted);margin-bottom:10px">أدخل رقم الطلب ورقم الهاتف المسجل لمعرفة آخر حالة للملف.</p>'+
+      '<div class="form-row two-col"><div class="field-group"><label>رقم الطلب</label><input id="anrsh-status-ref" dir="ltr" placeholder="ANR-2026-..." autocomplete="off"></div>'+
+      '<div class="field-group"><label>رقم الهاتف المسجل</label><input id="anrsh-status-phone" type="tel" dir="ltr" placeholder="06XXXXXXXX" autocomplete="tel"></div></div>'+
+      '<button type="button" class="btn-card btn-dl" id="anrsh-status-check" style="width:100%;margin-top:8px">🔍 التحقق من حالة الطلب</button>'+
+      '<div id="anrsh-status-result" role="status" aria-live="polite" style="margin-top:10px;white-space:pre-wrap;line-height:1.8"></div>';
+    if(otp&&otp.nextSibling)host.insertBefore(box,otp.nextSibling);else host.appendChild(box);
+    el("anrsh-status-check").onclick=window.checkANRSHRequestStatus;
+  }
+  window.checkANRSHRequestStatus=async function(){
+    var ref=val("anrsh-status-ref"),phone=val("anrsh-status-phone"),out=el("anrsh-status-result");
+    if(!ref||!phone){out.textContent="يرجى إدخال رقم الطلب ورقم الهاتف.";return;}
+    out.textContent="⏳ جارٍ التحقق...";
+    try{
+      var r=await api("/api/requests/"+encodeURIComponent(ref)+"/status?phone="+encodeURIComponent(phone));
+      var labels={pending_payment:"قيد الدراسة — في انتظار تأكيد الدفع",code_sent:"تمت مصادقة الدفع — رمز التأكيد صادر",unlocked:"تم التحقق — البطاقة جاهزة للطباعة",rejected:"مرفوض — راجع سبب الرفض أدناه"};
+      var date=r.createdAt?new Date(Number(r.createdAt)*1000).toLocaleString("fr-DZ"):"—";
+      out.textContent="رقم الطلب: "+r.requestNumber+"\\nالمكتب: "+r.bureau+"\\nالحالة: "+(labels[r.status]||r.status)+"\\nتاريخ الإيداع: "+date+(r.rejectionReason?"\\nسبب الرفض: "+r.rejectionReason:"");
+    }catch(e){out.textContent=e.message||"تعذر استرجاع حالة الطلب.";}
+  };
+
   function adminPanel(){
     var box=el("section-admin");if(!box)return;
     box.innerHTML='<h2 style="color:var(--gold-light)">🔐 فضاء الإدارة — ANRSH</h2>'+
@@ -1578,6 +1609,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var td=document.createElement("td");
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
+      var reject=document.createElement("button");reject.type="button";reject.className="btn-card btn-flip";reject.style.cssText="padding:5px;margin:2px";reject.textContent="⛔ رفض مع السبب";reject.onclick=function(){adReject(r.id)};td.appendChild(reject);
       var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
@@ -1594,6 +1626,17 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
+  };
+  window.adReject=async function(id){
+    var reason=window.prompt("اكتب سبب رفض الطلب ليظهر للمنخرط:");
+    if(reason===null)return;
+    reason=String(reason).trim();
+    if(!reason){alert("يجب كتابة سبب الرفض.");return;}
+    try{
+      await api("/api/admin/requests/"+encodeURIComponent(id)+"/reject",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason:reason})});
+      await adLoad();
+      if(el("ad_out"))el("ad_out").textContent="تم رفض الطلب وحفظ السبب.";
+    }catch(e){if(el("ad_out"))el("ad_out").textContent="تعذر رفض الطلب: "+e.message;}
   };
   window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adCsv=function(){
@@ -1659,7 +1702,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   document.addEventListener("DOMContentLoaded",function(){
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
-    adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
+    adminPanel();addRequestStatusLookup();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
     var info=el("payInfo");if(info)info.textContent="الاشتراك السنوي: 500 دج. تُحدَّد وسيلة الدفع وبيانات الحساب من المكتب المعتمد. أرفق وصل الدفع ضمن الوثائق؛ لا تُصدر البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب والتحقق من الرمز.";
   });
 })();
