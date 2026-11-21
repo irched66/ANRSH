@@ -1007,7 +1007,7 @@ function snap(face,name){
  host.appendChild(c);document.body.appendChild(host);
  return html2canvas(c,{backgroundColor:"#090e18",scale:2,useCORS:true}).then(function(cv){host.remove();return new Promise(function(ok){cv.toBlob(function(b){dlBlob(name,b).then(ok)},"image/png")})}).catch(function(){host.remove();alert("تعذر إنشاء الصورة، التقط لقطة شاشة.")});
 }
-async async function downloadCard(){
+async function downloadCard(){
  if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}
  if(typeof window.ANRSH_CHECK_PRINT!=="function" || !(await window.ANRSH_CHECK_PRINT())){
    unlocked=false;["btnDl","btnPr"].forEach(function(i){$(i).classList.add("btn-disabled")});
