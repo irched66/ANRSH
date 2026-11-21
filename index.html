@@ -107,6 +107,10 @@
             margin-bottom: 22px;
         }
 
+        .anrsh-brand-row{width:min(100%,430px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:0 auto 12px;direction:rtl}
+        .anrsh-flag{justify-self:start;font-size:2.6rem;line-height:1;filter:drop-shadow(0 3px 5px rgba(0,0,0,.35))}
+        .sonatrach-brand{justify-self:end;width:76px;height:86px;padding:6px;background:#fff;border:1px solid rgba(245,158,11,.65);border-radius:12px;display:flex;align-items:center;justify-content:center}
+        .sonatrach-brand img{width:100%;height:100%;object-fit:contain}
         .logo-box {
             width: 86px;
             height: 86px;
@@ -117,10 +121,14 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35);
-            margin-bottom: 12px;
+            margin-bottom: 0;
         }
 
         .logo-svg { width: 70px; height: 70px; }
+        .anrsh-daily-photo{position:relative;width:min(100%,560px);height:150px;margin:14px auto 12px;overflow:hidden;border:1px solid rgba(251,191,36,.55);border-radius:15px;background:#101827;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+        .anrsh-daily-photo img{display:block;width:100%;height:100%;object-fit:cover;opacity:.92}
+        .anrsh-daily-photo figcaption{position:absolute;inset:auto 0 0;padding:8px 12px;background:linear-gradient(transparent,rgba(0,0,0,.78));color:#fff;text-align:center;font-size:.82rem;font-weight:700}
+        @media(max-width:420px){.anrsh-brand-row{max-width:320px;gap:6px}.anrsh-flag{font-size:2.15rem}.sonatrach-brand{width:64px;height:72px}.logo-box{width:76px;height:76px}.logo-svg{width:62px;height:62px}.anrsh-daily-photo{height:125px}}
 
         .header-title {
             font-size: 1.4rem;
@@ -594,14 +602,25 @@ textarea{resize:vertical;font-family:inherit}
 
     <div class="container">
         <header>
-            <div class="logo-box">
-                <img class="lg logo-svg" alt="ANRSH" style="border-radius:12px;object-fit:cover">
+            <div class="anrsh-brand-row" aria-label="الهوية البصرية للجمعية">
+                <div class="anrsh-flag" aria-label="علم الجزائر" title="الجزائر">🇩🇿</div>
+                <div class="logo-box">
+                    <img class="lg logo-svg" alt="ANRSH" style="border-radius:12px;object-fit:cover">
+                </div>
+                <a class="sonatrach-brand" href="https://sonatrach.com/" target="_blank" rel="noopener noreferrer" aria-label="الموقع الرسمي لسوناطراك">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Sonatrach1.svg" alt="شعار سوناطراك" loading="lazy">
+                </a>
             </div>
             
             <h1 class="header-title" id="t-main-title">الجمعية الوطنية لمتقاعدي سوناطراك ANRSH</h1>
             <p class="header-welcome" id="t-welcome">
                 المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.
             </p>
+
+            <figure class="anrsh-daily-photo" id="anrshDailyPhotoBox">
+                <img id="anrshDailyPhoto" alt="صورة جزائرية يومية" loading="lazy" decoding="async">
+                <figcaption id="anrshDailyPhotoCaption">من ذاكرة الجزائر وجمالها</figcaption>
+            </figure>
 
             <div class="lang-strip">
                 <button type="button" class="lang-pill active" onclick="setLanguage('ar', this)">العربية</button>
@@ -1453,6 +1472,25 @@ document.querySelectorAll(".lg").forEach(function(i){i.src=LOGO});
 fill("user_wilaya",WIL,"-- اختر الولاية --");$("user_wilaya").value="سكيكدة";onWilayaChange();syncBadgeLive();
 obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 
+/* ===== ANRSH daily Algerian image ===== */
+(function(){
+  var images=[
+    ["assets/regional-offices/ALGIERS.jpg","الجزائر العاصمة","Alger","Algiers"],
+    ["assets/regional-offices/BEJAIA.jpg","بجاية","Béjaïa","Bejaia"],
+    ["assets/regional-offices/BISKRA.webp","بسكرة","Biskra","Biskra"],
+    ["assets/regional-offices/EL_MENIAA.jpg","المنيعة","El Meniaa","El Meniaa"],
+    ["assets/regional-offices/LAGHOUAT.jpg","الأغواط","Laghouat","Laghouat"],
+    ["assets/regional-offices/OUED_SOUF.jpg","وادي سوف","Oued Souf","Oued Souf"],
+    ["assets/regional-offices/SKIKDA.jpg","سكيكدة","Skikda","Skikda"],
+    ["assets/regional-offices/TIMIMOUN.jpg","تيميمون","Timimoun","Timimoun"]
+  ];
+  var d=new Date(),day=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
+  var item=images[((day%images.length)+images.length)%images.length];
+  var img=document.getElementById("anrshDailyPhoto"),caption=document.getElementById("anrshDailyPhotoCaption"),box=document.getElementById("anrshDailyPhotoBox");
+  if(img){img.src=item[0];img.alt=item[1];img.onerror=function(){if(box)box.hidden=true;};}
+  if(caption){var l=(typeof lang==="string"?lang:"ar");caption.textContent=(l==="fr"?"À la découverte de l’Algérie : "+item[2]:l==="en"?"Discovering Algeria: "+item[3]:"من جمال الجزائر: "+item[1]);}
+})();
+ 
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
 (function(){
   "use strict";
