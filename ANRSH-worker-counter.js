@@ -473,7 +473,7 @@ async function handleAdminList(request, env) {
     ? await env.DB.prepare(`
         SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
                p.id AS payment_id, p.status AS payment_status
-        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id
+        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
         ORDER BY m.created_at DESC LIMIT 500
       `).all()
     : await env.DB.prepare(`
@@ -585,8 +585,17 @@ async function handleAdminPaymentReview(id, request, env) {
   statements.push(env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"payment_"+decision,id));
   try { await env.DB.batch(statements); }
   catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
-  const check=await env.DB.prepare("SELECT status FROM member_payments WHERE id=?").bind(id).first();
+  const check=await env.DB.prepare("SELECT status,member_id FROM member_payments WHERE id=?").bind(id).first();
   if(!check||check.status!==decision) return json({error:"payment_review_conflict"},409);
+  if(decision==="rejected") {
+    const member=await env.DB.prepare("SELECT ref,profile FROM members WHERE id=?").bind(check.member_id).first();
+    const profile=parseJson(member?.profile,{});
+    const email=cleanText(profile.email,160);
+    const sent=email?await sendEmail(env,email,"ANRSH — ملاحظة بخصوص وصل الاشتراك",
+      "تعذر اعتماد وصل دفع الاشتراك لطلب "+(member?.ref||"")+". السبب: "+cleanText(body.reason,300)+". يرجى التواصل مع مكتبكم الجهوي لتسوية الملف."): {sent:false,reason:"member_email_missing"};
+    await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,error_code,created_at,sent_at) VALUES (?,?,?,'email','rejected',?,?,?,?)")
+      .bind(crypto.randomUUID(),check.member_id,email||"unavailable",sent.sent?"sent":"failed",sent.reason||null,Date.now(),sent.sent?Date.now():null).run();
+  }
   return json({ok:true,status:decision});
 }
 
@@ -924,6 +933,32 @@ async function route(request, env) {
   return json({ error: "not_found" }, 404);
 }
 
+async function generateRenewalReminders(env,nowDate=new Date()) {
+  if(!env.DB) throw new Error("database_unavailable");
+  const nextYear=nowDate.getUTCFullYear()+1;
+  const rows=await env.DB.prepare(`
+    SELECT m.id,m.ref,m.name,m.profile,m.bureau
+    FROM members m WHERE m.status='unlocked' AND EXISTS (
+      SELECT 1 FROM member_payments p WHERE p.member_id=m.id
+        AND p.membership_year=? AND p.status='verified' AND p.amount_dzd=500
+    )
+  `).bind(nextYear-1).all();
+  let sentCount=0;
+  for(const member of rows.results||[]) {
+    const profile=parseJson(member.profile,{});
+    const email=cleanText(profile.email,160);
+    if(!email) continue;
+    const already=await env.DB.prepare("SELECT id FROM notification_log WHERE member_id=? AND event_type='renewal_due' AND error_code=? LIMIT 1")
+      .bind(member.id,"renewal_"+nextYear).first();
+    if(already) continue;
+    const sent=await sendEmail(env,email,"ANRSH — تذكير بتجديد الانخراط",
+      "نذكركم بقرب انتهاء اشتراك ANRSH لسنة "+(nextYear-1)+". يمكنكم تجديد الانخراط السنوي بمبلغ 500 دج للسنة "+nextYear+" عبر مكتبكم الجهوي.");
+    await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,error_code,created_at,sent_at) VALUES (?,?,?,'email','renewal_due',?,?,?,?)")
+      .bind(crypto.randomUUID(),member.id,email,sent.sent?"sent":"failed","renewal_"+nextYear,Date.now(),sent.sent?Date.now():null).run();
+    if(sent.sent) sentCount++;
+  }
+  return {year:nextYear,notified:sentCount};
+}
 async function generateQuarterlyReports(env,nowDate=new Date()) {
   if(!env.DB) throw new Error("database_unavailable");
   const month=nowDate.getUTCMonth(), currentQuarter=Math.floor(month/3)+1;
@@ -954,7 +989,13 @@ async function generateQuarterlyReports(env,nowDate=new Date()) {
 }
 export default {
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(generateQuarterlyReports(env).catch(e => console.error("quarterly report cron failed")));
+    const now=new Date();
+    if(now.getUTCDate()===1 && [0,3,6,9].includes(now.getUTCMonth())) {
+      ctx.waitUntil(generateQuarterlyReports(env,now).catch(e => console.error("quarterly report cron failed")));
+    }
+    if(now.getUTCMonth()===10 && now.getUTCDate()===1) {
+      ctx.waitUntil(generateRenewalReminders(env,now).catch(e => console.error("renewal reminder cron failed")));
+    }
   },
   async fetch(request, env) {
     try {
