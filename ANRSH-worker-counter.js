@@ -128,14 +128,27 @@ function normalizePhone(v) {
 function validRef(v) {
   return /^[A-Za-z0-9_-]{8,80}$/.test(String(v || ""));
 }
-function adminKeyOk(request, env) {
-  const configured = env.ADMIN_API_KEY;
-  const supplied = request.headers.get("x-admin-key") || "";
-  return typeof configured === "string" && configured.length >= 32 &&
-    safeEqual(supplied, configured);
-}
 function fileName(name) {
   return cleanText(name, 100).replace(/[^\w.\-ء-ي]/g, "_") || "document";
+}
+async function fileEncryptionKey(env) {
+  const hex=String(env.FILE_ENCRYPTION_KEY||"");
+  if(!/^[a-f0-9]{64}$/i.test(hex)) throw new Error("file_encryption_not_configured");
+  const raw=new Uint8Array(hex.match(/.{2}/g).map(x=>parseInt(x,16)));
+  return crypto.subtle.importKey("raw",raw,{name:"AES-GCM"},false,["encrypt","decrypt"]);
+}
+async function encryptFileData(bytes,env) {
+  const key=await fileEncryptionKey(env),iv=crypto.getRandomValues(new Uint8Array(12));
+  const cipher=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,bytes);
+  return "enc:v1:"+b64url(iv)+":"+b64url(new Uint8Array(cipher));
+}
+async function decryptFileData(value,env) {
+  if(!String(value||"").startsWith("enc:v1:")) return base64ToBytes(value);
+  const parts=value.split(":");
+  if(parts.length!==4) throw new Error("invalid_encrypted_file");
+  const key=await fileEncryptionKey(env);
+  const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:fromB64url(parts[2])},key,fromB64url(parts[3]));
+  return new Uint8Array(plain);
 }
 function bytesToBase64(bytes) {
   return b64(bytes);
@@ -275,6 +288,7 @@ async function handleCreateRequest(request, env) {
     return json({ error: "multipart_form_required" }, 415);
   }
 
+  if (!/^[a-f0-9]{64}$/i.test(String(env.FILE_ENCRYPTION_KEY||""))) return json({error:"document_encryption_not_configured"},503);
   const form = await request.formData();
   const profileRaw = form.get("profile");
   if (typeof profileRaw !== "string" || profileRaw.length > 30000) {
@@ -314,7 +328,7 @@ async function handleCreateRequest(request, env) {
       name: fileName(item.name),
       type: item.type,
       size: item.size,
-      data: bytesToBase64(bytes)
+      data: await encryptFileData(bytes,env), encrypted: true
     };
   }
   // The current HTML requires the core identity/payment documents.
@@ -488,7 +502,11 @@ async function handleAdminFile(id, type, request, env) {
   const files = parseJson(row.files, {});
   const file = files[type];
   if (!file || !file.data) return json({ error: "file_not_found" }, 404);
-  const bytes = base64ToBytes(file.data);
+  let bytes;
+  try { bytes=await decryptFileData(file.data,env); }
+  catch(e) { return json({error:"document_decryption_failed"},503); }
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
+    .bind(Date.now(),actor.email,"private_document_access",id+":"+type).run();
   return new Response(bytes, {
     status: 200,
     headers: {
