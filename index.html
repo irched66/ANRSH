@@ -566,6 +566,19 @@ textarea{resize:vertical;font-family:inherit}
 .anrsh-source { color:#cbd5e1; font-size:.78rem; margin-top:7px; line-height:1.7; }
 @media(max-width:640px){.anrsh-daily-grid{grid-template-columns:1fr}.anrsh-daily{padding:12px;margin-inline:2px}}
 
+
+/* نافذة معاينة الاستمارة قبل الإرسال */
+.anrsh-preview-overlay{position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;padding:12px}
+.anrsh-preview-panel{width:min(760px,100%);max-height:90vh;overflow:auto;background:#101827;color:#f8fafc;border:1px solid rgba(251,191,36,.65);border-radius:16px;padding:18px;box-shadow:0 18px 55px #0009}
+.anrsh-preview-panel h2{color:#fbbf24;margin-bottom:12px;font-size:1.15rem}
+.anrsh-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.anrsh-preview-item{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.08);padding:9px;border-radius:9px;overflow-wrap:anywhere}
+.anrsh-preview-label{display:block;color:#fbbf24;font-size:.76rem;margin-bottom:4px}
+.anrsh-preview-value{font-size:.9rem;white-space:pre-wrap}
+.anrsh-preview-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.anrsh-preview-actions button{flex:1;min-width:145px}
+@media(max-width:560px){.anrsh-preview-grid{grid-template-columns:1fr}.anrsh-preview-panel{padding:13px}}
+
 </style>
 </head>
 <body>
@@ -835,12 +848,25 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p></div>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
-                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
-                        <span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>
+                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="previewApplication()">
+                        <span>👁️</span> <span id="t-btn-submit">معاينة الاستمارة قبل الحفظ والإرسال</span>
                     </button>
                 </form>
 
-                <!-- نافذة التحقق OTP -->
+
+<div class="anrsh-preview-overlay" id="anrshPreviewOverlay" role="dialog" aria-modal="true" aria-labelledby="anrshPreviewTitle">
+  <div class="anrsh-preview-panel">
+    <h2 id="anrshPreviewTitle">👁️ معاينة استمارة الانخراط قبل الحفظ والإرسال</h2>
+    <p style="color:#cbd5e1;font-size:.85rem;line-height:1.7;margin-bottom:12px">يرجى مراجعة المعلومات وأسماء الوثائق. يمكنك الرجوع للتصحيح؛ لن يُرسل الطلب قبل ضغط زر التأكيد النهائي.</p>
+    <div class="anrsh-preview-grid" id="anrshPreviewContent"></div>
+    <div class="anrsh-preview-actions">
+      <button type="button" class="btn-card" onclick="closeApplicationPreview()">↩️ رجوع للتصحيح</button>
+      <button type="button" class="btn-card btn-wa-card" onclick="confirmApplicationPreview()">✅ تأكيد وإرسال الطلب</button>
+    </div>
+  </div>
+</div>
+
+                                <!-- نافذة التحقق OTP -->
                 <div id="otpBox" class="otp-verification-box">
                     <h3 style="color: var(--green-wa); margin-bottom: 6px;" id="t-otp-head">🔐 تأكيد رمز الأمان لفك قفل طباعة البطاقة</h3>
                     <p style="font-size: 0.85rem; color: #cbd5e1;" id="t-otp-desc">
@@ -1084,6 +1110,41 @@ function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DO
   if(typeof old==="function")window.setLanguage=function(){var r=old.apply(this,arguments);refresh();return r};
   document.addEventListener("DOMContentLoaded",function(){refresh();setInterval(refresh,1000)});
   if(document.readyState!=="loading"){refresh();setInterval(refresh,1000)}
+})();
+</script>
+
+
+<script>
+(function(){
+  function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+  window.previewApplication=function(){
+    var form=document.getElementById("adhesionForm");
+    if(form&&!form.reportValidity())return;
+    var nodes=form.querySelectorAll("input,select,textarea"),rows=[];
+    nodes.forEach(function(el){
+      if(["button","submit","reset","hidden"].includes(el.type))return;
+      var label="";
+      var group=el.closest(".field-group");
+      if(group){var lab=group.querySelector("label");if(lab)label=lab.innerText.trim()}
+      if(!label&&el.id){var by=document.querySelector('label[for="'+el.id+'"]');if(by)label=by.innerText.trim()}
+      if(!label)label=el.id||"بيان";
+      var value="";
+      if(el.type==="file")value=el.files&&el.files.length?Array.from(el.files).map(function(f){return f.name}).join("، "):"لم يتم اختيار ملف";
+      else if(el.type==="checkbox")value=el.checked?"موافق":"غير موافق";
+      else if(el.tagName==="SELECT")value=el.selectedOptions.length?el.selectedOptions[0].text:"";
+      else value=el.value;
+      if(value)rows.push('<div class="anrsh-preview-item"><span class="anrsh-preview-label">'+esc(label)+'</span><div class="anrsh-preview-value">'+esc(value)+'</div></div>');
+    });
+    var box=document.getElementById("anrshPreviewContent");box.innerHTML=rows.join("");
+    document.getElementById("anrshPreviewOverlay").style.display="flex";
+    document.body.style.overflow="hidden";
+  };
+  window.closeApplicationPreview=function(){document.getElementById("anrshPreviewOverlay").style.display="none";document.body.style.overflow=""};
+  window.confirmApplicationPreview=function(){
+    closeApplicationPreview();
+    if(typeof window.requestSecurityOTP==="function")window.requestSecurityOTP();
+  };
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"){var x=document.getElementById("anrshPreviewOverlay");if(x&&x.style.display==="flex")closeApplicationPreview()}});
 })();
 </script>
 
