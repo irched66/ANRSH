@@ -1501,12 +1501,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var form=el("adhesionForm");
     if(form&&!form.reportValidity())return;
     var submitLabel=el("t-btn-submit"),submitButton=submitLabel&&submitLabel.closest("button");
+    if(submitButton){submitButton.disabled=true;if(submitLabel)submitLabel.textContent="⏳ جارٍ تجهيز الوثائق...";}
     try{
       var mapping=await fileCheck(), p=profile();
       if(!p.consent)throw new Error("يجب الموافقة على التصريح وحماية البيانات الشخصية.");
       var fd=new FormData(); fd.append("profile",JSON.stringify(p)); fd.append("consent","true");
       Object.keys(mapping).forEach(function(k){var f=mapping[k];if(f)fd.append(k,f,f.name)});
-      if(submitButton){submitButton.disabled=true;if(submitLabel)submitLabel.textContent="⏳ جارٍ حفظ الطلب والوثائق...";}
+      if(submitLabel)submitLabel.textContent="⏳ جارٍ حفظ الطلب والوثائق...";
       var result=await api("/api/requests",{method:"POST",body:fd});
       curRef=result.requestNumber; curNo=result.requestNumber; unlockToken="";
       if(el("anrsh-status-ref"))el("anrsh-status-ref").value=curRef;
