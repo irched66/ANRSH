@@ -1506,13 +1506,15 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
        if(r.paymentId&&r.paymentStatus==="pending_review"){var pay=document.createElement("button");pay.type="button";pay.className="btn-card btn-dl";pay.style.cssText="padding:5px;margin:2px";pay.textContent="💳 تأكيد استلام 500 دج";pay.onclick=function(){adPaymentReview(r.paymentId)};td.appendChild(pay);}
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
-      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
+      
       tr.appendChild(td);table.appendChild(tr);
     });
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
-    window.adPaymentReview=async function(id){
+    catch(e){el("ad_out").textContent="تعذر فتح الوثيقة: "+e.message;}
+   };
+   window.adPaymentReview=async function(id){
      if(!confirm("هل راجعت وصل الدفع وتأكدت فعلياً من استلام 500 دج؟"))return;
      try{await api("/api/admin/payments/"+encodeURIComponent(id)+"/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision:"verify"})});el("ad_out").textContent="تم تسجيل مراجعة الدفع. يمكنك الآن إصدار رمز التحقق.";await adLoad();}
      catch(e){el("ad_out").textContent="تعذرت مراجعة الدفع: "+e.message;}
