@@ -409,9 +409,30 @@ async function handleVerify(ref, request, env) {
     .bind(ref,row.otp_hash,Date.now()).run();
   if (!consumed.meta || consumed.meta.changes !== 1) return json({error:"code_already_used"},409);
   const token = await makePrintToken(ref, env);
-  return json({ ok: true, unlockToken: token, expiresIn: PRINT_TTL_SECONDS });
+  const cardToken=randomHex(32), cardHash=await sha256(cardToken);
+  await env.DB.prepare("INSERT INTO member_card_tokens (id,member_id,token_hash,active,issued_by,issued_at,revoked_at) VALUES (?,?,?,1,NULL,?,NULL)")
+    .bind(crypto.randomUUID(),row.id,cardHash,Date.now()).run();
+  return json({ ok: true, unlockToken: token, cardVerifyToken: cardToken, expiresIn: PRINT_TTL_SECONDS });
 }
 
+async function handleCardVerify(url,env) {
+  if(!env.DB) return json({ok:false,error:"database_unavailable"},503);
+  const token=url.searchParams.get("t")||"";
+  if(!/^[a-f0-9]{64}$/i.test(token)) return json({ok:false,error:"invalid_card"},400);
+  const hash=await sha256(token);
+  const row=await env.DB.prepare(`
+    SELECT m.name,m.bureau,m.ref,p.membership_year
+    FROM member_card_tokens c
+    JOIN members m ON m.id=c.member_id
+    JOIN member_payments p ON p.member_id=m.id
+    WHERE c.token_hash=? AND c.active=1 AND c.revoked_at IS NULL
+      AND m.status='unlocked' AND p.status='verified' AND p.amount_dzd=500
+      AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
+    ORDER BY p.created_at DESC LIMIT 1
+  `).bind(hash).first();
+  if(!row) return json({ok:false,valid:false,error:"membership_inactive"},404);
+  return json({ok:true,valid:true,member:row.name,office:row.bureau,year:row.membership_year});
+}
 async function handlePrintCheck(url, env) {
   const token = url.searchParams.get("t") || "";
   if (!(await checkPrintToken(token, env))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
@@ -767,6 +788,7 @@ async function route(request, env) {
   const verifyMatch = path.match(/^\/api\/requests\/([^/]+)\/verify$/);
   if (request.method === "POST" && verifyMatch) return handleVerify(decodeURIComponent(verifyMatch[1]), request, env);
 
+  if (request.method === "GET" && path === "/api/card/verify") return handleCardVerify(url,env);
   if (request.method === "GET" && path === "/api/print-check") return handlePrintCheck(url, env);
 
   if (request.method === "POST" && path === "/api/auth/bootstrap") return authBootstrap(request, env);
