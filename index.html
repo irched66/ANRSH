@@ -1239,7 +1239,7 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 الاشتراك السنوي: 500 دج|Cotisation annuelle : 500 DA|Annual fee: 500 DZD
 رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.|Le numéro de compte postal ou bancaire de votre bureau vous est communiqué par WhatsApp (0657709457). Paiement par Edahabia, CIB ou BaridiMob.|Your office will send you its postal or bank account number via WhatsApp (0657709457). Pay by Edahabia, CIB or BaridiMob.
 أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية|Je certifie l’exactitude des informations et respecte le règlement intérieur|I certify the information and accept the association’s bylaws
-تأكيد التسجيل والدفع وطلب رمز التحقق الأمني|Confirmer l’inscription et demander le code de vérification|Confirm registration and request verification code
+معاينة الاستمارة قبل الحفظ والإرسال|Aperçu du formulaire avant envoi|Preview the form before saving and submitting
 تأكيد رمز الأمان لفك قفل طباعة البطاقة|Code de sécurité pour débloquer l’impression|Security code to unlock card printing
 تأكيد الرمز وفك قفل الطباعة|Valider le code et débloquer l’impression|Validate code and unlock printing
 معاينة البطاقة الحية|Aperçu de la carte|Live card preview
@@ -1542,7 +1542,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       if(el("otpBox"))el("otpBox").scrollIntoView({behavior:"smooth"});
       alert("تم تسجيل طلبك بنجاح في قاعدة بيانات ANRSH.\nرقم الطلب: "+curRef+"\nالطلب الآن في انتظار مصادقة المكتب على الدفع. احتفظ برقم الطلب.");
     }catch(e){alert(e.message||"تعذر إرسال الطلب.");}
-    finally{var b=document.querySelector('button[onclick="requestSecurityOTP()"]');if(b){b.disabled=false;b.innerHTML='<span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>';}}
+    finally{var b=document.querySelector('button[onclick="requestSecurityOTP()"]');if(b){b.disabled=false;b.innerHTML='<span>🔐</span> <span id="t-btn-submit">معاينة الاستمارة قبل الحفظ والإرسال</span>';}}
   };
 
   window.validateSecurityOTP=async function(){
