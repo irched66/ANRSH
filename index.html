@@ -1308,7 +1308,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   var ADMIN_TOKEN = "";\n   var ADMIN_CHALLENGE = "";
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
-  var unlockToken = "";
+  var unlockToken = "";\n   var cardVerifyToken = "";
   window.ANRSH_API_BASE = API_BASE;
 
   function apiError(j, status){
@@ -1398,7 +1398,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     try{
       var r=await api("/api/requests/"+encodeURIComponent(curRef)+"/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:code})});
       if(!r.ok||!r.unlockToken)throw new Error("لم يتم تأكيد الرمز.");
-      unlockToken=r.unlockToken; unlockCard();
+      unlockToken=r.unlockToken; cardVerifyToken=r.cardVerifyToken||""; unlockCard();\n       if(cardVerifyToken&&el("bdQR")){el("bdQR").innerHTML="";new QRCode(el("bdQR"),{text:API_BASE+"/api/card/verify?t="+encodeURIComponent(cardVerifyToken),width:96,height:96});}
       alert("تم التحقق بنجاح. يمكنك الآن معاينة البطاقة وطباعتها خلال مدة صلاحية رمز الطباعة.");
     }catch(e){alert(e.message);}
   };
