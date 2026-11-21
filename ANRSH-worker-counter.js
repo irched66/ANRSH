@@ -550,7 +550,7 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/offices") return handleOffices(env);
   if (request.method === "POST" && path === "/api/requests") return handleCreateRequest(request, env);
 
-  const statusMatch = path.match(/^\\/api\\/requests\\/([^/]+)\\/status$/);
+  const statusMatch = path.match(/^\/api\/requests\/([^/]+)\/status$/);
   if (request.method === "GET" && statusMatch) {
     return handleRequestStatus(decodeURIComponent(statusMatch[1]), url, env);
   }
@@ -572,7 +572,7 @@ async function route(request, env) {
     return handleAdminApprove(decodeURIComponent(approveMatch[1]), request, env);
   }
 
-  const rejectMatch = path.match(/^\\/api\\/admin\\/requests\\/([^/]+)\\/reject$/);
+  const rejectMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/reject$/);
   if (request.method === "POST" && rejectMatch) {
     return handleAdminReject(decodeURIComponent(rejectMatch[1]), request, env);
   }
