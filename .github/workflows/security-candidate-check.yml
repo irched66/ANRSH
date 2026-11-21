@@ -1,0 +1,38 @@
+name: ANRSH candidate syntax checks
+
+on:
+  push:
+    branches:
+      - security/payment-otp-hardening
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check Worker JavaScript syntax
+        run: node --check ANRSH-worker-candidate.js
+      - name: Parse every inline JavaScript block in candidate HTML
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index-security-candidate.html', 'utf8');
+          const scripts = [];
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          for (const match of html.matchAll(re)) {
+            if (/\bsrc\s*=/.test(match[1])) continue;
+            if (match[2].trim()) scripts.push(match[2]);
+          }
+          if (!scripts.length) throw new Error('No inline JavaScript blocks were found');
+          scripts.forEach((source, index) => {
+            try { new Function(source); }
+            catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
+          });
+          console.log('Parsed inline JavaScript blocks:', scripts.length);
+          NODE
