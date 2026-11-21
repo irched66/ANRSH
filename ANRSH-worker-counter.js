@@ -550,6 +550,9 @@ async function handleAdminApprove(id, request, env) {
     await env.DB.prepare("UPDATE members SET otp_hash=NULL,otp_exp=NULL,status='pending_payment' WHERE id=?").bind(id).run();
     return json({ error: "member_notification_failed" },503);
   }
+  await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,provider_message_id,status,created_at,sent_at) VALUES (?,?,?,'email','approved',NULL,'sent',?,?)")
+    .bind(crypto.randomUUID(),id,cleanText(profile.email,160),Date.now(),Date.now()).run();
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"member_approval_code_sent",id).run();
   return json({ok:true,status:"code_sent",requestNumber:row.ref,expiresAt:expires,emailSent:true});
 }
 
@@ -582,8 +585,6 @@ async function handleAdminPaymentReview(id, request, env) {
   catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
   const check=await env.DB.prepare("SELECT status FROM member_payments WHERE id=?").bind(id).first();
   if(!check||check.status!==decision) return json({error:"payment_review_conflict"},409);
-  await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,created_at,sent_at) SELECT ?,member_id,COALESCE((SELECT json_extract(profile,'$.email') FROM members WHERE id=member_payments.member_id),''),'email',?, 'queued',?,NULL FROM member_payments WHERE id=?")
-    .bind(crypto.randomUUID(),decision==="verified"?"payment_verified":"rejected",now,id).run();
   return json({ok:true,status:decision});
 }
 
