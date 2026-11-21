@@ -1423,7 +1423,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var box=el("section-admin");if(!box)return;
     box.innerHTML='<h2 style="color:var(--gold-light)">🔐 فضاء الإدارة — ANRSH</h2>'+
       '<p style="font-size:.85rem;color:var(--text-muted);margin:8px 0">دخول فردي بكلمة مرور ورمز تحقق يُرسل إلى البريد الإداري.</p>'+
-      '<div id="anrshAdminLogin"><label>البريد الإداري</label><input id="anrsh_admin_email" type="email" autocomplete="username" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
+      '<div id="anrshInviteAccept" style="margin:10px 0;padding:10px;border:1px dashed rgba(255,255,255,.3);border-radius:8px"><b>تفعيل دعوة رئيس مكتب جهوي</b><input id="anrsh_invite_token" placeholder="رمز الدعوة المرسل إلى بريدك" dir="ltr" style="width:100%;padding:10px;margin:5px 0"><input id="anrsh_invite_password" type="password" placeholder="كلمة مرور جديدة (14 حرفاً على الأقل)" autocomplete="new-password" style="width:100%;padding:10px;margin:5px 0"><button type="button" class="btn-card btn-flip" onclick="adAcceptInvite()">قبول الدعوة وإنشاء الحساب</button><div id="invite_accept_result"></div></div><div id="anrshAdminLogin"><label>البريد الإداري</label><input id="anrsh_admin_email" type="email" autocomplete="username" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
       '<label>كلمة المرور</label><input id="anrsh_admin_password" type="password" autocomplete="current-password" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
       '<div id="anrshOtpStep" style="display:none"><label>رمز التحقق</label><input id="anrsh_admin_otp" inputmode="numeric" maxlength="6" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px"></div>'+
       '<button type="button" class="btn-card btn-dl" style="width:100%" id="anrsh_admin_enter">دخول الإدارة</button></div>'+
@@ -1448,6 +1448,10 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var vfy=await api("/api/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({challengeId:ADMIN_CHALLENGE,code:val("anrsh_admin_otp")})});
       ADMIN_CHALLENGE="";ADMIN_TOKEN=vfy.token;ADMIN_ME=vfy.user;el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";await adLoad();await loadAdminTools();
     }catch(e){out.textContent="تعذر الدخول: "+e.message;}
+  };
+  window.adAcceptInvite=async function(){
+    try{var r=await api("/api/auth/invitation/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:val("anrsh_invite_token"),password:el("anrsh_invite_password").value})});el("invite_accept_result").textContent=r.status==="pending_national_approval"?"تم إنشاء الحساب وهو بانتظار اعتماد المكتب الوطني.":"تم استلام الطلب.";}
+    catch(e){el("invite_accept_result").textContent="تعذر قبول الدعوة: "+e.message;}
   };
   window.adInvite=async function(){
     try{await api("/api/admin/invitations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:val("invite_email"),bureau:val("invite_bureau")})});el("ad_officers").textContent="تم إرسال الدعوة بالبريد الإداري لمدة 72 ساعة.";el("invite_email").value="";}
