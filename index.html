@@ -652,7 +652,7 @@ textarea{resize:vertical;font-family:inherit}
                         </div>
                         <div class="field-group">
                             <label id="t-lbl-commune">البلدية <span class="req">*</span>:</label>
-                            <select id="user_commune" onchange="syncBadgeLive()" required>
+                            <select id="user_commune" onchange="onUserCommuneChange()" required>
                                 <option value="">-- اختر البلدية --</option>
                             </select>
                         </div>
@@ -931,6 +931,7 @@ function onDairaChange(){changeGeoDaira("user")}
 function onBirthWilayaChange(){changeGeoWilaya("birth")}
 function onBirthDairaChange(){changeGeoDaira("birth")}
 function onBirthCommuneChange(){updatePostal("birth")}
+function onUserCommuneChange(){updatePostal("user")}
 function v(i){return ($(i).value||"").trim()}
 var HEADS={"Skikda":"Allaoua Laid","Constantine":"Allaoua Laid","Oran":"Touati Hassan","Hassi Messaoud":"Abdelli Abdelhamid","National":"Himmi Lachemi"};
 var curNo="";
