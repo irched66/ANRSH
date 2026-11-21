@@ -54,7 +54,7 @@ function corsHeaders(request) {
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
     "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
-    "access-control-allow-headers": "Content-Type, x-admin-key",
+    "access-control-allow-headers": "Content-Type, Authorization, x-bootstrap-secret",
     "access-control-max-age": "86400",
     "vary": "Origin"
   };
@@ -490,6 +490,129 @@ async function handleAdminDelete(id, request, env) {
   return json({ ok: true, deleted: true });
 }
 
+
+// ===== ANRSH individual administrator authentication =====
+const NATIONAL_EMAILS = new Set(["irched2521@gmail.com", "anrsh1994@gmail.com"]);
+const ADMIN_PASSWORD_ITERATIONS = 310000;
+const ADMIN_OTP_TTL_MS = 10 * 60 * 1000;
+const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+
+async function passwordDigest(password, saltHex) {
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(x => parseInt(x, 16)));
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: ADMIN_PASSWORD_ITERATIONS }, material, 256);
+  return [...new Uint8Array(bits)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+function bearer(request) {
+  const h = request.headers.get("authorization") || "";
+  return h.startsWith("Bearer ") ? h.slice(7).trim() : "";
+}
+async function requireAdmin(request, env) {
+  if (!env.DB) return null;
+  const token = bearer(request);
+  if (!/^[A-Za-z0-9_-]{40,100}$/.test(token)) return null;
+  const tokenHash = await sha256(token);
+  const row = await env.DB.prepare(`
+    SELECT u.id, u.email, u.role, u.bureau, u.active, s.id AS session_id, s.expires_at
+    FROM admin_sessions s JOIN admin_users u ON u.id = s.admin_id
+    WHERE s.token_hash = ? AND s.revoked_at IS NULL AND s.expires_at > ?
+      AND u.active = 1 LIMIT 1
+  `).bind(tokenHash, Date.now()).first();
+  if (!row) return null;
+  await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(Date.now(), row.session_id).run();
+  return row;
+}
+async function authBootstrap(request, env) {
+  if (!env.DB || !env.ANRSH_BOOTSTRAP_SECRET || String(env.ANRSH_BOOTSTRAP_SECRET).length < 32) {
+    return json({ error: "bootstrap_not_configured" }, 503);
+  }
+  const supplied = request.headers.get("x-bootstrap-secret") || "";
+  if (!safeEqual(supplied, env.ANRSH_BOOTSTRAP_SECRET)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const accounts = Array.isArray(body.accounts) ? body.accounts : [];
+  if (accounts.length !== 2) return json({ error: "exactly_two_national_accounts_required" }, 400);
+  const normalized = accounts.map(x => ({ email: cleanText(x.email, 160).toLowerCase(), password: String(x.password || "") }));
+  if (new Set(normalized.map(x => x.email)).size !== 2 ||
+      normalized.some(x => !NATIONAL_EMAILS.has(x.email) || x.password.length < 14 || x.password.length > 128)) {
+    return json({ error: "invalid_bootstrap_accounts" }, 400);
+  }
+  const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM admin_users").first();
+  if (Number(count?.n || 0) !== 0) return json({ error: "bootstrap_already_used" }, 409);
+  const now = Date.now();
+  const statements = [];
+  for (const a of normalized) {
+    const id = crypto.randomUUID(), salt = randomHex(16), hash = await passwordDigest(a.password, salt);
+    statements.push(env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) VALUES (?,?,'national',NULL,1,?)").bind(id,a.email,now));
+    statements.push(env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) VALUES (?,?,?,?,0,NULL)").bind(id,hash,salt,now));
+  }
+  try { await env.DB.batch(statements); }
+  catch (e) { console.error("bootstrap failed"); return json({ error: "bootstrap_failed" }, 500); }
+  return json({ ok: true, created: 2 });
+}
+async function authLogin(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const body = await request.json().catch(() => ({}));
+  const email = cleanText(body.email, 160).toLowerCase(), password = String(body.password || "");
+  if (!email || password.length < 1 || password.length > 128) return json({ error: "invalid_credentials" }, 400);
+  const row = await env.DB.prepare(`
+    SELECT u.id,u.email,u.role,u.bureau,u.active,c.password_hash,c.password_salt,c.failed_attempts,c.locked_until
+    FROM admin_users u JOIN admin_credentials c ON c.admin_id=u.id WHERE u.email=? LIMIT 1
+  `).bind(email).first();
+  if (!row || !row.active) return json({ error: "invalid_credentials" }, 401);
+  if (row.locked_until && Number(row.locked_until) > Date.now()) return json({ error: "account_temporarily_locked" }, 423);
+  const candidate = await passwordDigest(password, row.password_salt);
+  if (!safeEqual(candidate, row.password_hash)) {
+    const attempts = Number(row.failed_attempts || 0) + 1;
+    await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=?,locked_until=? WHERE admin_id=?")
+      .bind(attempts >= 8 ? 0 : attempts, attempts >= 8 ? Date.now() + 15*60*1000 : null, row.id).run();
+    return json({ error: "invalid_credentials" }, 401);
+  }
+  await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=0,locked_until=NULL WHERE admin_id=?").bind(row.id).run();
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM) return json({ error: "admin_otp_delivery_not_configured" }, 503);
+  const code = randomDigits(6), id = crypto.randomUUID(), expires = Date.now() + ADMIN_OTP_TTL_MS;
+  const codeHash = await sha256(row.id + ":login:" + code);
+  await env.DB.prepare("INSERT INTO admin_otps (id,admin_id,code_hash,purpose,expires_at,attempts,used_at,created_at) VALUES (?,?,?,'login',?,0,NULL,?)")
+    .bind(id,row.id,codeHash,expires,Date.now()).run();
+  const sent = await sendEmail(env,row.email,"ANRSH — رمز الدخول الإداري","رمز الدخول: "+code+"\nصالح لمدة 10 دقائق ويستعمل مرة واحدة.");
+  if (!sent.sent) {
+    await env.DB.prepare("UPDATE admin_otps SET used_at=? WHERE id=?").bind(Date.now(),id).run();
+    return json({ error: "admin_otp_delivery_failed" }, 503);
+  }
+  return json({ ok: true, challengeId: id, expiresAt: expires });
+}
+async function authVerify(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const body = await request.json().catch(() => ({}));
+  const challengeId = cleanText(body.challengeId, 80), code = String(body.code || "");
+  if (!/^[0-9a-f-]{36}$/i.test(challengeId) || !/^\d{6}$/.test(code)) return json({ error: "invalid_code" }, 400);
+  const row = await env.DB.prepare("SELECT id,admin_id,code_hash,expires_at,attempts,used_at FROM admin_otps WHERE id=? AND purpose='login'").bind(challengeId).first();
+  if (!row || row.used_at || Number(row.expires_at) < Date.now()) return json({ error: "code_expired_or_used" }, 410);
+  if (Number(row.attempts) >= 5) return json({ error: "too_many_attempts" }, 429);
+  const candidate = await sha256(row.admin_id + ":login:" + code);
+  if (!safeEqual(candidate,row.code_hash)) {
+    await env.DB.prepare("UPDATE admin_otps SET attempts=attempts+1 WHERE id=? AND used_at IS NULL").bind(challengeId).run();
+    return json({ error: "invalid_code" }, 401);
+  }
+  const consumed = await env.DB.prepare("UPDATE admin_otps SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>? AND attempts<5")
+    .bind(Date.now(),challengeId,Date.now()).run();
+  if (!consumed.meta || consumed.meta.changes !== 1) return json({ error: "code_already_used" }, 409);
+  const token = b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const tokenHash = await sha256(token), sessionId = crypto.randomUUID(), expiry = Date.now()+ADMIN_SESSION_TTL_MS;
+  await env.DB.prepare("INSERT INTO admin_sessions (id,admin_id,token_hash,expires_at,revoked_at,created_at,last_seen_at) VALUES (?,?,?, ?,NULL,?,?)")
+    .bind(sessionId,row.admin_id,tokenHash,expiry,Date.now(),Date.now()).run();
+  const user = await env.DB.prepare("SELECT id,email,role,bureau FROM admin_users WHERE id=? AND active=1").bind(row.admin_id).first();
+  return json({ ok:true, token, expiresAt:expiry, user });
+}
+async function authMe(request, env) {
+  const actor = await requireAdmin(request,env);
+  return actor ? json({ok:true,user:{id:actor.id,email:actor.email,role:actor.role,bureau:actor.bureau}}) : json({error:"unauthorized"},401);
+}
+async function authLogout(request, env) {
+  const token = bearer(request);
+  if (token) await env.DB.prepare("UPDATE admin_sessions SET revoked_at=? WHERE token_hash=? AND revoked_at IS NULL").bind(Date.now(),await sha256(token)).run();
+  return json({ok:true});
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -517,6 +640,12 @@ async function route(request, env) {
   if (request.method === "POST" && verifyMatch) return handleVerify(decodeURIComponent(verifyMatch[1]), request, env);
 
   if (request.method === "GET" && path === "/api/print-check") return handlePrintCheck(url, env);
+
+  if (request.method === "POST" && path === "/api/auth/bootstrap") return authBootstrap(request, env);
+  if (request.method === "POST" && path === "/api/auth/login") return authLogin(request, env);
+  if (request.method === "POST" && path === "/api/auth/verify") return authVerify(request, env);
+  if (request.method === "GET" && path === "/api/auth/me") return authMe(request, env);
+  if (request.method === "POST" && path === "/api/auth/logout") return authLogout(request, env);
 
   if (path === "/api/admin/requests" && request.method === "GET") return handleAdminList(request, env);
 
