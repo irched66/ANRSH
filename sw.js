@@ -1,5 +1,5 @@
 /* ANRSH PWA service worker — cache corrected for the files that exist in the repository. */
-var CACHE = "anrsh-v4";
+var CACHE = "anrsh-v5";
 var FILES = [
   "./",
   "index.html",
@@ -8,6 +8,14 @@ var FILES = [
   "icon.svg",
   "assets/anrsh-background.png",
   "assets/OUED_SOUF.jpg",
+  "assets/regional-offices/ALGIERS.jpg",
+  "assets/regional-offices/BEJAIA.jpg",
+  "assets/regional-offices/BISKRA.webp",
+  "assets/regional-offices/EL_MENIAA.jpg",
+  "assets/regional-offices/LAGHOUAT.jpg",
+  "assets/regional-offices/OUED_SOUF.jpg",
+  "assets/regional-offices/SKIKDA.jpg",
+  "assets/regional-offices/TIMIMOUN.jpg",
   "paiement.html",
   "otp.html",
   "verification-telephone.html"
