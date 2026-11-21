@@ -1,0 +1,21 @@
+name: ANRSH security phase 1 checks
+on:
+  push:
+    branches: [security-phase-1]
+  pull_request:
+    branches: [main]
+jobs:
+  static-and-schema-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Check Worker and inline JavaScript syntax
+        run: node tests/check-javascript.mjs
+      - name: Check additive D1 proposal migration
+        run: python tests/check-migration.py
