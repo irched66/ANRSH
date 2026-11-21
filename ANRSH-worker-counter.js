@@ -549,12 +549,23 @@ async function handleAdminPaymentReview(id, request, env) {
   if (actor.role !== "national" && payment.bureau !== actor.bureau) return json({error:"forbidden"},403);
   if (payment.status !== "pending_review") return json({error:"payment_not_pending"},409);
   if (decision === "verified" && Number(payment.amount_dzd) !== 500) return json({error:"invalid_payment_amount"},409);
-  const result = await env.DB.prepare(
-    "UPDATE member_payments SET status=?,reviewed_by=?,reviewed_at=?,rejection_reason=? WHERE id=? AND status='pending_review'"
-  ).bind(decision,actor.id,Date.now(),decision==="rejected"?cleanText(body.reason,300):null,id).run();
-  if (!result.meta || result.meta.changes !== 1) return json({error:"payment_review_conflict"},409);
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
-    .bind(Date.now(),actor.email,"payment_"+decision,id).run();
+  const now=Date.now();
+  const statements=[
+    env.DB.prepare("UPDATE member_payments SET status=?,reviewed_by=?,reviewed_at=?,rejection_reason=? WHERE id=? AND status='pending_review'")
+      .bind(decision,actor.id,now,decision==="rejected"?cleanText(body.reason,300):null,id)
+  ];
+  if(decision==="verified") statements.push(env.DB.prepare(`
+    INSERT INTO payment_allocations (id,payment_id,member_id,bureau,membership_year,gross_amount_dzd,national_share_dzd,regional_share_dzd,allocated_at)
+    SELECT ?,id,member_id,bureau,membership_year,500,100,400,?
+    FROM member_payments WHERE id=? AND status='verified'
+  `).bind(crypto.randomUUID(),now,id));
+  statements.push(env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"payment_"+decision,id));
+  try { await env.DB.batch(statements); }
+  catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
+  const check=await env.DB.prepare("SELECT status FROM member_payments WHERE id=?").bind(id).first();
+  if(!check||check.status!==decision) return json({error:"payment_review_conflict"},409);
+  await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,created_at,sent_at) SELECT ?,member_id,COALESCE((SELECT json_extract(profile,'$.email') FROM members WHERE id=member_payments.member_id),''),'email',?, 'queued',?,NULL FROM member_payments WHERE id=?")
+    .bind(crypto.randomUUID(),decision==="verified"?"payment_verified":"rejected",now,id).run();
   return json({ok:true,status:decision});
 }
 
@@ -753,10 +764,16 @@ async function handleReports(request,env,method) {
   if(!bureau||!Number.isInteger(year)||year<2020||year>2100||![1,2,3,4].includes(quarter)) return json({error:"invalid_report_period"},400);
   const periodStart=year+"-"+String((quarter-1)*3+1).padStart(2,"0")+"-01";
   const periodEnd=quarter===4?year+"-12-31":year+"-"+String(quarter*3+1).padStart(2,"0")+"-01";
-  const id=crypto.randomUUID();
+  const id=crypto.randomUUID(), periodFrom=Date.parse(periodStart+"T00:00:00Z"), periodTo=Date.parse(periodEnd+"T23:59:59Z");
+  const financial=await env.DB.prepare(`
+    SELECT COUNT(*) AS payment_count,COALESCE(SUM(amount_dzd),0) AS gross_dzd
+    FROM member_payments WHERE bureau=? AND status='verified' AND membership_year=? AND reviewed_at BETWEEN ? AND ?
+  `).bind(bureau,year,periodFrom,periodTo).first();
+  const gross=Number(financial?.gross_dzd||0);
+  const payload=Object.assign({},body.payload||{},{financialSummary:{verifiedPayments:Number(financial?.payment_count||0),grossDzd:gross,nationalShareDzd:Math.floor(gross*0.2),regionalShareDzd:gross-Math.floor(gross*0.2)}});
   try {
     await env.DB.prepare("INSERT INTO quarterly_reports (id,bureau,report_year,quarter,generated_by,generated_at,period_start,period_end,payload_json,status) VALUES (?,?,?,?,?,?,?,?,?,'generated')")
-      .bind(id,bureau,year,quarter,actor.id,Date.now(),periodStart,periodEnd,JSON.stringify(body.payload||{})).run();
+      .bind(id,bureau,year,quarter,actor.id,Date.now(),periodStart,periodEnd,JSON.stringify(payload)).run();
   } catch(e) { return json({error:"report_already_exists_or_save_failed"},409); }
   await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"quarterly_report_created",id).run();
   return json({ok:true,id,bureau,year,quarter});
