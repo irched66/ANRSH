@@ -1305,7 +1305,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 (function(){
   "use strict";
   var API_BASE = "https://anrsh-ap-dev.irched2521.workers.dev";
-  var ADMIN_KEY = "";
+  var ADMIN_TOKEN = "";\n   var ADMIN_CHALLENGE = "";
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
   var unlockToken = "";
@@ -1335,7 +1335,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   async function api(path, options){
     options=options||{};
     options.headers=Object.assign({},options.headers||{});
-    if(ADMIN_KEY) options.headers["x-admin-key"]=ADMIN_KEY;
+    if(ADMIN_TOKEN) options.headers["Authorization"]="Bearer "+ADMIN_TOKEN;
     var response=await fetch(API_BASE+path,options);
     var ct=response.headers.get("content-type")||"";
     if(!response.ok){var err={}; if(ct.indexOf("json")>=0)err=await response.json().catch(function(){return {}}); else err.error=await response.text().catch(function(){return ""}); throw new Error(apiError(err,response.status));}
@@ -1422,23 +1422,36 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   function adminPanel(){
     var box=el("section-admin");if(!box)return;
     box.innerHTML='<h2 style="color:var(--gold-light)">🔐 فضاء الإدارة — ANRSH</h2>'+
-      '<p style="font-size:.85rem;color:var(--text-muted);margin:8px 0">الدخول بمفتاح الإدارة السري المعرّف في إعدادات Worker. لا تحفظ المفتاح على جهاز مشترك.</p>'+
-      '<div id="anrshAdminLogin"><label>مفتاح الإدارة السري</label><input id="anrsh_admin_key" type="password" autocomplete="off" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
+      '<p style="font-size:.85rem;color:var(--text-muted);margin:8px 0">دخول فردي بكلمة مرور ورمز تحقق يُرسل إلى البريد الإداري.</p>'+
+      '<div id="anrshAdminLogin"><label>البريد الإداري</label><input id="anrsh_admin_email" type="email" autocomplete="username" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
+      '<label>كلمة المرور</label><input id="anrsh_admin_password" type="password" autocomplete="current-password" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
+      '<div id="anrshOtpStep" style="display:none"><label>رمز التحقق</label><input id="anrsh_admin_otp" inputmode="numeric" maxlength="6" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px"></div>'+
       '<button type="button" class="btn-card btn-dl" style="width:100%" id="anrsh_admin_enter">دخول الإدارة</button></div>'+
       '<div id="anrshAdminPanel" style="display:none"><div class="card-actions-bar"><input id="ad_q" placeholder="بحث بالاسم أو رقم الطلب أو المكتب" oninput="adRender()">'+
-      '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button></div>'+
+      '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button><button type="button" class="btn-card btn-flip" id="anrsh_logout">خروج آمن</button></div>'+
       '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div>'+
       '<div id="ad_out" style="margin-top:12px;font-size:.9rem;overflow-wrap:anywhere"></div>';
-    el("anrsh_admin_enter").onclick=window.adLogin;
-    el("anrsh_refresh").onclick=window.adLoad;
-    el("anrsh_csv").onclick=window.adCsv;
+    el("anrsh_admin_enter").onclick=window.adLogin;el("anrsh_refresh").onclick=window.adLoad;el("anrsh_csv").onclick=window.adCsv;el("anrsh_logout").onclick=window.adLogout;
   }
   window.adLogin=async function(){
-    var key=val("anrsh_admin_key"), out=el("ad_out");
-    if(key.length<32){out.textContent="مفتاح الإدارة يجب أن يكون صحيحاً (32 حرفاً على الأقل).";return;}
-    ADMIN_KEY=key;
-    try{await api("/api/admin/requests");el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";ADMIN_ME={ok:true};await adLoad();}
-    catch(e){ADMIN_KEY="";out.textContent="تعذر الدخول: "+e.message;}
+    var out=el("ad_out");
+    try{
+      if(!ADMIN_CHALLENGE){
+        var email=val("anrsh_admin_email"),password=el("anrsh_admin_password").value;
+        if(!email||!password){out.textContent="أدخل البريد الإداري وكلمة المرور.";return;}
+        var c=await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,password:password})});
+        ADMIN_CHALLENGE=c.challengeId;el("anrshOtpStep").style.display="block";el("anrsh_admin_password").value="";
+        out.textContent="أرسلنا رمز تحقق إلى بريدك الإداري.";return;
+      }
+      var vfy=await api("/api/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({challengeId:ADMIN_CHALLENGE,code:val("anrsh_admin_otp")})});
+      ADMIN_CHALLENGE="";ADMIN_TOKEN=vfy.token;ADMIN_ME=vfy.user;el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";await adLoad();
+    }catch(e){out.textContent="تعذر الدخول: "+e.message;}
+  };
+  window.adLogout=async function(){
+    try{await api("/api/auth/logout",{method:"POST"});}catch(e){}
+    ADMIN_TOKEN="";ADMIN_ME=null;ADMIN_CHALLENGE="";
+    if(el("anrshAdminLogin"))el("anrshAdminLogin").style.display="block";
+    if(el("anrshAdminPanel"))el("anrshAdminPanel").style.display="none";
   };
   window.adLoad=async function(){
     try{ADMIN_ROWS=await api("/api/admin/requests");window.ROWSM=ADMIN_ROWS;adRender();}
@@ -1460,19 +1473,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
-    catch(e){el("ad_out").textContent="تعذر فتح الوثيقة: "+e.message;}
-  };
-  window.adApprove=async function(id){
-    try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});
-      var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 24 ساعة):";out.appendChild(title);
-      var code=document.createElement("div");code.dir="ltr";code.style.cssText="font-size:2rem;letter-spacing:7px;color:var(--gold-light);font-weight:bold";code.textContent=r.code;out.appendChild(code);
-      var note=document.createElement("p");note.textContent=r.emailSent?"تم إرسال الرمز إلى البريد المسجل أيضاً.":"لم يثبت إرسال بريد إلكتروني؛ أرسل الرمز للمنخرط يدوياً.";out.appendChild(note);
-      if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
-      await adLoad();
-    }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
-  };
-  window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
-  window.adCsv=function(){
+    window.adApprove=async function(id){
+     try{await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});el("ad_out").textContent="رمز التحقق لا يصدر إلا بعد مراجعة إيصال دفع 500 دج وإثبات وصول رسالة البريد.";await adLoad();}
+     catch(e){el("ad_out").textContent="لم يتم إصدار الرمز: "+e.message;}
+   };
+   window.adDelete=async function(){alert("الحذف النهائي معطل لحماية ملفات المنخرطين.");};
+   window.adCsv=function(){
     var rows=[["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الولاية","البلدية","رقم التسجيل سوناطراك","البريد","تاريخ الطلب"]];
     ADMIN_ROWS.forEach(function(r){var p=r.profile||{};rows.push([r.requestNumber,r.name,r.bureau,r.phone,r.status,p.wilaya,p.commune,p.matricule,p.email,r.createdAt]);});
     var csv="\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
