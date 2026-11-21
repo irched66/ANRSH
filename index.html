@@ -607,7 +607,6 @@ textarea{resize:vertical;font-family:inherit}
                 <button type="button" class="lang-pill active" onclick="setLanguage('ar', this)">العربية</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('fr', this)">Français</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('en', this)">English</button>
-                <button type="button" class="lang-pill" onclick="setLanguage('ber', this)">ⵜⴰⵎⴰⵣⵉⵖⵜ</button>
                 <button type="button" class="lang-pill" id="btnInstall" onclick="doInstall()">📲 تثبيت التطبيق</button>
             </div>
 
@@ -1328,7 +1327,7 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 var WIL_L="Adrar,Chlef,Laghouat,Oum El Bouaghi,Batna,Béjaïa,Biskra,Béchar,Blida,Bouira,Tamanrasset,Tébessa,Tlemcen,Tiaret,Tizi Ouzou,Alger,Djelfa,Jijel,Sétif,Saïda,Skikda,Sidi Bel Abbès,Annaba,Guelma,Constantine,Médéa,Mostaganem,M’Sila,Mascara,Ouargla,Oran,El Bayadh,Illizi,Bordj Bou Arréridj,Boumerdès,El Tarf,Tindouf,Tissemsilt,El Oued,Khenchela,Souk Ahras,Tipaza,Mila,Aïn Defla,Naâma,Aïn Témouchent,Ghardaïa,Relizane,Timimoun,Bordj Badji Mokhtar,Ouled Djellal,Béni Abbès,In Salah,In Guezzam,Touggourt,Djanet,El M’Ghair,El Meniaa".split(",");
 var PL={"سكيكدة":"Skikda","عزابة":"Azzaba","القل":"Collo","الحروش":"El Harrouch","تمالوس":"Tamalous","فلفلة":"Filfila","حمادي كرومة":"Hamadi Krouma","جندل سعدي محمد":"Djendel Saadi Mohamed","قسنطينة":"Constantine","الخروب":"El Khroub","علي منجلي":"Ali Mendjeli","زيغود يوسف":"Zighoud Youcef","عين عبيد":"Aïn Abid","حامة بوزيان":"Hamma Bouziane","ابن زياد":"Ibn Ziad","حاسي مسعود":"Hassi Messaoud","حاسي الرمل":"Hassi R’Mel","أرزيو":"Arzew","عين أمناس":"In Amenas","بركاين":"Berkine","قاسي الطويل":"Gassi Touil"};
 Object.assign(PL,CFG.geoLatin||{});Object.keys(CFG.geo||{}).forEach(function(w){GEO[w]=CFG.geo[w]});
-var D={},ORI=new WeakMap(),IDX={fr:0,en:1,ber:2},lang=(function(){try{return localStorage.getItem("anrsh_language")||"ar"}catch(e){return "ar"}})();
+var D={},ORI=new WeakMap(),IDX={fr:0,en:1,ber:2},lang=(function(){try{var saved=localStorage.getItem("anrsh_language")||"ar";return ["ar","fr","en"].indexOf(saved)>=0?saved:"ar"}catch(e){return "ar"}})();
 ROWS.split("\n").forEach(function(r){var p=r.split("|");D[p[0]]=[p[1],p[2],p[3]||p[0]]});
 WIL.forEach(function(n,i){D[n]=[WIL_L[i],WIL_L[i],n]});
 Object.keys(PL).forEach(function(k){if(!D[k])D[k]=[PL[k],PL[k],k]});
@@ -1352,6 +1351,7 @@ function applyLang(){
  obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 }
 function setLanguage(l,btn){
+ if(["ar","fr","en"].indexOf(l)<0)l="ar";
  document.querySelectorAll(".lang-pill").forEach(function(b){b.classList.remove("active")});if(btn)btn.classList.add("active");
  lang=l;try{localStorage.setItem("anrsh_language",l)}catch(e){}applyLang();if(sr)setTimeout(readPage,200);
 }
@@ -1361,7 +1361,7 @@ var DUE={ar:["⏰ موعد التقرير الفصلي القادم:","(بعد "
 dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang==="ber"?"fr":lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
 var OT={ar:["رقم طلبك:","أرسل وصل دفع 500 دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة."],fr:["Votre n° de demande :","Envoyez le reçu de 500 DA et les documents par WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres par WhatsApp ; saisissez-le ici pour débloquer l’impression."],en:["Your request no.:","Send the 500 DZD receipt and documents via WhatsApp. After verification the office manager sends you a 6-digit code via WhatsApp; enter it here to unlock printing."]};
 function otpDesc(){var o=OT[lang==="ber"?"fr":lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
-var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US",ber:"fr-FR"},VP={ar:["ar"],fr:["fr"],en:["en"],ber:["zgh","kab","tzm","shi","ber"]},warned=false;
+var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US"},VP={ar:["ar"],fr:["fr"],en:["en"]},warned=false;
 function voiceFor(){if(!window.speechSynthesis)return null;var vs=window.speechSynthesis.getVoices(),p=VP[lang];var best=null;for(var i=0;i<vs.length;i++){var c=vs[i].lang.toLowerCase().replace("_","-");if(p.some(function(x){return c.indexOf(x)===0})){if(!best||vs[i].localService&&!best.localService||c==="ar-dz"||c==="fr-dz")best=vs[i]}}return best}
 var SH={ar:"لم يبدأ الصوت. تأكد من رفع صوت الهاتف، وثبّت صوت اللغة من إعدادات الهاتف ← تحويل النص إلى كلام (Google).",fr:"La voix n’a pas démarré. Vérifiez le volume et installez la voix de la langue dans Paramètres → Synthèse vocale (Google).",en:"Speech did not start. Check the volume and install the language voice in Settings → Text-to-speech (Google)."};
 function st(m){var e=$("srStatus");if(e)e.textContent=m||""}
