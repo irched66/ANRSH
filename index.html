@@ -1528,7 +1528,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   // The D1 Worker edition dated 16 Nov has no reports API yet; do not send data to obsolete Supabase routes.
   window.submitReport=async function(){
      try{
-       var d=rpData(),q=Number((d.period||"T1").replace("T",""))||1;
+       var d=rpData();if(d.period==="annual")throw new Error("يرجى اختيار تقرير فصلي T1 أو T2 أو T3 أو T4.");var q=Number((d.period||"T1").replace("T",""))||1;
        await api("/api/admin/reports",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bureau:d.bureau,year:d.year,quarter:q,payload:Object.assign(d,{text:reportText()})})});
        alert("تم حفظ التقرير في قاعدة البيانات ضمن صلاحيات المكتب.");await loadReports();
      }catch(e){alert("تعذر حفظ التقرير: "+e.message);}
