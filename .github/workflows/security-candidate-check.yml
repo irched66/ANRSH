@@ -18,6 +18,21 @@ jobs:
           node-version: 22
       - name: Check Worker JavaScript syntax
         run: node --check ANRSH-worker-candidate.js
-      - name: Check frontend JavaScript syntax
+      - name: Parse every inline JavaScript block in candidate HTML
         run: |
-          node -e "const fs=require('fs');const s=fs.readFileSync('index-security-candidate.html','utf8');const blocks=[...s.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi)].map(m=>m[1]).filter(x=>x.trim());for(let i=0;i<blocks.length;i++){new Function(blocks[i]);}console.log('Inline scripts parsed:',blocks.length)"
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index-security-candidate.html', 'utf8');
+          const scripts = [];
+          const re = /<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi;
+          for (const match of html.matchAll(re)) {
+            if (/\bsrc\s*=/.test(match[1])) continue;
+            if (match[2].trim()) scripts.push(match[2]);
+          }
+          if (!scripts.length) throw new Error('No inline JavaScript blocks were found');
+          scripts.forEach((source, index) => {
+            try { new Function(source); }
+            catch (error) { throw new Error('Inline script ' + (index + 1) + ': ' + error.message); }
+          });
+          console.log('Parsed inline JavaScript blocks:', scripts.length);
+          NODE
