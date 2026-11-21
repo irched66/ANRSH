@@ -1429,7 +1429,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       '<button type="button" class="btn-card btn-dl" style="width:100%" id="anrsh_admin_enter">دخول الإدارة</button></div>'+
       '<div id="anrshAdminPanel" style="display:none"><div class="card-actions-bar"><input id="ad_q" placeholder="بحث بالاسم أو رقم الطلب أو المكتب" oninput="adRender()">'+
       '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button><button type="button" class="btn-card btn-flip" id="anrsh_logout">خروج آمن</button></div>'+
-      '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div>'+
+      '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div>'+
+      '<div id="anrshNationalTools" style="display:none;margin-top:16px;padding:12px;border:1px solid rgba(255,255,255,.2);border-radius:10px"><h3>دعوة رئيس مكتب جهوي</h3><input id="invite_email" type="email" placeholder="البريد الإداري للرئيس" dir="ltr" style="width:100%;padding:10px;margin:5px 0"><select id="invite_bureau" style="width:100%;padding:10px;margin:5px 0"></select><button type="button" class="btn-card btn-dl" onclick="adInvite()">إرسال دعوة آمنة</button><button type="button" class="btn-card btn-flip" onclick="adPendingOfficers()">الحسابات بانتظار الاعتماد</button><div id="ad_officers" style="margin-top:8px"></div></div>'+
+      '<div id="anrshRegionalTools" style="display:none;margin-top:16px;padding:12px;border:1px solid rgba(255,255,255,.2);border-radius:10px"><h3>بيانات المكتب والولايات التابعة</h3><input id="office_president" placeholder="اسم الرئيس" style="width:100%;padding:9px;margin:4px 0"><input id="office_phone" placeholder="هاتف المكتب" style="width:100%;padding:9px;margin:4px 0"><input id="office_email" type="email" placeholder="البريد الإداري" style="width:100%;padding:9px;margin:4px 0"><input id="office_address" placeholder="العنوان" style="width:100%;padding:9px;margin:4px 0"><input id="office_bank" placeholder="اسم البنك" style="width:100%;padding:9px;margin:4px 0"><input id="office_rib" placeholder="RIB" style="width:100%;padding:9px;margin:4px 0"><input id="office_ccp" placeholder="رقم CCP" style="width:100%;padding:9px;margin:4px 0"><input id="office_ccpkey" placeholder="مفتاح CCP" style="width:100%;padding:9px;margin:4px 0"><button type="button" class="btn-card btn-dl" onclick="adSaveOffice()">حفظ بيانات المكتب</button><select id="office_wilaya" style="width:100%;padding:10px;margin:8px 0"></select><button type="button" class="btn-card btn-flip" onclick="adAssignWilaya()">إسناد الولاية إلى مكتبي</button><div id="office_wilaya_list"></div></div></div>'+
       '<div id="ad_out" style="margin-top:12px;font-size:.9rem;overflow-wrap:anywhere"></div>';
     el("anrsh_admin_enter").onclick=window.adLogin;el("anrsh_refresh").onclick=window.adLoad;el("anrsh_csv").onclick=window.adCsv;el("anrsh_logout").onclick=window.adLogout;
   }
@@ -1444,9 +1446,38 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
         out.textContent="أرسلنا رمز تحقق إلى بريدك الإداري.";return;
       }
       var vfy=await api("/api/auth/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({challengeId:ADMIN_CHALLENGE,code:val("anrsh_admin_otp")})});
-      ADMIN_CHALLENGE="";ADMIN_TOKEN=vfy.token;ADMIN_ME=vfy.user;el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";await adLoad();
+      ADMIN_CHALLENGE="";ADMIN_TOKEN=vfy.token;ADMIN_ME=vfy.user;el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";await adLoad();await loadAdminTools();
     }catch(e){out.textContent="تعذر الدخول: "+e.message;}
   };
+  window.adInvite=async function(){
+    try{await api("/api/admin/invitations",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:val("invite_email"),bureau:val("invite_bureau")})});el("ad_officers").textContent="تم إرسال الدعوة بالبريد الإداري لمدة 72 ساعة.";el("invite_email").value="";}
+    catch(e){el("ad_officers").textContent="تعذر إرسال الدعوة: "+e.message;}
+  };
+  window.adPendingOfficers=async function(){
+    try{var r=await api("/api/admin/officers/pending"),h=el("ad_officers");h.innerHTML="";(r.officers||[]).forEach(function(o){var b=document.createElement("button");b.className="btn-card btn-dl";b.textContent="اعتماد "+o.email+" — "+o.bureau;b.onclick=async function(){try{await api("/api/admin/officers/"+encodeURIComponent(o.id)+"/activate",{method:"POST"});adPendingOfficers();}catch(e){alert(e.message);}};h.appendChild(b);});if(!r.officers.length)h.textContent="لا توجد حسابات بانتظار الاعتماد.";}
+    catch(e){el("ad_officers").textContent=e.message;}
+  };
+  window.adSaveOffice=async function(){
+    try{await api("/api/admin/office-profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({president_name:val("office_president"),president_phone:val("office_phone"),email:val("office_email"),address:val("office_address"),bank_name:val("office_bank"),rib:val("office_rib"),ccp:val("office_ccp"),ccp_key:val("office_ccpkey")})});alert("تم حفظ بيانات المكتب.");}
+    catch(e){alert("تعذر الحفظ: "+e.message);}
+  };
+  window.adAssignWilaya=async function(){
+    try{await api("/api/admin/wilayas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({wilaya_code:val("office_wilaya")})});adLoadWilayas();alert("تم إسناد الولاية إلى مكتبك.");}
+    catch(e){alert("تعذر إسناد الولاية: "+e.message);}
+  };
+  async function loadAdminTools(){
+    try{
+      var offices=await api("/api/offices"),sel=el("invite_bureau");if(sel){sel.innerHTML="";(offices.offices||[]).forEach(function(o){var x=document.createElement("option");x.value=o.bureau;x.textContent=o.name;sel.appendChild(x);});}
+      if(ADMIN_ME&&ADMIN_ME.role==="national"){el("anrshNationalTools").style.display="block";adPendingOfficers();}
+      else {el("anrshRegionalTools").style.display="block";await adLoadWilayas();}
+    }catch(e){}
+  }
+  async function adLoadWilayas(){
+    try{
+      var r=await api("/api/wilayas"),sel=el("office_wilaya");if(sel){sel.innerHTML="";(r.wilayas||[]).forEach(function(w){var x=document.createElement("option");x.value=w.code;x.textContent=w.name_ar+" — "+w.code;sel.appendChild(x);});}
+      var a=await api("/api/admin/wilayas"),h=el("office_wilaya_list");if(h)h.textContent=(a.assignments||[]).map(function(x){return x.wilaya_name+" ("+x.wilaya_code+")";}).join("، ")||"لم تُسند ولايات بعد.";
+    }catch(e){}
+  }
   window.adLogout=async function(){
     try{await api("/api/auth/logout",{method:"POST"});}catch(e){}
     ADMIN_TOKEN="";ADMIN_ME=null;ADMIN_CHALLENGE="";
