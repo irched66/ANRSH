@@ -53,7 +53,7 @@ function corsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
-    "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
     "access-control-allow-headers": "Content-Type, Authorization, x-bootstrap-secret",
     "access-control-max-age": "86400",
     "vary": "Origin"
@@ -145,7 +145,7 @@ function base64ToBytes(value) {
 }
 
 async function makePrintToken(ref, env) {
-  const secret = env.ADMIN_API_KEY;
+  const secret = env.CARD_SIGNING_SECRET;
   const payload = { ref, exp: Math.floor(Date.now() / 1000) + PRINT_TTL_SECONDS };
   const body = b64url(new TextEncoder().encode(JSON.stringify(payload)));
   const sig = b64url(await hmac(body, secret));
@@ -153,10 +153,10 @@ async function makePrintToken(ref, env) {
 }
 async function checkPrintToken(token, env) {
   try {
-    if (!env.ADMIN_API_KEY || typeof token !== "string") return false;
+    if (!env.CARD_SIGNING_SECRET || typeof token !== "string") return false;
     const parts = token.split(".");
     if (parts.length !== 2) return false;
-    const expected = b64url(await hmac(parts[0], env.ADMIN_API_KEY));
+    const expected = b64url(await hmac(parts[0], env.CARD_SIGNING_SECRET));
     if (!safeEqual(parts[1], expected)) return false;
     const payload = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
     return !!payload.ref && Number(payload.exp) >= Math.floor(Date.now() / 1000);
@@ -386,29 +386,46 @@ async function handleVerify(ref, request, env) {
   const code = String(body.code || "").trim();
   if (!/^\d{6}$/.test(code)) return json({ error: "invalid_code" }, 400);
 
-  const row = await env.DB.prepare(
-    "SELECT ref, otp_hash, otp_exp, otp_tries, status FROM members WHERE ref = ?"
-  ).bind(ref).first();
+  const row = await env.DB.prepare(`
+    SELECT m.ref,m.id,m.otp_hash,m.otp_exp,m.otp_tries,m.status
+    FROM members m
+    WHERE m.ref=? AND EXISTS (
+      SELECT 1 FROM member_payments p WHERE p.member_id=m.id
+        AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
+        AND p.status='verified' AND p.amount_dzd=500
+    )
+  `).bind(ref).first();
   if (!row || !row.otp_hash || !row.otp_exp) return json({ error: "code_not_issued" }, 400);
-  if (row.status !== "code_sent" && row.status !== "unlocked") return json({ error: "payment_not_approved" }, 403);
+  if (row.status !== "code_sent") return json({ error: "payment_not_approved_or_code_used" }, 403);
   if (Number(row.otp_exp) < Date.now()) return json({ error: "code_expired" }, 410);
   if (Number(row.otp_tries || 0) >= MAX_OTP_TRIES) return json({ error: "too_many_attempts" }, 429);
-
   const candidate = await sha256(ref + ":" + code);
   if (!safeEqual(candidate, row.otp_hash)) {
-    await env.DB.prepare("UPDATE members SET otp_tries = otp_tries + 1 WHERE ref = ?").bind(ref).run();
+    await env.DB.prepare("UPDATE members SET otp_tries=otp_tries+1 WHERE ref=? AND status='code_sent'").bind(ref).run();
     return json({ error: "invalid_code" }, 401);
   }
-
+  if (!env.CARD_SIGNING_SECRET || String(env.CARD_SIGNING_SECRET).length < 32) return json({error:"card_signing_not_configured"},503);
+  const consumed = await env.DB.prepare("UPDATE members SET status='unlocked',otp_hash=NULL,otp_exp=NULL WHERE ref=? AND status='code_sent' AND otp_hash=? AND otp_exp>? AND otp_tries<5")
+    .bind(ref,row.otp_hash,Date.now()).run();
+  if (!consumed.meta || consumed.meta.changes !== 1) return json({error:"code_already_used"},409);
   const token = await makePrintToken(ref, env);
-  await env.DB.prepare("UPDATE members SET status = 'unlocked' WHERE ref = ?").bind(ref).run();
   return json({ ok: true, unlockToken: token, expiresIn: PRINT_TTL_SECONDS });
 }
 
 async function handlePrintCheck(url, env) {
   const token = url.searchParams.get("t") || "";
   if (!(await checkPrintToken(token, env))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
-  return json({ ok: true });
+  try {
+    const body=JSON.parse(new TextDecoder().decode(fromB64url(token.split(".")[0])));
+    const row=await env.DB.prepare(`
+      SELECT m.status FROM members m WHERE m.ref=? AND m.status='unlocked'
+      AND EXISTS (SELECT 1 FROM member_payments p WHERE p.member_id=m.id
+        AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
+        AND p.status='verified' AND p.amount_dzd=500)
+    `).bind(body.ref).first();
+    if(!row) return json({ok:false,error:"membership_inactive"},403);
+    return json({ok:true});
+  } catch(e) { return json({ok:false,error:"verification_unavailable"},503); }
 }
 
 async function handleAdminList(request, env) {
