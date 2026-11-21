@@ -4,17 +4,19 @@
  *
  * Required bindings/secrets:
  *   D1 binding: DB  -> database "anrsh"
- *   Secret: ADMIN_API_KEY  -> long random value (minimum 32 characters)
- *   Existing secret: RESEND_API_KEY (optional; email sending also needs RESEND_FROM)
- *   Variable: RESEND_FROM (optional verified sender, e.g. "ANRSH <noreply@your-domain.dz>")
+ *   Secret: ANRSH_BOOTSTRAP_SECRET (32+ random characters; one-time initial account setup)
+ *   Secret: CARD_SIGNING_SECRET (32+ random characters; card print-token signing)
+ *   Secret: FILE_ENCRYPTION_KEY (64 hexadecimal characters; AES-256-GCM document encryption)
+ *   Secret: RESEND_API_KEY and variable RESEND_FROM (verified sender; required for admin/member email OTP)
  *
  * IMPORTANT:
  * - R2 is currently unavailable to this Worker. Private attachments are therefore
  *   stored in the existing D1 members.files JSON column, with strict size limits.
- * - No document is exposed publicly. Document routes require ADMIN_API_KEY.
- * - WhatsApp messages cannot be sent automatically without a WhatsApp Business API.
- *   Approval returns the one-time code for the authorized office operator to send.
- * - This Worker does not alter or create database tables.
+ * - New uploaded documents are encrypted with AES-256-GCM; legacy Base64 records remain unencrypted
+ *   until a separately reviewed migration is completed.
+ * - Administrative routes require individual password + email OTP authentication and bureau scoping.
+ * - WhatsApp/SMS sending is not integrated; email OTP requires verified Resend configuration.
+ * - Apply the reviewed D1 proposal migration before enabling registration or administrative workflows.
  */
 
 const JSON_HEADERS = {
@@ -675,6 +677,7 @@ async function authLogin(request, env) {
   }
   await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=0,locked_until=NULL WHERE admin_id=?").bind(row.id).run();
   if (!env.RESEND_API_KEY || !env.RESEND_FROM) return json({ error: "admin_otp_delivery_not_configured" }, 503);
+  await env.DB.prepare("UPDATE admin_otps SET used_at=? WHERE admin_id=? AND purpose='login' AND used_at IS NULL").bind(Date.now(),row.id).run();
   const code = randomDigits(6), id = crypto.randomUUID(), expires = Date.now() + ADMIN_OTP_TTL_MS;
   const codeHash = await sha256(row.id + ":login:" + code);
   await env.DB.prepare("INSERT INTO admin_otps (id,admin_id,code_hash,purpose,expires_at,attempts,used_at,created_at) VALUES (?,?,?,'login',?,0,NULL,?)")
