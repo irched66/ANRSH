@@ -647,6 +647,78 @@ async function authLogout(request, env) {
   return json({ok:true});
 }
 
+
+async function authCreateInvitation(request,env) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  if(actor.role!=="national") return json({error:"forbidden"},403);
+  const body=await request.json().catch(()=>({}));
+  const email=cleanText(body.email,160).toLowerCase(), bureau=cleanText(body.bureau,80);
+  if(!/^\S+@\S+\.\S+$/.test(email)||!bureau) return json({error:"invalid_invitation"},400);
+  const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
+  if(!office) return json({error:"invalid_or_inactive_office"},400);
+  const token=randomHex(32), tokenHash=await sha256(token), id=crypto.randomUUID(), expires=Date.now()+72*60*60*1000;
+  const sent=await sendEmail(env,email,"ANRSH — دعوة حساب المكتب الجهوي",
+    "لإنشاء حساب رئيس المكتب الجهوي، افتح صفحة المنصة وأدخل رمز الدعوة التالي خلال 72 ساعة:\n"+token);
+  if(!sent.sent) return json({error:"invitation_email_failed"},503);
+  await env.DB.prepare("INSERT INTO admin_invitations (id,email,role,bureau,token_hash,expires_at,used_at,created_by,created_at) VALUES (?,?,'regional',?,?,?,NULL,?,?)")
+    .bind(id,email,bureau,tokenHash,expires,actor.id,Date.now()).run();
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
+    .bind(Date.now(),actor.email,"regional_invitation_created",id).run();
+  return json({ok:true,expiresAt:expires});
+}
+async function authAcceptInvitation(request,env) {
+  const body=await request.json().catch(()=>({}));
+  const token=String(body.token||""), password=String(body.password||"");
+  if(!/^[a-f0-9]{64}$/i.test(token)||password.length<14||password.length>128) return json({error:"invalid_invitation_or_password"},400);
+  const tokenHash=await sha256(token);
+  const invite=await env.DB.prepare("SELECT id,email,role,bureau,expires_at,used_at FROM admin_invitations WHERE token_hash=?").bind(tokenHash).first();
+  if(!invite||invite.used_at||Number(invite.expires_at)<Date.now()) return json({error:"invitation_expired_or_used"},410);
+  const id=crypto.randomUUID(),salt=randomHex(16),hash=await passwordDigest(password,salt);
+  const result=await env.DB.prepare("UPDATE admin_invitations SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>?")
+    .bind(Date.now(),invite.id,Date.now()).run();
+  if(!result.meta||result.meta.changes!==1) return json({error:"invitation_already_used"},409);
+  try {
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) VALUES (?,?,?, ?,0,?)").bind(id,invite.email,invite.role,invite.bureau,Date.now()),
+      env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) VALUES (?,?,?,?,0,NULL)").bind(id,hash,salt,Date.now())
+    ]);
+  } catch(e) { return json({error:"account_creation_failed_contact_national_office"},409); }
+  return json({ok:true,status:"pending_national_approval"});
+}
+async function authActivateOfficer(request,env,id) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  if(actor.role!=="national") return json({error:"forbidden"},403);
+  const result=await env.DB.prepare("UPDATE admin_users SET active=1 WHERE id=? AND role='regional' AND active=0").bind(id).run();
+  if(!result.meta||result.meta.changes!==1) return json({error:"regional_account_not_pending"},404);
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"regional_account_activated",id).run();
+  return json({ok:true,active:true});
+}
+async function handleReports(request,env,method) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  if(method==="GET") {
+    const r=actor.role==="national"
+      ? await env.DB.prepare("SELECT id,bureau,report_year,quarter,generated_at,payload_json,status FROM quarterly_reports ORDER BY report_year DESC,quarter DESC LIMIT 200").all()
+      : await env.DB.prepare("SELECT id,bureau,report_year,quarter,generated_at,payload_json,status FROM quarterly_reports WHERE bureau=? ORDER BY report_year DESC,quarter DESC LIMIT 100").bind(actor.bureau).all();
+    return json({ok:true,reports:r.results.map(x=>({...x,payload:parseJson(x.payload_json,{})}))});
+  }
+  const body=await request.json().catch(()=>({}));
+  const bureau=actor.role==="national"?cleanText(body.bureau,80):actor.bureau;
+  const year=Number(body.year),quarter=Number(body.quarter);
+  if(!bureau||!Number.isInteger(year)||year<2020||year>2100||![1,2,3,4].includes(quarter)) return json({error:"invalid_report_period"},400);
+  const periodStart=year+"-"+String((quarter-1)*3+1).padStart(2,"0")+"-01";
+  const periodEnd=quarter===4?year+"-12-31":year+"-"+String(quarter*3+1).padStart(2,"0")+"-01";
+  const id=crypto.randomUUID();
+  try {
+    await env.DB.prepare("INSERT INTO quarterly_reports (id,bureau,report_year,quarter,generated_by,generated_at,period_start,period_end,payload_json,status) VALUES (?,?,?,?,?,?,?,?,?,'generated')")
+      .bind(id,bureau,year,quarter,actor.id,Date.now(),periodStart,periodEnd,JSON.stringify(body.payload||{})).run();
+  } catch(e) { return json({error:"report_already_exists_or_save_failed"},409); }
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"quarterly_report_created",id).run();
+  return json({ok:true,id,bureau,year,quarter});
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -676,6 +748,12 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/print-check") return handlePrintCheck(url, env);
 
   if (request.method === "POST" && path === "/api/auth/bootstrap") return authBootstrap(request, env);
+  if (request.method === "POST" && path === "/api/auth/invitation/accept") return authAcceptInvitation(request,env);
+  if (request.method === "POST" && path === "/api/admin/invitations") return authCreateInvitation(request,env);
+  if (request.method === "GET" && path === "/api/admin/reports") return handleReports(request,env,"GET");
+  if (request.method === "POST" && path === "/api/admin/reports") return handleReports(request,env,"POST");
+  const activateMatch=path.match(/^\/api\/admin\/officers\/([^/]+)\/activate$/);
+  if(request.method==="POST"&&activateMatch) return authActivateOfficer(request,env,decodeURIComponent(activateMatch[1]));
   if (request.method === "POST" && path === "/api/auth/login") return authLogin(request, env);
   if (request.method === "POST" && path === "/api/auth/verify") return authVerify(request, env);
   if (request.method === "GET" && path === "/api/auth/me") return authMe(request, env);
