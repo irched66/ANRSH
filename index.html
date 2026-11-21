@@ -1494,7 +1494,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       invalid_code:"رمز التحقق غير صحيح.",
       too_many_attempts:"تم تجاوز عدد المحاولات المسموح بها.",
       unauthorized:"مفتاح الإدارة غير صحيح أو غير مصرح به.",
-      not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي."
+      not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي.",
+      multipart_form_required:"تعذر تجهيز ملفات الطلب. أعد المحاولة.",
+      invalid_profile:"بيانات الاستمارة غير صالحة. راجع الحقول.",
+      invalid_profile_json:"تعذر قراءة بيانات الاستمارة.",
+      consent_required:"يجب الموافقة على القانون الداخلي وحماية البيانات.",
+      invalid_or_inactive_office:"المكتب المختار غير مفعل حالياً.",
+      request_received_pending_payment:"تم استلام الطلب وينتظر تأكيد الدفع."
     };
     var key=j&&j.error||"";
     return map[key] || (j&&j.message) || ("خطأ في الاتصال بالخادم ("+status+").");
@@ -1524,18 +1530,43 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     };
   }
   function selectedFile(id){var x=el(id);return x&&x.files&&x.files[0]||null}
-  function fileCheck(){
-    var mapping={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
-    var total=0;
-    for(var k in mapping){var f=selectedFile(mapping[k]);
-      if(["photo","cni","retire","proof"].indexOf(k)>=0&&!f)throw new Error("يرجى إرفاق: "+({photo:"الصورة الشمسية",cni:"بطاقة التعريف الوطنية",retire:"قرار التقاعد",proof:"وصل دفع الاشتراك"}[k])+".");
+  async function compressImageFile(file){
+    if(!file||file.size<=220*1024||!/^image\\/(jpeg|png|webp)$/.test(file.type))return file;
+    if(!window.createImageBitmap)throw new Error("تعذر ضغط الصورة تلقائياً في هذا المتصفح. اختر صورة أصغر أو PDF.");
+    var bitmap=await createImageBitmap(file),canvas=document.createElement("canvas"),ctx;
+    var scales=[1,.9,.8,.7,.6],qualities=[.84,.78,.72,.66,.58];
+    try{
+      for(var i=0;i<scales.length;i++){
+        var scale=Math.min(scales[i],1600/Math.max(bitmap.width,bitmap.height));
+        canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+        canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+        ctx=canvas.getContext("2d");
+        ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+        var blob=await new Promise(function(resolve){canvas.toBlob(resolve,"image/jpeg",qualities[i])});
+        if(blob&&blob.size<=220*1024){
+          var name=file.name.replace(/\\.[^.]+$/,"")+".jpg";
+          return new File([blob],name,{type:"image/jpeg",lastModified:Date.now()});
+        }
+      }
+    }finally{if(bitmap.close)bitmap.close();}
+    throw new Error("تعذر ضغط "+file.name+" إلى الحجم المسموح. اختر صورة أوضح بحجم أصغر.");
+  }
+  async function fileCheck(){
+    var fields={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
+    var required={photo:"الصورة الشمسية",cni:"بطاقة التعريف الوطنية",retire:"قرار التقاعد",proof:"وصل دفع الاشتراك"};
+    var files={},total=0;
+    for(var k in fields){
+      var f=selectedFile(fields[k]);
+      if(required[k]&&!f)throw new Error("يرجى إرفاق: "+required[k]+".");
       if(!f)continue;
       if(["image/jpeg","image/png","image/webp","application/pdf"].indexOf(f.type)<0)throw new Error("الملف "+f.name+" يجب أن يكون JPG أو PNG أو WEBP أو PDF.");
+      f=await compressImageFile(f);
       if(f.size>220*1024)throw new Error("الملف "+f.name+" أكبر من 220 كيلوبايت.");
-      total+=f.size;
+      files[k]=f;total+=f.size;
     }
-    if(total>760*1024)throw new Error("مجموع الوثائق أكبر من 760 كيلوبايت. قلّص حجم الصور ثم أعد المحاولة.");
-    return mapping;
+    if(total>760*1024)throw new Error("مجموع الوثائق يتجاوز 760 كيلوبايت بعد الضغط. اختر ملفات أصغر.");
+    return files;
   }
 
   window.requestSecurityOTP=async function(){
@@ -1543,10 +1574,10 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     if(form&&!form.reportValidity())return;
     var submitLabel=el("t-btn-submit"),submitButton=submitLabel&&submitLabel.closest("button");
     try{
-      var mapping=fileCheck(), p=profile();
+      var mapping=await fileCheck(), p=profile();
       if(!p.consent)throw new Error("يجب الموافقة على التصريح وحماية البيانات الشخصية.");
       var fd=new FormData(); fd.append("profile",JSON.stringify(p)); fd.append("consent","true");
-      Object.keys(mapping).forEach(function(k){var f=selectedFile(mapping[k]);if(f)fd.append(k,f,f.name)});
+      Object.keys(mapping).forEach(function(k){var f=mapping[k];if(f)fd.append(k,f,f.name)});
       if(submitButton){submitButton.disabled=true;if(submitLabel)submitLabel.textContent="⏳ جارٍ حفظ الطلب والوثائق...";}
       var result=await api("/api/requests",{method:"POST",body:fd});
       curRef=result.requestNumber; curNo=result.requestNumber; unlockToken="";
