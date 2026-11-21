@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS notification_log (
   recipient TEXT NOT NULL,
   channel TEXT NOT NULL CHECK (channel IN ('email', 'sms', 'whatsapp_manual')),
   event_type TEXT NOT NULL
-    CHECK (event_type IN ('application_received', 'approved', 'rejected', 'renewal_due', 'payment_verified')),
+    CHECK (event_type IN ('application_received', 'approved', 'rejected', 'renewal_due', 'payment_verified', 'quarterly_report')),
   provider_message_id TEXT,
   status TEXT NOT NULL DEFAULT 'queued'
     CHECK (status IN ('queued', 'sent', 'failed')),
