@@ -353,14 +353,21 @@ async function handleCreateRequest(request, env) {
   };
 
   try {
-    await env.DB.prepare(`
-      INSERT INTO members
-        (id, ref, bureau, name, phone, profile, files, status, otp_hash, otp_exp, otp_tries, ip, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending_payment', NULL, NULL, 0, ?, CAST(strftime('%s','now') AS INTEGER))
-    `).bind(
-      id, ref, bureau, displayName, phone,
-      JSON.stringify(safeProfile), JSON.stringify(files), clientIp(request)
-    ).run();
+    await env.DB.batch([
+      env.DB.prepare(`
+        INSERT INTO members
+          (id, ref, bureau, name, phone, profile, files, status, otp_hash, otp_exp, otp_tries, ip, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'pending_payment', NULL, NULL, 0, ?, CAST(strftime('%s','now') AS INTEGER))
+      `).bind(
+        id, ref, bureau, displayName, phone,
+        JSON.stringify(safeProfile), JSON.stringify(files), clientIp(request)
+      ),
+      env.DB.prepare(`
+        INSERT INTO member_payments
+          (id, member_id, member_ref, bureau, membership_year, amount_dzd, currency, payment_method, receipt_ref, status, created_at)
+        VALUES (?, ?, ?, ?, ?, 500, 'DZD', 'other', ?, 'pending_review', ?)
+      `).bind(crypto.randomUUID(), id, ref, bureau, new Date().getFullYear(), ref, Date.now())
+    ]);
 
     return json({
       ok: true, requestNumber: ref,
@@ -461,35 +468,51 @@ async function handleAdminApprove(id, request, env) {
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
   if (actor.role !== "national" && row.bureau !== actor.bureau) return json({ error: "forbidden" }, 403);
-  return json({ error: "payment_verification_required" }, 409);
-
-  const code = randomDigits(6);
-  const hash = await sha256(row.ref + ":" + code);
-  const expires = Date.now() + OTP_TTL_MS;
-  await env.DB.prepare(`
-    UPDATE members SET otp_hash = ?, otp_exp = ?, otp_tries = 0, status = 'code_sent'
-    WHERE id = ?
-  `).bind(hash, expires, id).run();
-
+  const payment = await env.DB.prepare(
+    "SELECT id,status,amount_dzd FROM member_payments WHERE member_id=? AND membership_year=? ORDER BY created_at DESC LIMIT 1"
+  ).bind(id,new Date().getFullYear()).first();
+  if (!payment || payment.status !== "verified" || Number(payment.amount_dzd) !== 500) {
+    return json({ error: "payment_not_verified" }, 409);
+  }
   const profile = parseJson(row.profile, {});
-  const emailResult = await sendEmail(
-    env, cleanText(profile.email, 160),
-    "ANRSH — Code de confirmation",
-    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 24 heures.`
-  );
+  if (!cleanText(profile.email,160) || !env.RESEND_API_KEY || !env.RESEND_FROM) {
+    return json({ error: "member_email_delivery_not_configured" }, 503);
+  }
+  const code = randomDigits(6), hash = await sha256(row.ref + ":" + code);
+  const expires = Date.now() + 10 * 60 * 1000;
+  await env.DB.prepare(`
+    UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=0,status='code_sent' WHERE id=?
+  `).bind(hash,expires,id).run();
+  const sent = await sendEmail(env,cleanText(profile.email,160),"ANRSH — Code de confirmation",
+    "Votre paiement de 500 DZD a été vérifié.\nDemande : "+row.ref+"\nCode : "+code+"\nCe code expire dans 10 minutes et ne peut être utilisé qu'une fois.");
+  if (!sent.sent) {
+    await env.DB.prepare("UPDATE members SET otp_hash=NULL,otp_exp=NULL,status='pending_payment' WHERE id=?").bind(id).run();
+    return json({ error: "member_notification_failed" },503);
+  }
+  return json({ok:true,status:"code_sent",requestNumber:row.ref,expiresAt:expires,emailSent:true});
+}
 
-  // The current frontend does not yet display this code or send WhatsApp automatically.
-  // It is returned only to the authenticated office interface.
-  const digits = String(row.phone || "").replace(/\D/g, "").replace(/^0/, "213");
-  const waText = encodeURIComponent(
-    `ANRSH : paiement confirmé. Votre code de confirmation pour la demande ${row.ref} est ${code}.`
-  );
-  return json({
-    ok: true, status: "code_sent", requestNumber: row.ref,
-    code, emailSent: emailResult.sent,
-    whatsappUrl: digits ? `https://wa.me/${digits}?text=${waText}` : null,
-    expiresAt: expires
-  });
+async function handleAdminPaymentReview(id, request, env) {
+  if (!env.DB) return json({error:"database_unavailable"},503);
+  const actor = await requireAdmin(request,env);
+  if (!actor) return json({error:"unauthorized"},401);
+  const body = await request.json().catch(()=>({}));
+  const decision = body.decision === "verify" ? "verified" : body.decision === "reject" ? "rejected" : "";
+  if (!decision) return json({error:"invalid_payment_decision"},400);
+  const payment = await env.DB.prepare(
+    "SELECT p.id,p.member_id,p.bureau,p.amount_dzd,p.status FROM member_payments p WHERE p.id=?"
+  ).bind(id).first();
+  if (!payment) return json({error:"payment_not_found"},404);
+  if (actor.role !== "national" && payment.bureau !== actor.bureau) return json({error:"forbidden"},403);
+  if (payment.status !== "pending_review") return json({error:"payment_not_pending"},409);
+  if (decision === "verified" && Number(payment.amount_dzd) !== 500) return json({error:"invalid_payment_amount"},409);
+  const result = await env.DB.prepare(
+    "UPDATE member_payments SET status=?,reviewed_by=?,reviewed_at=?,rejection_reason=? WHERE id=? AND status='pending_review'"
+  ).bind(decision,actor.id,Date.now(),decision==="rejected"?cleanText(body.reason,300):null,id).run();
+  if (!result.meta || result.meta.changes !== 1) return json({error:"payment_review_conflict"},409);
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
+    .bind(Date.now(),actor.email,"payment_"+decision,id).run();
+  return json({ok:true,status:decision});
 }
 
 async function handleAdminDelete(id, request, env) {
@@ -663,6 +686,11 @@ async function route(request, env) {
   const fileMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && fileMatch) {
     return handleAdminFile(decodeURIComponent(fileMatch[1]), decodeURIComponent(fileMatch[2]), request, env);
+  }
+
+  const paymentReviewMatch = path.match(/^\/api\/admin\/payments\/([^/]+)\/review$/);
+  if (request.method === "POST" && paymentReviewMatch) {
+    return handleAdminPaymentReview(decodeURIComponent(paymentReviewMatch[1]),request,env);
   }
 
   const approveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/approve$/);
