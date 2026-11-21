@@ -28,9 +28,25 @@ CREATE INDEX IF NOT EXISTS idx_member_payments_member
   ON member_payments(member_id, membership_year);
 CREATE INDEX IF NOT EXISTS idx_member_payments_status
   ON member_payments(status, created_at);
-CREATE UNIQUE INDEX IF NOT EXISTS idx_one_verified_payment_per_member_year
-  ON member_payments(member_id, membership_year)
-  WHERE status = 'verified';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_one_payment_per_member_year
+  ON member_payments(member_id, membership_year);
+
+CREATE TABLE IF NOT EXISTS payment_allocations (
+  id TEXT PRIMARY KEY,
+  payment_id TEXT NOT NULL UNIQUE,
+  member_id TEXT NOT NULL,
+  bureau TEXT NOT NULL,
+  membership_year INTEGER NOT NULL,
+  gross_amount_dzd INTEGER NOT NULL CHECK (gross_amount_dzd = 500),
+  national_share_dzd INTEGER NOT NULL CHECK (national_share_dzd = 100),
+  regional_share_dzd INTEGER NOT NULL CHECK (regional_share_dzd = 400),
+  allocated_at INTEGER NOT NULL,
+  FOREIGN KEY (payment_id) REFERENCES member_payments(id),
+  FOREIGN KEY (member_id) REFERENCES members(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_allocations_bureau_year
+  ON payment_allocations(bureau, membership_year);
 
 CREATE TABLE IF NOT EXISTS member_card_tokens (
   id TEXT PRIMARY KEY,
@@ -96,5 +112,5 @@ CREATE INDEX IF NOT EXISTS idx_notification_log_status
 -- 2) The QR contains a random opaque token. Store only its hash here; public verification must also
 --    check current member approval and verified payment status.
 -- 3) Do not store OTP values, password values, or full message bodies in notification_log.
--- 4) The 20/80 allocation should be calculated from verified payments and written to a separate,
---    auditable remittance ledger only after its accounting rules are reviewed.
+-- 4) Each verified 500 DZD payment is allocated as 100 DZD national (20%) and 400 DZD regional (80%).
+--    payment_allocations is the auditable per-payment ledger; reconcile it before any remittance.
