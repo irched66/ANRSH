@@ -1460,12 +1460,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   function addCell(tr,value){var td=document.createElement("td");td.style.cssText="padding:7px;border-bottom:1px solid rgba(255,255,255,.14);vertical-align:top";td.textContent=value==null?"":String(value);tr.appendChild(td);return td;}
   window.adRender=function(){
     var table=el("adTbl");if(!table)return;table.innerHTML="";
-    var head=document.createElement("tr");["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الإجراءات"].forEach(function(t){addCell(head,t)});table.appendChild(head);
+    var head=document.createElement("tr");["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الدفع","الإجراءات"].forEach(function(t){addCell(head,t)});table.appendChild(head);
     var q=(val("ad_q")||"").toLowerCase();
     ADMIN_ROWS.forEach(function(r){var p=r.profile||{}, hay=[r.requestNumber,r.name,r.bureau,r.phone,p.matricule,p.wilaya].join(" ").toLowerCase();if(q&&!hay.includes(q))return;
-      var tr=document.createElement("tr");addCell(tr,r.requestNumber);addCell(tr,r.name);addCell(tr,r.bureau);addCell(tr,r.phone);addCell(tr,r.status);
+      var tr=document.createElement("tr");addCell(tr,r.requestNumber);addCell(tr,r.name);addCell(tr,r.bureau);addCell(tr,r.phone);addCell(tr,r.status);addCell(tr,r.paymentStatus);
       var td=document.createElement("td");
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
+       if(r.paymentId&&r.paymentStatus==="pending_review"){var pay=document.createElement("button");pay.type="button";pay.className="btn-card btn-dl";pay.style.cssText="padding:5px;margin:2px";pay.textContent="💳 تأكيد استلام 500 دج";pay.onclick=function(){adPaymentReview(r.paymentId)};td.appendChild(pay);}
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
       var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
@@ -1473,7 +1474,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
-    window.adApprove=async function(id){
+    window.adPaymentReview=async function(id){
+     if(!confirm("هل راجعت وصل الدفع وتأكدت فعلياً من استلام 500 دج؟"))return;
+     try{await api("/api/admin/payments/"+encodeURIComponent(id)+"/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision:"verify"})});el("ad_out").textContent="تم تسجيل مراجعة الدفع. يمكنك الآن إصدار رمز التحقق.";await adLoad();}
+     catch(e){el("ad_out").textContent="تعذرت مراجعة الدفع: "+e.message;}
+   };
+   window.adApprove=async function(id){
      try{await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});el("ad_out").textContent="رمز التحقق لا يصدر إلا بعد مراجعة إيصال دفع 500 دج وإثبات وصول رسالة البريد.";await adLoad();}
      catch(e){el("ad_out").textContent="لم يتم إصدار الرمز: "+e.message;}
    };
@@ -1485,8 +1491,18 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     dlBlob("ANRSH-demandes-2026-11-16.csv",new Blob([csv],{type:"text/csv;charset=utf-8"}));
   };
   // The D1 Worker edition dated 16 Nov has no reports API yet; do not send data to obsolete Supabase routes.
-  window.submitReport=function(){alert("قسم التقارير ظاهر في هذه النسخة، لكن Worker الحالي لا يحتوي بعد على مسارات حفظ التقارير. لم يتم إرسال أي تقرير.");};
-  window.loadReports=function(){var h=el("rp_hist");if(h)h.textContent="حفظ التقارير في قاعدة البيانات غير مفعّل بعد في Worker إصدار 16 نوفمبر.";};
+  window.submitReport=async function(){
+     try{
+       var d=rpData(),q=Number((d.period||"T1").replace("T",""))||1;
+       await api("/api/admin/reports",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bureau:d.bureau,year:d.year,quarter:q,payload:Object.assign(d,{text:reportText()})})});
+       alert("تم حفظ التقرير في قاعدة البيانات ضمن صلاحيات المكتب.");await loadReports();
+     }catch(e){alert("تعذر حفظ التقرير: "+e.message);}
+   };
+  window.loadReports=async function(){
+     var h=el("rp_hist");if(!h)return;
+     try{var r=await api("/api/admin/reports");h.textContent="التقارير المحفوظة في قاعدة البيانات: "+((r.reports||[]).length);}
+     catch(e){h.textContent="يجب تسجيل الدخول بصلاحية إدارية لعرض التقارير. "+e.message;}
+   };
 
   // Live connection status, without exposing any secret.
   function addPublicCounters(){
