@@ -1370,7 +1370,7 @@ function applyLang(){
 function setLanguage(l,btn){
  if(["ar","fr","en"].indexOf(l)<0)l="ar";
  document.querySelectorAll(".lang-pill").forEach(function(b){b.classList.remove("active")});if(btn)btn.classList.add("active");
- lang=l;try{localStorage.setItem("anrsh_language",l)}catch(e){}applyLang();if(sr)setTimeout(readPage,200);
+ lang=l;try{localStorage.setItem("anrsh_language",l)}catch(e){}applyLang();if(window.updateANRSHDailyPhotoCaption)window.updateANRSHDailyPhotoCaption();if(sr)setTimeout(readPage,200);
 }
 var _ow=onWilayaChange,_od=onDairaChange;onWilayaChange=function(){_ow();applyLang()};onDairaChange=function(){_od();applyLang()};
 var _sm=switchMainTab;switchMainTab=function(n){_sm(n);if(sr)setTimeout(readPage,150)};
@@ -1488,7 +1488,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   var item=images[((day%images.length)+images.length)%images.length];
   var img=document.getElementById("anrshDailyPhoto"),caption=document.getElementById("anrshDailyPhotoCaption"),box=document.getElementById("anrshDailyPhotoBox");
   if(img){img.src=item[0];img.alt=item[1];img.onerror=function(){if(box)box.hidden=true;};}
-  if(caption){var l=(typeof lang==="string"?lang:"ar");caption.textContent=(l==="fr"?"À la découverte de l’Algérie : "+item[2]:l==="en"?"Discovering Algeria: "+item[3]:"من جمال الجزائر: "+item[1]);}
+  window.updateANRSHDailyPhotoCaption=function(){
+    if(!caption)return;
+    var l=(typeof lang==="string"?lang:"ar");
+    caption.textContent=(l==="fr"?"À la découverte de l’Algérie : "+item[2]:l==="en"?"Discovering Algeria: "+item[3]:"من جمال الجزائر: "+item[1]);
+  };
+  window.updateANRSHDailyPhotoCaption();
 })();
  
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
