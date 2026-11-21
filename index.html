@@ -1570,7 +1570,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var r=await api("/api/requests/"+encodeURIComponent(ref)+"/status?phone="+encodeURIComponent(phone));
       var labels={pending_payment:"قيد الدراسة — في انتظار تأكيد الدفع",code_sent:"تمت مصادقة الدفع — رمز التأكيد صادر",unlocked:"تم التحقق — البطاقة جاهزة للطباعة",rejected:"مرفوض — راجع سبب الرفض أدناه"};
       var date=r.createdAt?new Date(Number(r.createdAt)*1000).toLocaleString("fr-DZ"):"—";
-      out.textContent="رقم الطلب: "+r.requestNumber+"\\nالمكتب: "+r.bureau+"\\nالحالة: "+(labels[r.status]||r.status)+"\\nتاريخ الإيداع: "+date+(r.rejectionReason?"\\nسبب الرفض: "+r.rejectionReason:"");
+      out.textContent="رقم الطلب: "+r.requestNumber+"\nالمكتب: "+r.bureau+"\nالحالة: "+(labels[r.status]||r.status)+"\nتاريخ الإيداع: "+date+(r.rejectionReason?"\nسبب الرفض: "+r.rejectionReason:"");
     }catch(e){out.textContent=e.message||"تعذر استرجاع حالة الطلب.";}
   };
 
