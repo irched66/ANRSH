@@ -762,6 +762,59 @@ async function handleReports(request,env,method) {
   return json({ok:true,id,bureau,year,quarter});
 }
 
+
+async function handleOfficeWilayas(request,env,method) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  if(method==="GET") {
+    const rows=actor.role==="national"
+      ? await env.DB.prepare("SELECT bureau,wilaya_code,wilaya_name FROM office_wilayas ORDER BY bureau,CAST(wilaya_code AS INTEGER)").all()
+      : await env.DB.prepare("SELECT bureau,wilaya_code,wilaya_name FROM office_wilayas WHERE bureau=? ORDER BY CAST(wilaya_code AS INTEGER)").bind(actor.bureau).all();
+    return json({ok:true,assignments:rows.results});
+  }
+  const body=await request.json().catch(()=>({}));
+  const bureau=actor.role==="national"?cleanText(body.bureau,80):actor.bureau;
+  const code=cleanText(body.wilaya_code,3);
+  const w=await env.DB.prepare("SELECT code,name_ar FROM wilayas WHERE code=? AND active=1").bind(code).first();
+  if(!bureau||!w) return json({error:"invalid_bureau_or_wilaya"},400);
+  const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
+  if(!office) return json({error:"invalid_or_inactive_office"},400);
+  try {
+    await env.DB.prepare("INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name) VALUES (?,?,?)").bind(bureau,code,w.name_ar).run();
+  } catch(e) { return json({error:"wilaya_already_assigned_or_save_failed"},409); }
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"wilaya_assigned",bureau+":"+code).run();
+  return json({ok:true,bureau,wilaya_code:code,wilaya_name:w.name_ar});
+}
+async function handleOfficeProfile(request,env) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  const body=await request.json().catch(()=>({}));
+  const bureau=actor.role==="national"?cleanText(body.bureau,80):actor.bureau;
+  if(!bureau) return json({error:"bureau_required"},400);
+  const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=?").bind(bureau).first();
+  if(!office) return json({error:"office_not_found"},404);
+  const bank=cleanText(body.bank_name,120),rib=cleanText(body.rib,40),ccp=cleanText(body.ccp,30),key=cleanText(body.ccp_key,20);
+  const now=Date.now();
+  await env.DB.prepare(`
+    INSERT INTO offices (bureau,bank_name,rib,ccp,ccp_key,updated_by,updated_at)
+    VALUES (?,?,?,?,?,?,?)
+    ON CONFLICT(bureau) DO UPDATE SET bank_name=excluded.bank_name,rib=excluded.rib,
+      ccp=excluded.ccp,ccp_key=excluded.ccp_key,updated_by=excluded.updated_by,updated_at=excluded.updated_at
+  `).bind(bureau,bank||null,rib||null,ccp||null,key||null,actor.id,now).run();
+  const president=cleanText(body.president_name,120),phone=normalizePhone(body.president_phone),email=cleanText(body.email,160),address=cleanText(body.address,300);
+  await env.DB.prepare("UPDATE regional_offices SET president_name=COALESCE(?,president_name),president_phone=COALESCE(?,president_phone),email=COALESCE(?,email),address=COALESCE(?,address),updated_at=? WHERE bureau=?")
+    .bind(president||null,phone||null,email||null,address||null,now,bureau).run();
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"office_profile_updated",bureau).run();
+  return json({ok:true,bureau});
+}
+async function handlePendingOfficers(request,env) {
+  const actor=await requireAdmin(request,env);
+  if(!actor) return json({error:"unauthorized"},401);
+  if(actor.role!=="national") return json({error:"forbidden"},403);
+  const r=await env.DB.prepare("SELECT id,email,bureau,created_at FROM admin_users WHERE role='regional' AND active=0 ORDER BY created_at").all();
+  return json({ok:true,officers:r.results});
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -794,6 +847,10 @@ async function route(request, env) {
   if (request.method === "POST" && path === "/api/auth/bootstrap") return authBootstrap(request, env);
   if (request.method === "POST" && path === "/api/auth/invitation/accept") return authAcceptInvitation(request,env);
   if (request.method === "POST" && path === "/api/admin/invitations") return authCreateInvitation(request,env);
+  if (request.method === "GET" && path === "/api/admin/officers/pending") return handlePendingOfficers(request,env);
+  if (request.method === "GET" && path === "/api/admin/wilayas") return handleOfficeWilayas(request,env,"GET");
+  if (request.method === "POST" && path === "/api/admin/wilayas") return handleOfficeWilayas(request,env,"POST");
+  if (request.method === "POST" && path === "/api/admin/office-profile") return handleOfficeProfile(request,env);
   if (request.method === "GET" && path === "/api/admin/reports") return handleReports(request,env,"GET");
   if (request.method === "POST" && path === "/api/admin/reports") return handleReports(request,env,"POST");
   const activateMatch=path.match(/^\/api\/admin\/officers\/([^/]+)\/activate$/);
