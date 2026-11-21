@@ -4,7 +4,13 @@ import assert from "node:assert/strict";
 
 const worker = readFileSync("ANRSH-worker-counter.js", "utf8");
 const workerForScript = worker.replace(/export\s+default\s*\{/, "const __worker = {");
-assert.doesNotThrow(() => new vm.Script(workerForScript, { filename: "ANRSH-worker-counter.js" }));
+try {
+  new vm.Script(workerForScript, { filename: "ANRSH-worker-counter.js" });
+  console.log("Worker syntax passed.");
+} catch (error) {
+  console.error("Worker syntax failed:", error.stack);
+  throw error;
+}
 
 const html = readFileSync("index.html", "utf8");
 const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
@@ -15,8 +21,13 @@ for (const match of scripts) {
   if (!/^(text|application)\/(javascript|ecmascript)$/i.test(type)) continue;
   const source = match[2].trim();
   if (!source) continue;
-  assert.doesNotThrow(() => new vm.Script(source, { filename: "index-inline-" + (checked + 1) + ".js" }));
-  checked++;
+  try {
+    new vm.Script(source, { filename: "index-inline-" + (checked + 1) + ".js" });
+    checked++;
+  } catch (error) {
+    console.error("Inline script failed at block " + (checked + 1) + ":", error.stack);
+    throw error;
+  }
 }
 assert.ok(checked > 0, "Expected at least one inline JavaScript block");
 assert.ok(worker.includes("async function requireAdmin"), "Session authentication guard must exist");
