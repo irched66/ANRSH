@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>ANRSH – المنصة الرقمية الرسمية 2026/2027/2027 | إصدار 16 نوفمبر 2026</title>
+    <title>ANRSH – المنصة الرقمية الرسمية 2026–2027</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#d97706">
 
@@ -1173,14 +1173,14 @@ renderDir();
 var ROWS=`المساعد الصوتي لذوي الإعاقة البصرية|Assistant vocal pour malvoyants|Voice assistant for visually impaired
 تفعيل القارئ الصوتي|Activer la lecture vocale|Enable screen reader
 إيقاف القارئ الصوتي|Arrêter la lecture vocale|Stop screen reader
-الجمعية الوطنية لمتقاعدي سوناطراك ANRSH|Association Nationale des Retraités de Sonatrach ANRSH|Sonatrach Retirees National Association ANRSH|ⵜⴰⵎⵙⵙⵓⵔⵜ ⵜⴰⵏⴰⵎⵓⵔⵜⵉⵏⵜ ⵏ ⵉⵎⵙⴽⴰⵔⴰⵏ ⵏ ⵙⵓⵏⴰⵜⵔⴰⴽ ANRSH
+الجمعية الوطنية لمتقاعدي سوناطراك ANRSH|Association Nationale des Retraités de Sonatrach ANRSH|Sonatrach Retirees National Association ANRSH
 المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.|Plateforme numérique officielle d’adhésion et de rapports périodiques 2026. Bienvenue à tous les retraités, retraitées et ayants droit sur l’ensemble du territoire.|Official digital platform for membership and periodic reports 2026. Welcome to all retirees and beneficiaries across the country.
 طلب الانخراط والبطاقة|Adhésion et carte|Membership & card
 التقارير الأدبية والمالية|Rapports moraux et financiers|Narrative & financial reports
 دليل المكاتب ورؤساء النواحي|Annuaire des bureaux et responsables|Offices & regional heads
 فضاء الإدارة المحمي|Espace administration protégé|Protected admin area
 الموسم المالي والجمعوي 2026|Exercice financier et associatif 2026|Financial and association year 2026
-استمارة الانخراط واستخراج بطاقة العضوية 2026|Formulaire d’adhésion et carte de membre 2026|Membership form and 2026 member card|ⴰⵙⵙⵓⴼⵖ ⵏ ⵜⵓⵜⵍⴰⵢⵜ 2026
+استمارة الانخراط واستخراج بطاقة العضوية 2026|Formulaire d’adhésion et carte de membre 2026|Membership form and 2026 member card
 يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.|Veuillez saisir les données avec précision et joindre les documents demandés pour confirmer le paiement et recevoir le code d’impression.|Please enter your data accurately and attach the required documents to confirm payment and receive the print code.
 البيانات الشخصية والمدنية|Données personnelles et civiles|Personal and civil data
 الصفة والانخراط|Statut|Status
@@ -1326,14 +1326,13 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 var WIL_L="Adrar,Chlef,Laghouat,Oum El Bouaghi,Batna,Béjaïa,Biskra,Béchar,Blida,Bouira,Tamanrasset,Tébessa,Tlemcen,Tiaret,Tizi Ouzou,Alger,Djelfa,Jijel,Sétif,Saïda,Skikda,Sidi Bel Abbès,Annaba,Guelma,Constantine,Médéa,Mostaganem,M’Sila,Mascara,Ouargla,Oran,El Bayadh,Illizi,Bordj Bou Arréridj,Boumerdès,El Tarf,Tindouf,Tissemsilt,El Oued,Khenchela,Souk Ahras,Tipaza,Mila,Aïn Defla,Naâma,Aïn Témouchent,Ghardaïa,Relizane,Timimoun,Bordj Badji Mokhtar,Ouled Djellal,Béni Abbès,In Salah,In Guezzam,Touggourt,Djanet,El M’Ghair,El Meniaa".split(",");
 var PL={"سكيكدة":"Skikda","عزابة":"Azzaba","القل":"Collo","الحروش":"El Harrouch","تمالوس":"Tamalous","فلفلة":"Filfila","حمادي كرومة":"Hamadi Krouma","جندل سعدي محمد":"Djendel Saadi Mohamed","قسنطينة":"Constantine","الخروب":"El Khroub","علي منجلي":"Ali Mendjeli","زيغود يوسف":"Zighoud Youcef","عين عبيد":"Aïn Abid","حامة بوزيان":"Hamma Bouziane","ابن زياد":"Ibn Ziad","حاسي مسعود":"Hassi Messaoud","حاسي الرمل":"Hassi R’Mel","أرزيو":"Arzew","عين أمناس":"In Amenas","بركاين":"Berkine","قاسي الطويل":"Gassi Touil"};
 Object.assign(PL,CFG.geoLatin||{});Object.keys(CFG.geo||{}).forEach(function(w){GEO[w]=CFG.geo[w]});
-var D={},ORI=new WeakMap(),IDX={fr:0,en:1,ber:2},lang=(function(){try{var saved=localStorage.getItem("anrsh_language")||"ar";return ["ar","fr","en"].indexOf(saved)>=0?saved:"ar"}catch(e){return "ar"}})();
-ROWS.split("\n").forEach(function(r){var p=r.split("|");D[p[0]]=[p[1],p[2],p[3]||p[0]]});
+var D={},ORI=new WeakMap(),IDX={fr:0,en:1},lang=(function(){try{var saved=localStorage.getItem("anrsh_language")||"ar";return ["ar","fr","en"].indexOf(saved)>=0?saved:"ar"}catch(e){return "ar"}})();
+ROWS.split("\n").forEach(function(r){var p=r.split("|");D[p[0]]=[p[1],p[2]]});
 WIL.forEach(function(n,i){D[n]=[WIL_L[i],WIL_L[i],n]});
 Object.keys(PL).forEach(function(k){if(!D[k])D[k]=[PL[k],PL[k],k]});
 [["ناحية","Région ","region"],["المكتب الجهوي","Bureau régional ","regional office"]].forEach(function(g){Object.keys(PL).forEach(function(k){D[g[0]+" "+k]=[g[1]+PL[k],PL[k]+" "+g[2],g[1]+PL[k]]})});
 D["ناحية حاسي مسعود (DP)"]=["Région Hassi Messaoud (DP)","Hassi Messaoud region (DP)"];D["ناحية سكيكدة (المنطقة البتروكيماوية)"]=["Région Skikda (zone pétrochimique)","Skikda region (petrochemical zone)"];D["ناحية أوهانت / إن صالح"]=["Région Ohanet / In Salah","Ohanet / In Salah region"];D["ناحية تقرت وحوض الحمراء"]=["Région Touggourt et Hamra","Touggourt & Hamra region"];D["ناحية TFT"]=["Région TFT","TFT region"];D["ناحية الجزائر العاصمة والوسط"]=["Région Alger et Centre","Algiers & Centre region"];D["ناحية غرد الباغل"]=["Région Gourd El Baghel","Gourd El Baghel region"];D["المكتب الجهوي الجزائر العاصمة والوسط"]=["Bureau régional Alger et Centre","Algiers & Centre regional office"];
-for(var k in D){if(D[k].length<3)D[k][2]=k}
-Object.keys(CFG.ber||{}).forEach(function(k){if(!D[k])D[k]=[k,k,k];D[k][2]=CFG.ber[k]});
+for(var k in D){if(D[k].length<2)D[k][1]=k}
 function trS(s,l){var m=s.match(/^([^\u0600-\u06FFA-Za-z0-9(\-]*)([\s\S]*?)([\s:*.]*)$/);if(!m||!m[2])return s;var c=m[2].trim(),d=D[c],e=m[3];if(!d){d=D[c+"."];if(d)e=e.replace(".","")}return d?m[1]+d[IDX[l]]+e:s}
 window.tr=function(s){return lang==="ar"?s:trS(s,lang)};
 var _al=window.alert;window.alert=function(m){_al(tr(String(m)))};
@@ -1345,7 +1344,7 @@ function applyLang(){
  while(n=w.nextNode()){var o=ORI.get(n);if(!o||n.nodeValue!==o.t){o={a:n.nodeValue,t:n.nodeValue};ORI.set(n,o)}
   var t=lang==="ar"?o.a:trS(o.a,lang);if(n.nodeValue!==t)n.nodeValue=t;o.t=t}
  document.querySelectorAll("[placeholder]").forEach(function(e){if(!e.dataset.p0)e.dataset.p0=e.placeholder;e.placeholder=lang==="ar"?e.dataset.p0:trS(e.dataset.p0,lang)});
- var h=document.documentElement;h.lang=lang==="ber"?"zgh":lang;h.dir=lang==="ar"?"rtl":"ltr";
+ var h=document.documentElement;h.lang=lang;h.dir=lang==="ar"?"rtl":"ltr";
  try{dueInfo();if(curRef)otpDesc()}catch(x){}
  obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 }
@@ -1357,9 +1356,9 @@ function setLanguage(l,btn){
 var _ow=onWilayaChange,_od=onDairaChange;onWilayaChange=function(){_ow();applyLang()};onDairaChange=function(){_od();applyLang()};
 var _sm=switchMainTab;switchMainTab=function(n){_sm(n);if(sr)setTimeout(readPage,150)};
 var DUE={ar:["⏰ موعد التقرير الفصلي القادم:","(بعد "," يوماً)"," ⚠️ اقترب الموعد","📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى irched2521@gmail.com و anrsh1994@gmail.com."],fr:["⏰ Prochain rapport trimestriel :","(dans "," jours)"," ⚠️ Échéance proche","📅 Rapport moral et financier annuel : avant le 31 janvier, envoyé par e-mail à irched2521@gmail.com et anrsh1994@gmail.com."],en:["⏰ Next quarterly report due:","(in "," days)"," ⚠️ Deadline close","📅 Annual narrative and financial report: before 31 January, e-mailed to irched2521@gmail.com and anrsh1994@gmail.com."]};
-dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang==="ber"?"fr":lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
+dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
 var OT={ar:["رقم طلبك:","أرسل وصل دفع 500 دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة."],fr:["Votre n° de demande :","Envoyez le reçu de 500 DA et les documents par WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres par WhatsApp ; saisissez-le ici pour débloquer l’impression."],en:["Your request no.:","Send the 500 DZD receipt and documents via WhatsApp. After verification the office manager sends you a 6-digit code via WhatsApp; enter it here to unlock printing."]};
-function otpDesc(){var o=OT[lang==="ber"?"fr":lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
+function otpDesc(){var o=OT[lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
 var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US"},VP={ar:["ar"],fr:["fr"],en:["en"]},warned=false;
 function voiceFor(){if(!window.speechSynthesis)return null;var vs=window.speechSynthesis.getVoices(),p=VP[lang];var best=null;for(var i=0;i<vs.length;i++){var c=vs[i].lang.toLowerCase().replace("_","-");if(p.some(function(x){return c.indexOf(x)===0})){if(!best||vs[i].localService&&!best.localService||c==="ar-dz"||c==="fr-dz")best=vs[i]}}return best}
 var SH={ar:"لم يبدأ الصوت. تأكد من رفع صوت الهاتف، وثبّت صوت اللغة من إعدادات الهاتف ← تحويل النص إلى كلام (Google).",fr:"La voix n’a pas démarré. Vérifiez le volume et installez la voix de la langue dans Paramètres → Synthèse vocale (Google).",en:"Speech did not start. Check the volume and install the language voice in Settings → Text-to-speech (Google)."};
@@ -1371,7 +1370,7 @@ function gtts(parts,i){
  var a=AU||(AU=new Audio()),L=TL[lang]||"fr";
  a.src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl="+L+"&q="+encodeURIComponent(parts[i]);
  a.onended=function(){gtts(parts,i+1)};
- var bad=function(){st("⚠️ "+SH[lang==="ber"?"fr":lang])};
+ var bad=function(){st("⚠️ "+SH[lang])};
  a.onerror=bad;var pr=a.play();if(pr&&pr.catch)pr.catch(bad);if(i===0)st("🔊")}
 function stopAll(){try{window.speechSynthesis&&window.speechSynthesis.cancel()}catch(x){}if(AU){AU.onended=null;AU.pause()}}
 function speak(t){
@@ -1527,12 +1526,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   window.requestSecurityOTP=async function(){
     var form=el("adhesionForm");
     if(form&&!form.reportValidity())return;
+    var submitLabel=el("t-btn-submit"),submitButton=submitLabel&&submitLabel.closest("button");
     try{
       var mapping=fileCheck(), p=profile();
       if(!p.consent)throw new Error("يجب الموافقة على التصريح وحماية البيانات الشخصية.");
       var fd=new FormData(); fd.append("profile",JSON.stringify(p)); fd.append("consent","true");
       Object.keys(mapping).forEach(function(k){var f=selectedFile(mapping[k]);if(f)fd.append(k,f,f.name)});
-      var button=document.querySelector('button[onclick="requestSecurityOTP()"]');if(button){button.disabled=true;button.textContent="⏳ جارٍ حفظ الطلب والوثائق...";}
+      if(submitButton){submitButton.disabled=true;if(submitLabel)submitLabel.textContent="⏳ جارٍ حفظ الطلب والوثائق...";}
       var result=await api("/api/requests",{method:"POST",body:fd});
       curRef=result.requestNumber; curNo=result.requestNumber; unlockToken="";
       if(typeof syncBadgeLive==="function")syncBadgeLive();
@@ -1541,7 +1541,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       if(el("otpBox"))el("otpBox").scrollIntoView({behavior:"smooth"});
       alert("تم تسجيل طلبك بنجاح في قاعدة بيانات ANRSH.\nرقم الطلب: "+curRef+"\nالطلب الآن في انتظار مصادقة المكتب على الدفع. احتفظ برقم الطلب.");
     }catch(e){alert(e.message||"تعذر إرسال الطلب.");}
-    finally{var b=document.querySelector('button[onclick="requestSecurityOTP()"]');if(b){b.disabled=false;b.innerHTML='<span>🔐</span> <span id="t-btn-submit">معاينة الاستمارة قبل الحفظ والإرسال</span>';}}
+    finally{if(submitButton){submitButton.disabled=false;if(submitLabel)submitLabel.textContent=window.tr?window.tr("معاينة الاستمارة قبل الحفظ والإرسال"):"معاينة الاستمارة قبل الحفظ والإرسال";}}
   };
 
   window.validateSecurityOTP=async function(){
@@ -1689,7 +1689,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   document.addEventListener("DOMContentLoaded",function(){
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
-    var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
+    var info=el("payInfo");if(info)info.textContent="الاشتراك السنوي: 500 دج. تُحدَّد وسيلة الدفع وبيانات الحساب من المكتب المعتمد. أرفق وصل الدفع ضمن الوثائق؛ لا تُصدر البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب والتحقق من الرمز.";
   });
 })();
 /* ===== end D1 integration ===== */
