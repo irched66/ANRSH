@@ -1325,7 +1325,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       code_expired:"انتهت صلاحية رمز التحقق.",
       invalid_code:"رمز التحقق غير صحيح.",
       too_many_attempts:"تم تجاوز عدد المحاولات المسموح بها.",
-      unauthorized:"مفتاح الإدارة غير صحيح أو غير مصرح به.",
+      unauthorized:"جلسة الإدارة غير صالحة أو انتهت صلاحيتها. يرجى تسجيل الدخول مجدداً.",
+      member_email_delivery_not_configured:"تعذر إرسال الرمز: تحقق من البريد الإلكتروني المسجل وإعداد خدمة البريد.",
+      member_notification_failed:"تعذر إرسال رمز التحقق. لم يُفعّل الحساب؛ يرجى إعادة المحاولة أو التواصل مع المكتب الوطني.",
+      member_approval_conflict:"تغيرت حالة الطلب أثناء المراجعة. حدّث قائمة الطلبات ثم أعد المحاولة.",
+      member_not_awaiting_confirmation:"هذا الطلب ليس في حالة انتظار رمز التحقق.",
+      payment_review_conflict:"سبق أن عولجت مراجعة الدفع أو تغيرت حالتها. حدّث قائمة الطلبات.",
+      payment_allocation_failed:"تعذر تسجيل توزيع المبلغ. لا تعتبر عملية الاعتماد مكتملة قبل مراجعة السجل المالي.",
       not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي."
     };
     var key=j&&j.error||"";
@@ -1517,7 +1523,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
      catch(e){el("ad_out").textContent="تعذرت مراجعة الدفع: "+e.message;}
    };
    window.adApprove=async function(id){
-     try{await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});el("ad_out").textContent="رمز التحقق لا يصدر إلا بعد مراجعة إيصال دفع 500 دج وإثبات وصول رسالة البريد.";await adLoad();}
+     try{await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});el("ad_out").textContent="تم إرسال رمز التحقق إلى البريد الإلكتروني المسجل للمنخرط. الرمز صالح لمدة 10 دقائق ويُستخدم مرة واحدة.";await adLoad();}
      catch(e){el("ad_out").textContent="لم يتم إصدار الرمز: "+e.message;}
    };
    window.adDelete=async function(){alert("الحذف النهائي معطل لحماية ملفات المنخرطين.");};
