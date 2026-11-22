@@ -542,7 +542,9 @@ async function handleAdminApprove(id, request, env) {
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
   if (actor.role !== "national" && row.bureau !== actor.bureau) return json({ error: "forbidden" }, 403);
-  if (!["pending_payment", "code_sent"].includes(row.status)) {
+  const now = Date.now();
+  const staleOtpLock = row.status === "otp_sending" && Number(row.otp_exp || 0) < now;
+  if (!["pending_payment", "code_sent"].includes(row.status) && !staleOtpLock) {
     return json({ error: "member_not_awaiting_confirmation" }, 409);
   }
   const payment = await env.DB.prepare(
@@ -560,13 +562,17 @@ async function handleAdminApprove(id, request, env) {
 
   const code = randomDigits(6), hash = await sha256(row.ref + ":" + code);
   const expires = Date.now() + 10 * 60 * 1000;
+  const lockUntil = Date.now() + 5 * 60 * 1000;
   const issued = await env.DB.prepare(`
-    UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=0,status='code_sent'
-    WHERE id=? AND status=? AND EXISTS (
+    UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=0,status='otp_sending'
+    WHERE id=? AND (
+      status IN ('pending_payment','code_sent')
+      OR (status='otp_sending' AND otp_exp < ?)
+    ) AND EXISTS (
       SELECT 1 FROM member_payments
       WHERE member_id=? AND membership_year=? AND status='verified' AND amount_dzd=500
     )
-  `).bind(hash,expires,id,row.status,id,new Date().getFullYear()).run();
+  `).bind(hash,lockUntil,id,Date.now(),id,new Date().getFullYear()).run();
   if (!issued.meta || issued.meta.changes !== 1) {
     return json({ error: "member_approval_conflict" }, 409);
   }
@@ -577,9 +583,15 @@ async function handleAdminApprove(id, request, env) {
     // Restore the previous state only if this exact OTP is still current.
     await env.DB.prepare(`
       UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=?,status=?
-      WHERE id=? AND status='code_sent' AND otp_hash=?
+      WHERE id=? AND status='otp_sending' AND otp_hash=?
     `).bind(row.otp_hash,row.otp_exp,row.otp_tries||0,row.status,id,hash).run();
     return json({ error: "member_notification_failed" },503);
+  }
+  const activated = await env.DB.prepare(
+    "UPDATE members SET status='code_sent',otp_exp=? WHERE id=? AND status='otp_sending' AND otp_hash=?"
+  ).bind(expires,id,hash).run();
+  if (!activated.meta || activated.meta.changes !== 1) {
+    return json({ error: "member_approval_conflict" }, 409);
   }
   await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,provider_message_id,status,created_at,sent_at) VALUES (?,?,?,'email','approved',NULL,'sent',?,?)")
     .bind(crypto.randomUUID(),id,email,Date.now(),Date.now()).run();
