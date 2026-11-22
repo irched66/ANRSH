@@ -1,82 +1,58 @@
-# ANRSH DIGITAL — Security Phase 1 Execution Plan
+# ANRSH DIGITAL — Security Phase 1: implementation audit
 
-Status: design baseline only; implementation and verification are NOT complete.
-Target branch: security-phase-1
-Production safety: no changes to main, no D1 writes, no Worker deployment, no Pages deployment.
+Audit date: 2026-11-22
+Target branch: `security-phase-1`
+Production safety: `main`, live D1, deployed Worker and Pages have not been changed by this audit.
 
-## Confirmed D1 baseline (read-only checks supplied by the project owner)
-- admin_users: 0 rows
-- admin_credentials: 0 rows
-- admin_otps: 0 rows
-- admin_sessions: 0 rows
-- admin_invitations: 0 rows
+## Executive status
 
-The tables exist, but no administrative identities or credentials have been provisioned.
+**Not approved for production handover yet.** The development branch now contains substantial implementation for all seven work packages, but implementation presence is not the same as verified operation. No isolated Cloudflare test environment, provider secrets, live mail delivery, production migration, or end-to-end acceptance run was available in this review.
 
-## Work packages
+A concrete reliability fix was committed during this audit: regional invitation consumption and inactive account creation now run in one D1 batch, so a failed account insert does not burn the invitation token.
 
-### 1. National-office authentication
-- Two separate national identities: irched2521@gmail.com and anrsh1994@gmail.com.
-- Passwords must be individually salted and derived with PBKDF2-SHA-256 (or a reviewed stronger WebCrypto-compatible KDF).
-- No passwords, bootstrap tokens, or OTP values in source control, SQL migrations, logs, or chat.
-- Initial provisioning must be one-time, authenticated, and fail closed once the first two national accounts exist.
-- Each account must require a second factor at login.
+## Work package status
 
-### 2. Regional-office accounts and invitations
-- Regional accounts are created only through a national-office invitation and subsequent approval.
-- Unique administrative email and dedicated phone per regional president.
-- Invitations are single-use, hashed at rest, and expire.
-- The regional account remains inactive until approved.
+| # | Area | Code observed on development branch | Remaining release gate |
+|---|---|---|---|
+| 1 | National admin login | One-time two-account bootstrap; PBKDF2-SHA-256 password derivation; email OTP with 10-minute expiry; hashed server-side sessions; logout/revocation; failed-password lockout. | Provision the two national identities only through the protected bootstrap procedure; verify Resend sender/secrets and test both identities, OTP expiry, replay, lockout and session revocation in an isolated environment. D1 currently has zero admin users per the last owner-supplied read-only check. |
+| 2 | Regional accounts | National-only invitations; 72-hour single-use hashed invitation; password creation; inactive account pending national approval; national activation route and UI. | Test invitation delivery, expiry, replay, duplicate email, inactive state and activation. Confirm every president's unique official email/phone and bureau record. |
+| 3 | Role and bureau isolation | Server-side bearer session lookup; national vs bureau-scoped list/document/payment/report/office/wilaya operations; active-office and active-wilaya checks; global unique wilaya assignment index. | Exercise negative authorization tests for every route with two regional accounts and national account. Confirm the 69 active wilaya records and resolve any incorrect assignments through an audited workflow. |
+| 4 | Personal documents | New uploads use AES-256-GCM with a server-side key; private authenticated document retrieval; bureau scope; no Base64 files in list output; document access audit. | Legacy Base64 documents remain unencrypted. Verify encryption key configuration, backup/recovery, size/type checks, access controls and migration strategy before handling real identity documents. Do not claim legacy documents are encrypted. |
+| 5 | 500 DZD payment | Payment ledger records 500 DZD; manual authorized review; 100 DZD national / 400 DZD regional allocation; duplicate payment-per-member/year constraint; audit entries. | Validate migration against a disposable copy of the schema; test pending/verified/rejected flows, concurrent reviews, reconciliation and real receipt checks. A file upload alone is not proof that money was received. |
+| 6 | Membership card / QR | Random 256-bit QR verification token stored as a hash; public verification checks active card, unlocked member and verified current-year 500 DZD payment; short-lived signed print token also checks current membership/payment. | Verify actual HTML card printing/download calls the correct Worker checks; test expired/revoked/renewed cards and ensure no card can be issued before verified payment and approval. |
+| 7 | Reports / notifications / release | Bureau-scoped quarterly report generation and storage; email notification paths for selected events; frontend report submission/history; notification log. | Quarterly reports are generated by an authenticated request, not automatically scheduled or emailed. SMS/WhatsApp sending is not integrated. Renewal reminders and delivery/retry behavior need implementation and provider configuration. Test Arabic/French/English and mobile layout. |
 
-### 3. Role and bureau isolation
-- Every authenticated request resolves its actor from a hashed server-side session token.
-- National role may administer all bureaus.
-- Regional role is restricted to its own bureau; never trust a bureau supplied by the browser.
-- List, document, approval, office profile, wilaya assignment, and report routes must all enforce the same scope.
-- Preserve unique wilaya assignment and national oversight.
+## Confirmed technical observations
 
-### 4. Personal-document protection
-- Remove the shared ADMIN_API_KEY model from all administrative routes.
-- Require authenticated, role-scoped access for every document read.
-- Keep documents private; do not return Base64 document contents in list responses.
-- Add audit events for sensitive document access.
-- Review encryption-at-rest/storage architecture before claiming documents are encrypted. Base64 is encoding, not encryption.
+- Frontend `index.html` calls the D1 Worker at `https://anrsh-ap-dev.irched2521.workers.dev` and contains the password + OTP login and invitation acceptance UI.
+- Worker routes include registration, member OTP verification, QR verification, print-check, authentication, invitations, office profile, wilaya assignments, payment review and quarterly report generation.
+- New member submission creates a pending 500 DZD payment record and requires the configured core documents. Payment must still be manually verified by an authorized reviewer.
+- The Worker requires configuration including `FILE_ENCRYPTION_KEY`, `CARD_SIGNING_SECRET`, `ANRSH_BOOTSTRAP_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, and D1 binding `DB`. Presence and correctness of production values were not verified here. Never commit or send their values in chat.
+- The reviewed SQL file `migrations/2026-11-21-security-phase-1-proposal.sql` is a proposal only. It creates payment ledger/allocation, card-token, quarterly-report and notification-log tables. It has not been executed against live D1.
+- The latest commit produced no associated GitHub Actions workflow runs; no automated CI result is available from this audit.
+- No Worker or Pages deployment was performed.
 
-### 5. Payment validation (500 DZD)
-- A payment record must capture amount, currency, method, receipt reference, reviewer, timestamps, and status.
-- Approval must require an exact 500 DZD amount and an authorized reviewer.
-- Do not infer successful payment from an uploaded receipt alone.
-- Financial split: 20% national office / 80% regional office, with auditable calculations and reconciliation.
-- Do not invent bank/postal details or payment provider integrations.
+## Changes made during this audit
 
-### 6. Membership card and QR verification
-- QR must contain an opaque, non-guessable verification identifier or signed token, not the public request reference alone.
-- Verification must query current membership status and validity in D1; a valid signature alone is insufficient.
-- Card issuance must require verified payment and national/authorized approval.
-- Print/download authorization must be short-lived and revocable.
+- `ANRSH-worker-counter.js`: made regional invitation acceptance atomic by batching invitation consumption, inactive admin-user insertion and password-credential insertion. This avoids consuming a valid invitation if account creation fails.
+- Commit: `1e7d69bf0d9b77d9e0aa454b61efa31758301b4c`.
 
-### 7. Reports, notifications, and release verification
-- Quarterly reports must be generated from auditable payment and membership records, scoped by bureau.
-- Notifications must report approval/rejection/renewal without exposing sensitive documents or OTPs.
-- Email delivery requires a verified provider configuration; SMS requires a selected provider and secret configuration.
-- Test Arabic/French UI, mobile layout, 69 wilayas, duplicate assignment prevention, authorization boundaries, rate limits, expiry, revocation, and failure cases.
+## Release checklist — must pass before handover
 
-## Release gates
-1. Implement backend authentication and authorization before changing the admin UI.
-2. Add any required D1 migration as a reviewed SQL file only; never run it against live D1 from this branch.
-3. Add/execute automated tests against an isolated test database and test Worker environment.
-4. Verify all existing public registration and member flows remain compatible.
-5. Review the complete diff and migration with the project owner.
-6. Obtain separate explicit approval before applying D1 migrations or deploying either Worker or Pages.
+1. Create an isolated test D1 database and test Worker; apply the reviewed migration there only.
+2. Configure test-only secrets and a verified test email sender. Do not use real member documents for tests.
+3. Run automated syntax, endpoint, schema-compatibility, role-isolation, OTP, invitation, payment, document-encryption, QR, report and frontend tests.
+4. Confirm 69 active wilayas, 11 regional offices, valid bureau mappings, and uniqueness of wilaya assignments.
+5. Confirm the actual deployment origin is in the Worker CORS allow-list.
+6. Test the complete member journey on Android: application, required files, payment receipt review, OTP, QR verification, card printing and renewal.
+7. Test regional and national admin journeys separately, including negative cross-bureau access attempts.
+8. Review and approve the D1 migration; then obtain separate explicit approval before applying it to production.
+9. Provision the two national accounts through the one-time secure bootstrap outside source control and chat.
+10. Obtain separate explicit approval before deploying the Worker and Pages frontend.
+11. Produce the final handover pack: release commit SHA, migration version, deployment endpoints, test report, admin guide, member guide and rollback/backup procedure.
 
-## Known blockers to resolve during implementation
-- The current Worker uses one shared ADMIN_API_KEY for all admin list, document, approve, and delete routes.
-- The current HTML frontend contains the shared-key login UI and must be migrated with the backend.
-- Existing OTP for member approval is 24 hours and is returned to the browser; this must be redesigned.
-- Current print token verification does not check live membership/payment status.
-- Current Worker has no implemented admin login/session/invitation endpoints.
-- Current D1 schema supplied so far does not include dedicated payment ledger or quarterly report tables.
-- SMS provider is not configured in the inspected code. Provider selection/configuration must be handled without committing secrets.
-- No live Worker, D1 data, secrets, or deployment environment has been tested from this workspace.
+## Handover decision
 
-This document records scope and release gates; it does not certify that any work package is implemented or secure.
+**Current decision: development review only — not production-ready / not certified.**
+
+The seven areas have code in place to varying degrees, but the remaining release gates above are real blockers. In particular, no test database or provider configuration was available, legacy document encryption is unresolved, and automated quarterly delivery plus SMS/WhatsApp are not implemented. Do not invite retirees to upload personal documents or announce public launch until the release gates are passed.
