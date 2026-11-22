@@ -33,6 +33,7 @@ assert.ok(checked > 0, "Expected at least one inline JavaScript block");
 assert.ok(worker.includes("async function requireAdmin"), "Session authentication guard must exist");
 assert.ok(!worker.includes("adminKeyOk(request, env)"), "Shared admin API key must not authorize routes");
 assert.ok(worker.includes("payment_not_verified"), "Member approval must require verified payment");
+assert.ok(worker.includes("new Date(Date.UTC(year,quarter*3,0))"), "Quarterly report period must end on the actual last day");
 assert.ok(worker.includes("FILE_ENCRYPTION_KEY"), "New document uploads must require encryption key");
 assert.ok(!html.includes("ANRSH-2026-CHANGE"), "Fixed legacy browser OTP key must not exist");
 assert.ok(html.includes("window.validateSecurityOTP=async function()"), "Member OTP must be verified through the Worker API");
