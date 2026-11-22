@@ -40,13 +40,11 @@
             position: relative;
         }
 
-        .bg-cinematic {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -2;
-            background: radial-gradient(circle at 50% 15%, #1e293b 0%, #070a10 100%);
-        }
+        .bg-cinematic{position:fixed;inset:0;width:100vw;height:100vh;z-index:-2;background:linear-gradient(rgba(4,9,20,.72),rgba(4,9,20,.88)),url("assets/anrsh-background.png") center/cover fixed,radial-gradient(circle at 50% 15%,#1e293b 0%,#070a10 100%)}
+.anrsh-clock-quote{max-width:900px;margin:12px auto 4px;padding:12px 16px;border:1px solid rgba(245,158,11,.45);border-radius:14px;background:rgba(3,8,18,.72);text-align:center;backdrop-filter:blur(8px)}
+.anrsh-clock{font-size:1.12rem;font-weight:900;color:#fbbf24;direction:ltr;font-variant-numeric:tabular-nums}
+.anrsh-quote{margin-top:8px;color:#f8fafc;font-size:.95rem;line-height:1.9}
+.anrsh-quote-source{display:block;color:#fcd34d;font-size:.78rem;margin-top:3px}
 
         .audio-assistant-bar {
             background: linear-gradient(90deg, #1e3a8a, #0284c7);
@@ -546,13 +544,17 @@ textarea{resize:vertical;font-family:inherit}
             <h1 class="header-title" id="t-main-title">الجمعية الوطنية لمتقاعدي سوناطراك ANRSH</h1>
             <p class="header-welcome" id="t-welcome">
                 المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.
-            </p>
+            </p>            <div class="anrsh-clock-quote" aria-live="polite">
+                <div id="anrsh-clock" class="anrsh-clock">--:--:--</div>
+                <div id="anrsh-quote" class="anrsh-quote">إِنَّ مَعَ الْعُسْرِ يُسْرًا</div>
+                <small id="anrsh-quote-source" class="anrsh-quote-source">سورة الشرح، الآية 6</small>
+            </div>
+
 
             <div class="lang-strip">
                 <button type="button" class="lang-pill active" onclick="setLanguage('ar', this)">العربية</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('fr', this)">Français</button>
                 <button type="button" class="lang-pill" onclick="setLanguage('en', this)">English</button>
-                <button type="button" class="lang-pill" onclick="setLanguage('ber', this)">ⵜⴰⵎⴰⵣⵉⵖⵜ</button>
                 <button type="button" class="lang-pill" id="btnInstall" onclick="doInstall()">📲 تثبيت التطبيق</button>
             </div>
 
@@ -918,6 +920,7 @@ var $=function(i){return document.getElementById(i)};
 var WIL="أدرار,الشلف,الأغواط,أم البواقي,باتنة,بجاية,بسكرة,بشار,البليدة,البويرة,تمنراست,تبسة,تلمسان,تيارت,تيزي وزو,الجزائر,الجلفة,جيجل,سطيف,سعيدة,سكيكدة,سيدي بلعباس,عنابة,قالمة,قسنطينة,المدية,مستغانم,المسيلة,معسكر,ورقلة,وهران,البيض,إليزي,برج بوعريريج,بومرداس,الطارف,تندوف,تيسمسيلت,الوادي,خنشلة,سوق أهراس,تيبازة,ميلة,عين الدفلى,النعامة,عين تموشنت,غرداية,غليزان,تيميمون,برج باجي مختار,أولاد جلال,بني عباس,عين صالح,عين قزام,تقرت,جانت,المغير,المنيعة".split(",");
 var GEO={},ADMIN_GEO=null;
 var photo="",unlocked=false,otp="",lang="ar";
+ try{var savedLang=localStorage.getItem("anrsh_language");if(["ar","fr","en"].indexOf(savedLang)!==-1)lang=savedLang;else localStorage.setItem("anrsh_language","ar")}catch(e){}
 function fill(id,arr,ph){var s=$(id);if(!s)return;s.innerHTML="";var o=document.createElement("option");o.value="";o.textContent=ph;s.appendChild(o);arr.forEach(function(v){var x=document.createElement("option");x.value=v;x.textContent=v;s.appendChild(x)})}
 function communesFor(w){if(!ADMIN_GEO)return [];var found=ADMIN_GEO.wilayas.find(function(x){return x.name_ar===w||String(x.code)===String(w)});var code=found?found.code:w;return ADMIN_GEO.communes.filter(function(c){return String(c.wilaya_code)===String(code)})}
 function dairasFor(w){return Array.from(new Set(communesFor(w).map(function(c){return c.daira_ar||"غير محددة في المصدر"}))).sort(function(a,b){return a.localeCompare(b,"ar")})}
@@ -987,7 +990,22 @@ function rpData(){return{bureau:$("rp_bureau").value,type:v("rp_type"),period:pe
 function reportText(){var d=rpData(),bl=$("rp_bureau").selectedOptions[0]?$("rp_bureau").selectedOptions[0].textContent:d.bureau;return "ANRSH – تقرير "+d.type+" "+d.year+"\nالمكتب: "+bl+"\n\n— التقرير الأدبي —\nمنتسبون جدد: "+d.members+"\nأنشطة منجزة: "+d.acts+"\nمستفيدو العمرة: "+d.omra+"\nمستفيدو المساعدات الاجتماعية: "+d.aid+"\n\nالأنشطة والإنجازات:\n"+d.lit+"\n\nالصعوبات:\n"+d.diff+"\n\nالآفاق:\n"+d.persp+"\n\n— التقرير المالي —\nالاشتراكات: "+d.cot+" دج\nإيرادات أخرى: "+d.oth+" دج\nمجموع الإيرادات: "+d.income+" دج\nمصاريف التسيير: "+d.adm+" دج\nمصاريف التضامن والاجتماعية: "+d.soc+" دج\nمصاريف أخرى: "+d.misc+" دج\nمجموع المصاريف: "+d.expenses+" دج\nالرصيد: "+(d.income-d.expenses)+" دج\nملاحظات: "+d.note+"\n\nالتاريخ: "+new Date().toLocaleDateString("fr-DZ")}
 function sendReportMail(){if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}saveReportDraft(true);openURL("mailto:irched2521@gmail.com,anrsh1994@gmail.com?subject="+encodeURIComponent("ANRSH – تقرير "+v("rp_type")+" "+v("rp_year")+" – "+$("rp_bureau").value)+"&body="+encodeURIComponent(reportText()))}
 function sendReportWA(){wa("213657709457",reportText())}
-function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'</body></html>'],{type:"text/html"}))}
+function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'<script>
+(function(){
+ function updateClock(){var n=document.getElementById("anrsh-clock");if(n)n.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",weekday:"long",year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}
+ var items=[
+  {text:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",source:"سورة الشرح، الآية 6"},
+  {text:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",source:"سورة البقرة، الآية 286"},
+  {text:"وَقُل رَّبِّ زِدْنِي عِلْمًا",source:"سورة طه، الآية 114"},
+  {text:"يَسِّرُوا وَلَا تُعَسِّرُوا، وَبَشِّرُوا وَلَا تُنَفِّرُوا",source:"حديث صحيح — صحيح البخاري 69؛ صحيح مسلم 1734"},
+  {text:"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ",source:"حديث حسن — جامع الترمذي 1956"}
+ ],i=0;
+ function rotate(){var q=items[i++%items.length],t=document.getElementById("anrsh-quote"),s=document.getElementById("anrsh-quote-source");if(t)t.textContent=q.text;if(s)s.textContent=q.source}
+ updateClock();rotate();setInterval(updateClock,1000);setInterval(rotate,12000);
+})();
+</script>
+
+</body></html>'],{type:"text/html"}))}
 function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
 function saveReportDraft(q){try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");L.unshift({d:new Date().toLocaleDateString("fr-DZ"),t:v("rp_type")+" "+v("rp_year"),b:$("rp_bureau").value,txt:reportText()});localStorage.setItem("anrsh_rp",JSON.stringify(L.slice(0,20)));rpHist();if(!q)alert("تم الحفظ على هذا الجهاز.")}catch(x){if(!q)alert("تعذر الحفظ على هذا المتصفح.")}}
 function rpHist(){var h=$("rp_hist");try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");h.innerHTML=L.length?"<b>التقارير المحفوظة:</b><br>"+L.map(function(r){return r.d+" · "+r.t+" · "+r.b}).join("<br>"):""}catch(x){}}
@@ -1191,16 +1209,17 @@ function applyLang(){
  obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 }
 function setLanguage(l,btn){
- document.querySelectorAll(".lang-pill").forEach(function(b){b.classList.remove("active")});if(btn)btn.classList.add("active");
- lang=l;try{localStorage.setItem("anrsh_language",l)}catch(e){}applyLang();if(sr)setTimeout(readPage,200);
+  if(["ar","fr","en"].indexOf(l)===-1)l="ar";
+  document.querySelectorAll(".lang-pill").forEach(function(b){b.classList.remove("active")});if(btn)btn.classList.add("active");
+  lang=l;try{localStorage.setItem("anrsh_language",l)}catch(e){}applyLang();if(sr)setTimeout(readPage,200);
 }
 var _ow=onWilayaChange,_od=onDairaChange;onWilayaChange=function(){_ow();applyLang()};onDairaChange=function(){_od();applyLang()};
 var _sm=switchMainTab;switchMainTab=function(n){_sm(n);if(sr)setTimeout(readPage,150)};
 var DUE={ar:["⏰ موعد التقرير الفصلي القادم:","(بعد "," يوماً)"," ⚠️ اقترب الموعد","📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى irched2521@gmail.com و anrsh1994@gmail.com."],fr:["⏰ Prochain rapport trimestriel :","(dans "," jours)"," ⚠️ Échéance proche","📅 Rapport moral et financier annuel : avant le 31 janvier, envoyé par e-mail à irched2521@gmail.com et anrsh1994@gmail.com."],en:["⏰ Next quarterly report due:","(in "," days)"," ⚠️ Deadline close","📅 Annual narrative and financial report: before 31 January, e-mailed to irched2521@gmail.com and anrsh1994@gmail.com."]};
 dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang==="ber"?"fr":lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
-var OT={ar:["رقم طلبك:","أرسل وصل دفع 500 دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة."],fr:["Votre n° de demande :","Envoyez le reçu de 500 DA et les documents par WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres par WhatsApp ; saisissez-le ici pour débloquer l’impression."],en:["Your request no.:","Send the 500 DZD receipt and documents via WhatsApp. After verification the office manager sends you a 6-digit code via WhatsApp; enter it here to unlock printing."]};
-function otpDesc(){var o=OT[lang==="ber"?"fr":lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
-var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US",ber:"fr-FR"},VP={ar:["ar"],fr:["fr"],en:["en"],ber:["zgh","kab","tzm","shi","ber"]},warned=false;
+var OT={ar:["رقم طلبك:","بعد التحقق الإداري من وصل دفع 500 دج وقبول الملف، يُرسل رمز تحقق من 6 أرقام إلى بريدك الإلكتروني المسجل. الرمز صالح لمدة 10 دقائق ويُستخدم مرة واحدة."],fr:["N° de demande :","Après vérification du paiement de 500 DA et validation du dossier, un code à 6 chiffres est envoyé à votre adresse e-mail enregistrée. Il expire après 10 minutes et ne peut être utilisé qu’une fois."],en:["Your request no.:","After the 500 DZD payment and file are verified, a 6-digit code is sent to your registered email. It expires after 10 minutes and can only be used once."]};
+function otpDesc(){var o=OT[lang]||OT.ar;$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
+var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US"},VP={ar:["ar"],fr:["fr"],en:["en"]},warned=false;
 function voiceFor(){if(!window.speechSynthesis)return null;var vs=window.speechSynthesis.getVoices(),p=VP[lang];var best=null;for(var i=0;i<vs.length;i++){var c=vs[i].lang.toLowerCase().replace("_","-");if(p.some(function(x){return c.indexOf(x)===0})){if(!best||vs[i].localService&&!best.localService||c==="ar-dz"||c==="fr-dz")best=vs[i]}}return best}
 var SH={ar:"لم يبدأ الصوت. تأكد من رفع صوت الهاتف، وثبّت صوت اللغة من إعدادات الهاتف ← تحويل النص إلى كلام (Google).",fr:"La voix n’a pas démarré. Vérifiez le volume et installez la voix de la langue dans Paramètres → Synthèse vocale (Google).",en:"Speech did not start. Check the volume and install the language voice in Settings → Text-to-speech (Google)."};
 function st(m){var e=$("srStatus");if(e)e.textContent=m||""}
