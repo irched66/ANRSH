@@ -293,9 +293,11 @@ async function handleCreateRequest(request, env) {
   const paymentMethod = cleanText(p.payment_method, 30);
   const paymentReference = cleanText(p.payment_reference, 80);
   const otpChannel = cleanText(p.otp_channel, 20);
+  const email = cleanText(p.email, 160);
   if (!bureau || !first || !last || phone.length < 8 || !paymentReference ||
       !["baridimob", "ccp", "bank", "edahabia", "cib"].includes(paymentMethod) ||
-      !["sms", "email", "whatsapp"].includes(otpChannel)) {
+      !["sms", "email", "whatsapp"].includes(otpChannel) ||
+      (otpChannel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
     return json({ error: "required_fields_missing" }, 400);
   }
 
@@ -352,7 +354,7 @@ async function handleCreateRequest(request, env) {
     work_region: cleanText(p.work_region, 100),
     specialty: cleanText(p.specialty, 120),
     retire_year: cleanText(p.retire_year, 10),
-    phone, email: cleanText(p.email, 160),
+    phone, email,
     nss: cleanText(p.nss, 40), cnr: cleanText(p.cnr, 40),
     membership_fee: 500, payment_method: paymentMethod,
     payment_reference: paymentReference, otp_channel: otpChannel,
@@ -495,14 +497,15 @@ async function handleAdminApprove(id, request, env) {
 
   const profile = parseJson(row.profile, {});
   const requestedChannel = ["sms", "email", "whatsapp"].includes(profile.otp_channel) ? profile.otp_channel : "email";
-  const emailResult = await sendEmail(
-    env, cleanText(profile.email, 160),
-    "ANRSH — Code de confirmation",
-    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 24 heures.`
-  );
+  // Send only through the member-selected channel. SMS/WhatsApp are manual until provider integration.
+  const emailResult = requestedChannel === "email"
+    ? await sendEmail(
+        env, cleanText(profile.email, 160),
+        "ANRSH — Code de confirmation",
+        `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 24 heures.`
+      )
+    : { sent: false };
 
-  // The current frontend does not yet display this code or send WhatsApp automatically.
-  // It is returned only to the authenticated office interface.
   const digits = String(row.phone || "").replace(/\D/g, "").replace(/^0/, "213");
   const waText = encodeURIComponent(
     `ANRSH : paiement confirmé. Votre code de confirmation pour la demande ${row.ref} est ${code}.`
@@ -510,7 +513,7 @@ async function handleAdminApprove(id, request, env) {
   return json({
     ok: true, status: "code_sent", requestNumber: row.ref,
     code, otpChannel: requestedChannel, emailSent: emailResult.sent,
-    whatsappUrl: digits ? `https://wa.me/${digits}?text=${waText}` : null,
+    whatsappUrl: requestedChannel === "whatsapp" && digits ? `https://wa.me/${digits}?text=${waText}` : null,
     expiresAt: expires
   });
 }
