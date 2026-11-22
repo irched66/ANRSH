@@ -1,4 +1,4 @@
-var CACHE = "anrsh-v3";
+var CACHE = "anrsh-v4";
 var FILES = ["./", "index.html", "config.js", "manifest.webmanifest", "intro.mp4", "assets/anrsh-background.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", function (e) {
