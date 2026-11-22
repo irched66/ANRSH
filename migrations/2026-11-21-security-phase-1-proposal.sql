@@ -107,6 +107,14 @@ CREATE INDEX IF NOT EXISTS idx_notification_log_member
 CREATE INDEX IF NOT EXISTS idx_notification_log_status
   ON notification_log(status, created_at);
 
+-- Preflight before applying: inspect existing cross-office duplicates with
+-- SELECT wilaya_code, COUNT(DISTINCT bureau) AS office_count
+-- FROM office_wilayas GROUP BY wilaya_code HAVING COUNT(DISTINCT bureau) > 1;
+-- Resolve any reported duplicates through an approved data correction before this index.
+-- This database-level constraint closes the concurrent-assignment race.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_office_wilayas_global_unique
+  ON office_wilayas(wilaya_code);
+
 -- Security notes:
 -- 1) The payment receipt remains in the existing private document store; receipt_ref is metadata only.
 -- 2) The QR contains a random opaque token. Store only its hash here; public verification must also
