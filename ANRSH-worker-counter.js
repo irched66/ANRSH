@@ -553,7 +553,8 @@ async function handleAdminApprove(id, request, env) {
   }
   const profile = parseJson(row.profile, {});
   const email = cleanText(profile.email,160);
-  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !env.RESEND_API_KEY || !env.RESEND_FROM) {
+  const at = email.indexOf('@'), dot = email.lastIndexOf('.');
+  if (!email || at < 1 || dot < at + 2 || dot >= email.length - 1 || email.includes(' ') || !env.RESEND_API_KEY || !env.RESEND_FROM) {
     return json({ error: "member_email_delivery_not_configured" }, 503);
   }
 
@@ -571,7 +572,7 @@ async function handleAdminApprove(id, request, env) {
   }
 
   const sent = await sendEmail(env,email,"ANRSH — Code de confirmation",
-    "Votre paiement de 500 DZD a été vérifié.\\nDemande : "+row.ref+"\\nCode : "+code+"\\nCe code expire dans 10 minutes et ne peut être utilisé qu'une fois.");
+    "Votre paiement de 500 DZD a été vérifié."+String.fromCharCode(10)+"Demande : "+row.ref+String.fromCharCode(10)+"Code : "+code+String.fromCharCode(10)+"Ce code expire dans 10 minutes et ne peut être utilisé qu'une seule fois.");
   if (!sent.sent) {
     // Restore the previous state only if this exact OTP is still current.
     await env.DB.prepare(`
