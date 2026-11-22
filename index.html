@@ -1392,9 +1392,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var b=document.createElement("span");b.textContent=value||"—";
     row.appendChild(a);row.appendChild(b);return row;
   }
-  window.previewAdhesionForm=function(){
+  window.previewAdhesionForm=function(skipValidation){
     var form=el("adhesionForm");
-    if(form&&!form.reportValidity())return;
+    if(form&&!skipValidation&&!form.reportValidity())return;
     var p=profile(), box=el("adhesionPreviewContent");
     if(!box)return;
     box.replaceChildren();
@@ -1432,8 +1432,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     adhesionPreviewConfirmed=true;closeAdhesionPreview();window.requestSecurityOTP();
   };
   var adhesionFormEl=el("adhesionForm");
-  if(adhesionFormEl)adhesionFormEl.addEventListener("input",function(){adhesionPreviewConfirmed=false;});
-  if(adhesionFormEl)adhesionFormEl.addEventListener("change",function(){adhesionPreviewConfirmed=false;});
+  function refreshOpenAdhesionPreview(){
+    adhesionPreviewConfirmed=false;
+    var panel=el("adhesionPreview");
+    if(panel&&!panel.hidden)window.previewAdhesionForm(true);
+  }
+  if(adhesionFormEl)adhesionFormEl.addEventListener("input",refreshOpenAdhesionPreview);
+  if(adhesionFormEl)adhesionFormEl.addEventListener("change",refreshOpenAdhesionPreview);
   function fileCheck(){
     var mapping={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
     var total=0;
