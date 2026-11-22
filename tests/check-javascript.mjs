@@ -37,6 +37,9 @@ assert.ok(worker.includes("AND changes()=1"), "Payment allocation must only foll
 assert.ok(worker.includes('for (const required of ["photo", "cni", "cni_back", "retire", "proof"])'), "Server must require both sides of the national identity card");
 assert.ok(worker.includes("member_approval_conflict"), "Member OTP issuance must use a conditional state transition");
 assert.ok(worker.includes("Restore the previous state only if this exact OTP is still current"), "Failed email delivery must safely restore the prior OTP state");
+assert.ok(worker.includes("status='otp_sending'"), "Member OTP delivery must acquire a sending lock before contacting email provider");
+assert.ok(worker.includes("status='otp_sending' AND otp_exp < ?"), "Stale OTP sending locks must be recoverable after their lease expires");
+assert.ok(worker.includes("SET status='code_sent',otp_exp=? WHERE id=? AND status='otp_sending' AND otp_hash=?"), "OTP becomes usable only after email delivery succeeds");
 assert.ok(worker.includes("new Date(Date.UTC(year,quarter*3,0))"), "Quarterly report period must end on the actual last day");
 assert.ok(worker.includes("FILE_ENCRYPTION_KEY"), "New document uploads must require encryption key");
 assert.ok(!html.includes("ANRSH-2026-CHANGE"), "Fixed legacy browser OTP key must not exist");
