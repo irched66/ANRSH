@@ -290,7 +290,12 @@ async function handleCreateRequest(request, env) {
   const first = cleanText(p.first_name, 100);
   const last = cleanText(p.last_name, 100);
   const phone = normalizePhone(p.phone);
-  if (!bureau || !first || !last || phone.length < 8) {
+  const paymentMethod = cleanText(p.payment_method, 30);
+  const paymentReference = cleanText(p.payment_reference, 80);
+  const otpChannel = cleanText(p.otp_channel, 20);
+  if (!bureau || !first || !last || phone.length < 8 || !paymentReference ||
+      !["baridimob", "ccp", "bank", "edahabia", "cib"].includes(paymentMethod) ||
+      !["sms", "email", "whatsapp"].includes(otpChannel)) {
     return json({ error: "required_fields_missing" }, 400);
   }
 
@@ -349,6 +354,8 @@ async function handleCreateRequest(request, env) {
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
     nss: cleanText(p.nss, 40), cnr: cleanText(p.cnr, 40),
+    membership_fee: 500, payment_method: paymentMethod,
+    payment_reference: paymentReference, otp_channel: otpChannel,
     consent: true, submitted_at: new Date().toISOString()
   };
 
@@ -370,6 +377,23 @@ async function handleCreateRequest(request, env) {
     console.error("create request", e);
     return json({ error: "request_save_failed" }, 500);
   }
+}
+
+async function handleRequestStatus(ref, url, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!validRef(ref)) return json({ error: "invalid_request_number" }, 400);
+  const phone = normalizePhone(url.searchParams.get("phone") || "");
+  if (phone.length < 8) return json({ error: "phone_required" }, 400);
+  const row = await env.DB.prepare(
+    "SELECT phone, status FROM members WHERE ref = ?"
+  ).bind(ref).first();
+  if (!row || !safeEqual(normalizePhone(row.phone), phone)) {
+    return json({ error: "request_not_found" }, 404);
+  }
+  const state = row.status === "code_sent" ? "otp_ready" :
+    row.status === "unlocked" ? "verified" :
+    row.status === "pending_payment" ? "under_review" : "pending";
+  return json({ ok: true, state });
 }
 
 async function handleVerify(ref, request, env) {
@@ -451,6 +475,15 @@ async function handleAdminApprove(id, request, env) {
     "SELECT id, ref, name, phone, profile, status FROM members WHERE id = ?"
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
+  if (row.status !== "pending_payment") return json({ error: "request_not_pending_payment" }, 409);
+  const filesRow = await env.DB.prepare("SELECT files FROM members WHERE id = ?").bind(id).first();
+  const savedFiles = parseJson(filesRow?.files, {});
+  const savedProfile = parseJson(row.profile, {});
+  if (!savedFiles.proof || !savedFiles.proof.data ||
+      Number(savedProfile.membership_fee) !== 500 ||
+      !savedProfile.payment_reference || !savedProfile.payment_method) {
+    return json({ error: "payment_evidence_incomplete" }, 400);
+  }
 
   const code = randomDigits(6);
   const hash = await sha256(row.ref + ":" + code);
@@ -461,6 +494,7 @@ async function handleAdminApprove(id, request, env) {
   `).bind(hash, expires, id).run();
 
   const profile = parseJson(row.profile, {});
+  const requestedChannel = ["sms", "email", "whatsapp"].includes(profile.otp_channel) ? profile.otp_channel : "email";
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
@@ -475,7 +509,7 @@ async function handleAdminApprove(id, request, env) {
   );
   return json({
     ok: true, status: "code_sent", requestNumber: row.ref,
-    code, emailSent: emailResult.sent,
+    code, otpChannel: requestedChannel, emailSent: emailResult.sent,
     whatsappUrl: digits ? `https://wa.me/${digits}?text=${waText}` : null,
     expiresAt: expires
   });
@@ -512,6 +546,11 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/wilayas") return handleWilayas(env);
   if (request.method === "GET" && path === "/api/offices") return handleOffices(env);
   if (request.method === "POST" && path === "/api/requests") return handleCreateRequest(request, env);
+
+  const statusMatch = path.match(/^\/api\/requests\/([^/]+)\/status$/);
+  if (request.method === "GET" && statusMatch) {
+    return handleRequestStatus(decodeURIComponent(statusMatch[1]), url, env);
+  }
 
   const verifyMatch = path.match(/^\/api\/requests\/([^/]+)\/verify$/);
   if (request.method === "POST" && verifyMatch) return handleVerify(decodeURIComponent(verifyMatch[1]), request, env);
