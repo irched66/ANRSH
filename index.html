@@ -990,20 +990,7 @@ function rpData(){return{bureau:$("rp_bureau").value,type:v("rp_type"),period:pe
 function reportText(){var d=rpData(),bl=$("rp_bureau").selectedOptions[0]?$("rp_bureau").selectedOptions[0].textContent:d.bureau;return "ANRSH – تقرير "+d.type+" "+d.year+"\nالمكتب: "+bl+"\n\n— التقرير الأدبي —\nمنتسبون جدد: "+d.members+"\nأنشطة منجزة: "+d.acts+"\nمستفيدو العمرة: "+d.omra+"\nمستفيدو المساعدات الاجتماعية: "+d.aid+"\n\nالأنشطة والإنجازات:\n"+d.lit+"\n\nالصعوبات:\n"+d.diff+"\n\nالآفاق:\n"+d.persp+"\n\n— التقرير المالي —\nالاشتراكات: "+d.cot+" دج\nإيرادات أخرى: "+d.oth+" دج\nمجموع الإيرادات: "+d.income+" دج\nمصاريف التسيير: "+d.adm+" دج\nمصاريف التضامن والاجتماعية: "+d.soc+" دج\nمصاريف أخرى: "+d.misc+" دج\nمجموع المصاريف: "+d.expenses+" دج\nالرصيد: "+(d.income-d.expenses)+" دج\nملاحظات: "+d.note+"\n\nالتاريخ: "+new Date().toLocaleDateString("fr-DZ")}
 function sendReportMail(){if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}saveReportDraft(true);openURL("mailto:irched2521@gmail.com,anrsh1994@gmail.com?subject="+encodeURIComponent("ANRSH – تقرير "+v("rp_type")+" "+v("rp_year")+" – "+$("rp_bureau").value)+"&body="+encodeURIComponent(reportText()))}
 function sendReportWA(){wa("213657709457",reportText())}
-function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'<script>
-(function(){
- function updateClock(){var n=document.getElementById("anrsh-clock");if(n)n.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",weekday:"long",year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}
- var items=[
-  {text:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",source:"سورة الشرح، الآية 6"},
-  {text:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",source:"سورة البقرة، الآية 286"},
-  {text:"وَقُل رَّبِّ زِدْنِي عِلْمًا",source:"سورة طه، الآية 114"},
-  {text:"يَسِّرُوا وَلَا تُعَسِّرُوا، وَبَشِّرُوا وَلَا تُنَفِّرُوا",source:"حديث صحيح — صحيح البخاري 69؛ صحيح مسلم 1734"},
-  {text:"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ",source:"حديث حسن — جامع الترمذي 1956"}
- ],i=0;
- function rotate(){var q=items[i++%items.length],t=document.getElementById("anrsh-quote"),s=document.getElementById("anrsh-quote-source");if(t)t.textContent=q.text;if(s)s.textContent=q.source}
- updateClock();rotate();setInterval(updateClock,1000);setInterval(rotate,12000);
-})();
-</script>
+function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'
 
 </body></html>'],{type:"text/html"}))}
 function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
@@ -1615,6 +1602,20 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 })();
 /* ===== end D1 integration ===== */
 
+</script>
+<script>
+(function(){
+ function updateClock(){var n=document.getElementById("anrsh-clock");if(n)n.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",weekday:"long",year:"numeric",month:"long",day:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date())}
+ var items=[
+  {text:"إِنَّ مَعَ الْعُسْرِ يُسْرًا",source:"سورة الشرح، الآية 6"},
+  {text:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",source:"سورة البقرة، الآية 286"},
+  {text:"وَقُل رَّبِّ زِدْنِي عِلْمًا",source:"سورة طه، الآية 114"},
+  {text:"يَسِّرُوا وَلَا تُعَسِّرُوا، وَبَشِّرُوا وَلَا تُنَفِّرُوا",source:"حديث صحيح — صحيح البخاري 69؛ صحيح مسلم 1734"},
+  {text:"تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ",source:"حديث حسن — جامع الترمذي 1956"}
+ ],i=0;
+ function rotate(){var q=items[i++%items.length],t=document.getElementById("anrsh-quote"),s=document.getElementById("anrsh-quote-source");if(t)t.textContent=q.text;if(s)s.textContent=q.source}
+ updateClock();rotate();setInterval(updateClock,1000);setInterval(rotate,12000);
+})();
 </script>
 </body>
 </html>
