@@ -848,10 +848,9 @@ async function handleOfficeWilayas(request,env,method) {
   try {
     const inserted=await env.DB.prepare(`
       INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name)
-      SELECT ?,?,?,?
+      SELECT ?,?,?
       WHERE NOT EXISTS (SELECT 1 FROM office_wilayas WHERE wilaya_code=?)
-    `.replace("SELECT ?,?,?,?","SELECT ?,?,?"))
-      .bind(bureau,code,w.name_ar,code).run();
+    `).bind(bureau,code,w.name_ar,code).run();
     if(!inserted.meta||inserted.meta.changes!==1) return json({error:"wilaya_already_assigned"},409);
   } catch(e) { return json({error:"wilaya_already_assigned_or_save_failed"},409); }
   await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"wilaya_assigned",bureau+":"+code).run();
