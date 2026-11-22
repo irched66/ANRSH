@@ -268,7 +268,7 @@ async function handleHealth(env) {
 async function handleWilayas(env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const r = await env.DB.prepare(`
-    SELECT code, name_ar, name_fr, name_en, name_tz
+    SELECT code, name_ar, name_fr, name_en
     FROM wilayas WHERE active = 1 ORDER BY CAST(code AS INTEGER)
   `).all();
   return json({ ok: true, count: r.results.length, wilayas: r.results });
