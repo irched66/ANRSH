@@ -780,6 +780,11 @@ textarea{resize:vertical;font-family:inherit}
 
                     <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
                     <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p></div>
+                    <div class="form-row two-col" style="margin-top:10px">
+                      <div class="field-group"><label for="payment_method">وسيلة تسديد الاشتراك *</label><select id="payment_method" required><option value="">-- اختر وسيلة الدفع --</option><option value="baridimob">بريدي موب</option><option value="ccp">تحويل CCP</option><option value="bank">تحويل بنكي</option><option value="edahabia">البطاقة الذهبية</option><option value="cib">CIB</option></select></div>
+                      <div class="field-group"><label for="payment_reference">رقم العملية/مرجع الدفع *</label><input id="payment_reference" required maxlength="80" autocomplete="off" placeholder="رقم العملية الظاهر في الوصل"></div>
+                    </div>
+                    <div class="field-group" style="margin-top:8px"><label for="otp_channel">قناة استلام رمز التأكيد بعد المصادقة *</label><select id="otp_channel" required><option value="sms">SMS</option><option value="email">البريد الإلكتروني</option><option value="whatsapp">WhatsApp</option></select><small>سيتم اعتماد القناة المختارة عند إصدار الرمز. الإرسال الآلي عبر SMS وWhatsApp يتطلب ربط مزود خدمة معتمد.</small></div>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
                     <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
@@ -790,13 +795,15 @@ textarea{resize:vertical;font-family:inherit}
                 <!-- نافذة التحقق OTP -->
                 <div id="otpBox" class="otp-verification-box">
                     <h3 style="color: var(--green-wa); margin-bottom: 6px;" id="t-otp-head">🔐 تأكيد رمز الأمان لفك قفل طباعة البطاقة</h3>
-                    <p style="font-size: 0.85rem; color: #cbd5e1;" id="t-otp-desc">
-                        تم إرسال إشعار الدفع والتسجيل إلى البريد الإداري <b>irched2521@gmail.com</b>. أدخل رمز التحقق المعتمد:
-                    </p>
-                    <input type="text" id="otpInput" class="otp-input-field" maxlength="6" placeholder="000000">
+                    <p style="font-size: 0.85rem; color: #cbd5e1;" id="t-otp-desc">تم استلام الطلب وإثبات دفع 500 دج. انتظر مراجعة المكتب المختص، ثم اضغط على زر التحقق من حالة الطلب.</p>
+                    <button type="button" class="btn-card btn-flip" style="max-width:280px;margin:8px auto" onclick="checkRequestApproval()">🔄 التحقق من حالة الطلب</button>
+                    <p id="requestState" aria-live="polite"></p>
+                    <div id="otpEntry" hidden>
+                    <input type="text" id="otpInput" class="otp-input-field" maxlength="6" inputmode="numeric" placeholder="000000">
                     <button type="button" class="btn-card btn-dl" style="max-width: 280px; margin: 0 auto;" onclick="validateSecurityOTP()">
                         <span id="t-otp-confirm">✅ تأكيد الرمز وفك قفل الطباعة</span>
                     </button>
+                    </div>
                 </div>
             </div>
 
@@ -1357,6 +1364,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       nin:val("nin_no"), matricule:val("matricule_sh"), activity:val("user_activity"),
       work_region:val("user_work_region"), specialty:val("last_structure"), retire_year:val("retire_year"),
       phone:val("user_phone"), email:val("user_email"), nss:val("nss_no"), cnr:val("cnr_no"),
+      payment_method:val("payment_method"), payment_reference:val("payment_reference"),
+      otp_channel:val("otp_channel"), membership_fee:500,
       consent:!!(el("accept_rules")&&el("accept_rules").checked&&el("accept_privacy")&&el("accept_privacy").checked)
     };
   }
@@ -1388,11 +1397,29 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       curRef=result.requestNumber; curNo=result.requestNumber; unlockToken="";
       if(typeof syncBadgeLive==="function")syncBadgeLive();
       if(el("otpBox"))el("otpBox").style.display="block";
-      if(el("otpDesc"))otpDesc();
+      if(el("otpEntry"))el("otpEntry").hidden=true;
+      if(el("requestState"))el("requestState").textContent="حالة الطلب: في انتظار مراجعة إثبات الدفع من المكتب.";
       if(el("otpBox"))el("otpBox").scrollIntoView({behavior:"smooth"});
       alert("تم تسجيل طلبك بنجاح في قاعدة بيانات ANRSH.\nرقم الطلب: "+curRef+"\nالطلب الآن في انتظار مصادقة المكتب على الدفع. احتفظ برقم الطلب.");
     }catch(e){alert(e.message||"تعذر إرسال الطلب.");}
     finally{var b=document.querySelector('button[onclick="requestSecurityOTP()"]');if(b){b.disabled=false;b.innerHTML='<span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>';}}
+  };
+
+  window.checkRequestApproval=async function(){
+    if(!curRef){alert("لا يوجد رقم طلب للتحقق.");return;}
+    try{
+      var phone=val("user_phone");
+      var r=await api("/api/requests/"+encodeURIComponent(curRef)+"/status?phone="+encodeURIComponent(phone));
+      var state=el("requestState");
+      if(r.state==="otp_ready"){
+        if(el("otpEntry"))el("otpEntry").hidden=false;
+        if(state)state.textContent="✅ تمت المصادقة على إثبات الدفع وصدر رمز التأكيد. أدخل الرمز الذي وصلك عبر القناة المعتمدة.";
+      }else if(r.state==="verified"){
+        if(state)state.textContent="تم التحقق من الرمز مسبقاً.";
+      }else{
+        if(state)state.textContent="⏳ الطلب قيد المراجعة. لم يصدر رمز التأكيد بعد.";
+      }
+    }catch(e){if(el("requestState"))el("requestState").textContent=e.message;}
   };
 
   window.validateSecurityOTP=async function(){
