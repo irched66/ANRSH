@@ -1401,7 +1401,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var groups=[
       ["البيانات الشخصية",[
         ["الاسم واللقب",(p.first_name||"")+" "+(p.last_name||"")],["تاريخ ومكان الميلاد",(p.birth_date||"")+" — "+(p.birth_place||"")],
-        ["الصفة",p.user_type],["نوع الطلب",p.demand_type],["رقم التعريف الوطني",p.nin],["رقم التسجيل سوناطراك",p.matricule],
+        ["ولاية / دائرة / بلدية الميلاد",[p.birth_wilaya,p.birth_daira,p.birth_commune].filter(Boolean).join(" / ")],
+        ["فصيلة الدم",p.blood_group],["الصفة",p.user_type],["نوع الطلب",p.demand_type],["رقم التعريف الوطني",p.nin],["رقم التسجيل سوناطراك",p.matricule],
         ["الولاية / الدائرة / البلدية",[p.wilaya,p.daira,p.commune].filter(Boolean).join(" / ")],["العنوان",p.address],
         ["الهاتف والبريد",[p.phone,p.email].filter(Boolean).join(" — ")],["سنة التقاعد",p.retire_year],
         ["النشاط والمنشأة",[p.activity,p.work_region,p.specialty].filter(Boolean).join(" — ")],
@@ -1419,8 +1420,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var dh=document.createElement("h3");dh.textContent="الصور والوثائق المختارة";dh.style.cssText="color:var(--gold-light);margin:14px 0 6px";box.appendChild(dh);
     [["الصورة الشمسية","user_photo_file"],["بطاقة التعريف – الوجه الأمامي","doc_cni"],["بطاقة التعريف – الوجه الخلفي","doc_cni_back"],["قرار التقاعد","doc_retire"],["إثبات الدفع","doc_payment_proof"]].forEach(function(pair){
       var f=selectedFile(pair[1]);box.appendChild(previewRow(pair[0],f?f.name+" ("+Math.ceil(f.size/1024)+" KB)":"لم يتم اختيار ملف"));
-      if(f&&pair[1]==="user_photo_file"&&f.type.indexOf("image/")===0){
-        var img=document.createElement("img");img.alt="معاينة الصورة الشمسية";img.src=URL.createObjectURL(f);img.style.cssText="display:block;width:110px;height:130px;object-fit:cover;border-radius:10px;margin:8px auto";box.appendChild(img);
+      if(f&&f.type.indexOf("image/")===0){
+        var img=document.createElement("img");img.alt="معاينة "+pair[0];img.src=URL.createObjectURL(f);img.style.cssText="display:block;max-width:180px;max-height:180px;object-fit:contain;border-radius:10px;margin:8px auto;border:1px solid rgba(255,255,255,.2)";box.appendChild(img);
       }
     });
     el("adhesionPreview").hidden=false;
