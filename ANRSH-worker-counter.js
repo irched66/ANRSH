@@ -582,11 +582,17 @@ async function handleAdminPaymentReview(id, request, env) {
     SELECT ?,id,member_id,bureau,membership_year,500,100,400,?
     FROM member_payments WHERE id=? AND status='verified'
   `).bind(crypto.randomUUID(),now,id));
-  statements.push(env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"payment_"+decision,id));
-  try { await env.DB.batch(statements); }
+  let reviewResults;
+  try { reviewResults=await env.DB.batch(statements); }
   catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
+  if(!reviewResults?.[0]?.meta||reviewResults[0].meta.changes!==1)
+    return json({error:"payment_review_conflict"},409);
+  if(decision==="verified" && (!reviewResults?.[1]?.meta||reviewResults[1].meta.changes!==1))
+    return json({error:"payment_allocation_failed"},500);
   const check=await env.DB.prepare("SELECT status,member_id FROM member_payments WHERE id=?").bind(id).first();
   if(!check||check.status!==decision) return json({error:"payment_review_conflict"},409);
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
+    .bind(now,actor.email,"payment_"+decision,id).run();
   if(decision==="rejected") {
     const member=await env.DB.prepare("SELECT ref,profile FROM members WHERE id=?").bind(check.member_id).first();
     const profile=parseJson(member?.profile,{});
@@ -767,16 +773,19 @@ async function authAcceptInvitation(request,env) {
     results=await env.DB.batch([
       env.DB.prepare("UPDATE admin_invitations SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>?")
         .bind(Date.now(),invite.id,Date.now()),
-      env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) VALUES (?,?,?, ?,0,?)")
+      // Each following insert is conditional on the immediately preceding statement changing exactly one row.
+      env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) SELECT ?,?,?,?,0,? WHERE changes()=1")
         .bind(id,invite.email,invite.role,invite.bureau,Date.now()),
-      env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) VALUES (?,?,?,?,0,NULL)")
+      env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) SELECT ?,?,?,?,0,NULL WHERE changes()=1")
         .bind(id,hash,salt,Date.now())
     ]);
   } catch(e) {
     return json({error:"account_creation_failed_invitation_not_consumed"},409);
   }
-  if(!results?.[0]?.meta||results[0].meta.changes!==1) {
-    return json({error:"invitation_already_used_or_expired"},409);
+  if(!results?.[0]?.meta||results[0].meta.changes!==1 ||
+     !results?.[1]?.meta||results[1].meta.changes!==1 ||
+     !results?.[2]?.meta||results[2].meta.changes!==1) {
+    return json({error:"invitation_already_used_or_account_exists"},409);
   }
   return json({ok:true,status:"pending_national_approval"});
 }
@@ -837,7 +846,13 @@ async function handleOfficeWilayas(request,env,method) {
   const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
   if(!office) return json({error:"invalid_or_inactive_office"},400);
   try {
-    await env.DB.prepare("INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name) VALUES (?,?,?)").bind(bureau,code,w.name_ar).run();
+    const inserted=await env.DB.prepare(`
+      INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name)
+      SELECT ?,?,?,?
+      WHERE NOT EXISTS (SELECT 1 FROM office_wilayas WHERE wilaya_code=?)
+    `.replace("SELECT ?,?,?,?","SELECT ?,?,?"))
+      .bind(bureau,code,w.name_ar,code).run();
+    if(!inserted.meta||inserted.meta.changes!==1) return json({error:"wilaya_already_assigned"},409);
   } catch(e) { return json({error:"wilaya_already_assigned_or_save_failed"},409); }
   await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"wilaya_assigned",bureau+":"+code).run();
   return json({ok:true,bureau,wilaya_code:code,wilaya_name:w.name_ar});
