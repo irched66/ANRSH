@@ -37,4 +37,12 @@ assert.ok(worker.includes("new Date(Date.UTC(year,quarter*3,0))"), "Quarterly re
 assert.ok(worker.includes("FILE_ENCRYPTION_KEY"), "New document uploads must require encryption key");
 assert.ok(!html.includes("ANRSH-2026-CHANGE"), "Fixed legacy browser OTP key must not exist");
 assert.ok(html.includes("window.validateSecurityOTP=async function()"), "Member OTP must be verified through the Worker API");
+assert.ok(html.includes('video.src="intro.mp4"'), "Opening video must remain wired to the landing page");
+assert.ok(html.includes('assets/anrsh-background.png'), "Approved ANRSH background must be used");
+assert.ok(html.includes('id="anrsh-clock"'), "Algeria local clock must be displayed");
+assert.ok(html.includes('id="anrsh-quote"') && html.includes("سورة الشرح، الآية 6"), "Quran and hadith rotation must be present with references");
+assert.ok(!html.includes("setLanguage('ber'"), "Amazigh language option must be removed");
+assert.ok(html.includes('api("/api/visitor-visit"'), "Unique visitor counter must call the Worker");
+assert.ok(worker.includes("ADMIN_OTP_TTL_MS = 10 * 60 * 1000"), "Administrative OTP must expire after ten minutes");
+assert.ok(worker.includes('"/api/visitor-visit"'), "Worker visitor counter route must exist");
 console.log("Syntax checks passed: Worker + " + checked + " inline script(s); security invariants checked.");
