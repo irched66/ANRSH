@@ -41,6 +41,9 @@ assert.ok(worker.includes("new Date(Date.UTC(year,quarter*3,0))"), "Quarterly re
 assert.ok(worker.includes("FILE_ENCRYPTION_KEY"), "New document uploads must require encryption key");
 assert.ok(!html.includes("ANRSH-2026-CHANGE"), "Fixed legacy browser OTP key must not exist");
 assert.ok(html.includes("window.validateSecurityOTP=async function()"), "Member OTP must be verified through the Worker API");
+assert.ok(html.includes("member_notification_failed"), "Frontend must explain failed member OTP delivery");
+assert.ok(html.includes("تم إرسال رمز التحقق إلى البريد الإلكتروني المسجل للمنخرط"), "Admin UI must confirm the actual member OTP delivery target");
+assert.ok(html.includes('id="doc_cni_back" accept="image/*,.pdf" required'), "Registration form must require the back of the identity card");
 assert.ok(html.includes('video.src="intro.mp4"'), "Opening video must remain wired to the landing page");
 assert.ok(html.includes('assets/anrsh-background.png'), "Approved ANRSH background must be used");
 assert.ok(html.includes('id="anrsh-clock"'), "Algeria local clock must be displayed");
