@@ -787,10 +787,24 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="field-group" style="margin-top:8px"><label for="otp_channel">قناة استلام رمز التأكيد بعد المصادقة *</label><select id="otp_channel" required><option value="sms">SMS</option><option value="email">البريد الإلكتروني</option><option value="whatsapp">WhatsApp</option></select><small>سيتم اعتماد القناة المختارة عند إصدار الرمز. الإرسال الآلي عبر SMS وWhatsApp يتطلب ربط مزود خدمة معتمد.</small></div>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
-                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
-                        <span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>
+                    <button type="button" class="btn-card btn-flip" style="width:100%;padding:14px;font-size:1.05rem;margin-top:18px" onclick="previewAdhesionForm()">
+                        <span aria-hidden="true">👁️</span> معاينة الاستمارة قبل الإرسال
                     </button>
                 </form>
+
+                <!-- المعاينة محلية على جهاز المنخرط ولا ترفع أي بيانات أو وثائق -->
+                <div id="adhesionPreview" hidden role="dialog" aria-modal="true" aria-labelledby="adhesionPreviewTitle"
+                     style="position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.88);padding:14px;overflow:auto">
+                  <div style="max-width:760px;margin:18px auto;background:#111827;border:1px solid var(--gold-primary);border-radius:18px;padding:18px;color:#fff">
+                    <h2 id="adhesionPreviewTitle" style="color:var(--gold-light);text-align:center;margin-bottom:8px">👁️ معاينة استمارة الانخراط</h2>
+                    <p style="text-align:center;color:#cbd5e1;font-size:.88rem;margin-bottom:14px">راجع بياناتك والوثائق المختارة. لم يتم حفظ أو إرسال أي شيء بعد.</p>
+                    <div id="adhesionPreviewContent"></div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+                      <button type="button" class="btn-card btn-flip" style="flex:1;min-width:130px" onclick="closeAdhesionPreview()">↩️ رجوع للتعديل</button>
+                      <button type="button" class="btn-card btn-wa-card" style="flex:1;min-width:160px" onclick="confirmAdhesionPreview()">✅ تأكيد وإرسال الطلب</button>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- نافذة التحقق OTP -->
                 <div id="otpBox" class="otp-verification-box">
@@ -1370,6 +1384,55 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     };
   }
   function selectedFile(id){var x=el(id);return x&&x.files&&x.files[0]||null}
+  var adhesionPreviewConfirmed=false;
+  function previewRow(label,value){
+    var row=document.createElement("div");
+    row.style.cssText="display:grid;grid-template-columns:minmax(115px,34%) 1fr;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,.12);overflow-wrap:anywhere";
+    var a=document.createElement("strong");a.textContent=label;a.style.color="var(--gold-light)";
+    var b=document.createElement("span");b.textContent=value||"—";
+    row.appendChild(a);row.appendChild(b);return row;
+  }
+  window.previewAdhesionForm=function(){
+    var form=el("adhesionForm");
+    if(form&&!form.reportValidity())return;
+    var p=profile(), box=el("adhesionPreviewContent");
+    if(!box)return;
+    box.replaceChildren();
+    var groups=[
+      ["البيانات الشخصية",[
+        ["الاسم واللقب",(p.first_name||"")+" "+(p.last_name||"")],["تاريخ ومكان الميلاد",(p.birth_date||"")+" — "+(p.birth_place||"")],
+        ["الصفة",p.user_type],["نوع الطلب",p.demand_type],["رقم التعريف الوطني",p.nin],["رقم التسجيل سوناطراك",p.matricule],
+        ["الولاية / الدائرة / البلدية",[p.wilaya,p.daira,p.commune].filter(Boolean).join(" / ")],["العنوان",p.address],
+        ["الهاتف والبريد",[p.phone,p.email].filter(Boolean).join(" — ")],["سنة التقاعد",p.retire_year],
+        ["النشاط والمنشأة",[p.activity,p.work_region,p.specialty].filter(Boolean).join(" — ")],
+        ["رقم الضمان الاجتماعي",p.nss],["رقم CNR",p.cnr],["المكتب الجهوي",p.bureau]
+      ]],
+      ["بيانات الاشتراك والدفع",[
+        ["الاشتراك السنوي","500 دج"],["طريقة الدفع",p.payment_method],["مرجع العملية",p.payment_reference],
+        ["قناة رمز التأكيد",p.otp_channel],["الموافقة على التصريح وحماية البيانات",p.consent?"نعم":"لا"]
+      ]]
+    ];
+    groups.forEach(function(g){
+      var h=document.createElement("h3");h.textContent=g[0];h.style.cssText="color:var(--gold-light);margin:14px 0 6px";box.appendChild(h);
+      g[1].forEach(function(pair){box.appendChild(previewRow(pair[0],pair[1]))});
+    });
+    var dh=document.createElement("h3");dh.textContent="الصور والوثائق المختارة";dh.style.cssText="color:var(--gold-light);margin:14px 0 6px";box.appendChild(dh);
+    [["الصورة الشمسية","user_photo_file"],["بطاقة التعريف – الوجه الأمامي","doc_cni"],["بطاقة التعريف – الوجه الخلفي","doc_cni_back"],["قرار التقاعد","doc_retire"],["إثبات الدفع","doc_payment_proof"]].forEach(function(pair){
+      var f=selectedFile(pair[1]);box.appendChild(previewRow(pair[0],f?f.name+" ("+Math.ceil(f.size/1024)+" KB)":"لم يتم اختيار ملف"));
+      if(f&&pair[1]==="user_photo_file"&&f.type.indexOf("image/")===0){
+        var img=document.createElement("img");img.alt="معاينة الصورة الشمسية";img.src=URL.createObjectURL(f);img.style.cssText="display:block;width:110px;height:130px;object-fit:cover;border-radius:10px;margin:8px auto";box.appendChild(img);
+      }
+    });
+    el("adhesionPreview").hidden=false;
+    el("adhesionPreview").scrollTop=0;
+  };
+  window.closeAdhesionPreview=function(){el("adhesionPreview").hidden=true;};
+  window.confirmAdhesionPreview=function(){
+    adhesionPreviewConfirmed=true;closeAdhesionPreview();window.requestSecurityOTP();
+  };
+  var adhesionFormEl=el("adhesionForm");
+  if(adhesionFormEl)adhesionFormEl.addEventListener("input",function(){adhesionPreviewConfirmed=false;});
+  if(adhesionFormEl)adhesionFormEl.addEventListener("change",function(){adhesionPreviewConfirmed=false;});
   function fileCheck(){
     var mapping={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
     var total=0;
@@ -1385,6 +1448,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
 
   window.requestSecurityOTP=async function(){
+    if(!adhesionPreviewConfirmed){alert("يرجى معاينة الاستمارة بعلامة العين ثم تأكيد الإرسال.");return;}
+    adhesionPreviewConfirmed=false;
     var form=el("adhesionForm");
     if(form&&!form.reportValidity())return;
     try{
