@@ -421,13 +421,24 @@ async function handleVerify(ref, request, env) {
     return json({ error: "invalid_code" }, 401);
   }
   if (!env.CARD_SIGNING_SECRET || String(env.CARD_SIGNING_SECRET).length < 32) return json({error:"card_signing_not_configured"},503);
-  const consumed = await env.DB.prepare("UPDATE members SET status='unlocked',otp_hash=NULL,otp_exp=NULL WHERE ref=? AND status='code_sent' AND otp_hash=? AND otp_exp>? AND otp_tries<5")
-    .bind(ref,row.otp_hash,Date.now()).run();
-  if (!consumed.meta || consumed.meta.changes !== 1) return json({error:"code_already_used"},409);
   const token = await makePrintToken(ref, env);
   const cardToken=randomHex(32), cardHash=await sha256(cardToken);
-  await env.DB.prepare("INSERT INTO member_card_tokens (id,member_id,token_hash,active,issued_by,issued_at,revoked_at) VALUES (?,?,?,1,NULL,?,NULL)")
-    .bind(crypto.randomUUID(),row.id,cardHash,Date.now()).run();
+  let issueResults;
+  try {
+    issueResults=await env.DB.batch([
+      env.DB.prepare("UPDATE members SET status='unlocked',otp_hash=NULL,otp_exp=NULL WHERE ref=? AND status='code_sent' AND otp_hash=? AND otp_exp>? AND otp_tries<5")
+        .bind(ref,row.otp_hash,Date.now()),
+      env.DB.prepare("INSERT INTO member_card_tokens (id,member_id,token_hash,active,issued_by,issued_at,revoked_at) SELECT ?,?,?,1,NULL,?,NULL WHERE changes()=1")
+        .bind(crypto.randomUUID(),row.id,cardHash,Date.now())
+    ]);
+  } catch(e) {
+    console.error("member card token issuance failed");
+    return json({error:"card_activation_failed"},503);
+  }
+  if(!issueResults?.[0]?.meta||issueResults[0].meta.changes!==1)
+    return json({error:"code_already_used"},409);
+  if(!issueResults?.[1]?.meta||issueResults[1].meta.changes!==1)
+    return json({error:"card_activation_failed"},503);
   return json({ ok: true, unlockToken: token, cardVerifyToken: cardToken, expiresIn: PRINT_TTL_SECONDS });
 }
 
