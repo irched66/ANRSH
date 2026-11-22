@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2400" width="1600" height="2400">
+<defs>
+ <linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07111f"/><stop offset=".48" stop-color="#12243b"/><stop offset="1" stop-color="#080d18"/></linearGradient>
+ <radialGradient id="gold"><stop stop-color="#d99a27" stop-opacity=".24"/><stop offset="1" stop-color="#d99a27" stop-opacity="0"/></radialGradient>
+ <radialGradient id="blue"><stop stop-color="#1686a8" stop-opacity=".23"/><stop offset="1" stop-color="#1686a8" stop-opacity="0"/></radialGradient>
+ <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="#d5a23b" stroke-opacity=".055" stroke-width="1"/></pattern>
+ <linearGradient id="line" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eab84e" stop-opacity="0"/><stop offset=".5" stop-color="#eab84e" stop-opacity=".34"/><stop offset="1" stop-color="#eab84e" stop-opacity="0"/></linearGradient>
+</defs>
+<rect width="1600" height="2400" fill="url(#base)"/>
+<rect width="1600" height="2400" fill="url(#grid)"/>
+<ellipse cx="250" cy="360" rx="760" ry="680" fill="url(#blue)"/>
+<ellipse cx="1390" cy="1430" rx="780" ry="860" fill="url(#gold)"/>
+<ellipse cx="380" cy="2110" rx="680" ry="550" fill="url(#blue)"/>
+<g fill="none" stroke="url(#line)" stroke-width="2">
+ <path d="M-100 520 Q500 120 1700 680"/><path d="M-100 580 Q500 180 1700 740"/>
+ <path d="M-100 1740 Q600 1320 1700 1880"/><path d="M-100 1800 Q600 1380 1700 1940"/>
+</g>
+<g fill="none" stroke="#d5a23b" stroke-opacity=".10" stroke-width="3">
+ <circle cx="1280" cy="360" r="210"/><circle cx="1280" cy="360" r="260"/><circle cx="1280" cy="360" r="310"/>
+ <circle cx="260" cy="1750" r="260"/><circle cx="260" cy="1750" r="320"/>
+</g>
+<path d="M0 0H1600V2400H0Z" fill="none" stroke="#d5a23b" stroke-opacity=".10" stroke-width="20"/>
+</svg>
