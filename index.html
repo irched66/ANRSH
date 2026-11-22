@@ -45,7 +45,11 @@
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             z-index: -2;
-            background: radial-gradient(circle at 50% 15%, #1e293b 0%, #070a10 100%);
+            background:
+                linear-gradient(rgba(4, 8, 16, .58), rgba(4, 8, 16, .82)),
+                url("assets/anrsh-background.png") center / cover no-repeat,
+                radial-gradient(circle at 50% 15%, #1e293b 0%, #070a10 100%);
+            background-attachment: fixed;
         }
 
         .audio-assistant-bar {
@@ -1483,6 +1487,45 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   window.loadReports=function(){var h=el("rp_hist");if(h)h.textContent="حفظ التقارير في قاعدة البيانات غير مفعّل بعد في Worker إصدار 16 نوفمبر.";};
 
   // Live connection status, without exposing any secret.
+  // Official ANRSH information strip: live Algeria clock, Quran verse and authentic hadith.
+  function addDailyContent(){
+    var header=document.querySelector("header");
+    if(!header || el("anrsh-daily-content")) return;
+    var verses=[
+      {text:"فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا",ref:"سورة الشرح · الآيتان 5–6"},
+      {text:"وَقُلِ اعْمَلُوا فَسَيَرَى اللَّهُ عَمَلَكُمْ وَرَسُولُهُ وَالْمُؤْمِنُونَ",ref:"سورة التوبة · الآية 105"},
+      {text:"لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",ref:"سورة البقرة · الآية 286"},
+      {text:"قُلْ يَا عِبَادِيَ الَّذِينَ أَسْرَفُوا عَلَىٰ أَنْفُسِهِمْ لَا تَقْنَطُوا مِنْ رَحْمَةِ اللَّهِ",ref:"سورة الزمر · الآية 53"}
+    ];
+    var hadiths=[
+      {text:"يَسِّرُوا وَلَا تُعَسِّرُوا، وَبَشِّرُوا وَلَا تُنَفِّرُوا.",ref:"صحيح البخاري وصحيح مسلم"},
+      {text:"إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى.",ref:"صحيح البخاري وصحيح مسلم"}
+    ];
+    var now=new Date(), day=Math.floor(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())/86400000);
+    var verse=verses[((day%verses.length)+verses.length)%verses.length];
+    var hadith=hadiths[((day%hadiths.length)+hadiths.length)%hadiths.length];
+    var box=document.createElement("section");box.id="anrsh-daily-content";
+    box.setAttribute("aria-label","الساعة والمحتوى الإيماني اليومي");
+    box.style.cssText="width:min(100%,900px);margin:14px auto 8px;padding:13px;border:1px solid rgba(245,158,11,.48);border-radius:16px;background:rgba(5,10,18,.78);backdrop-filter:blur(8px);box-shadow:0 8px 28px rgba(0,0,0,.24);";
+    var clock=document.createElement("div");clock.style.cssText="text-align:center;color:#fbbf24;font-size:clamp(1.2rem,4vw,1.8rem);font-weight:800;direction:ltr;font-variant-numeric:tabular-nums";
+    var date=document.createElement("div");date.style.cssText="text-align:center;color:#e2e8f0;font-size:.82rem;margin:2px 0 12px";
+    var vTitle=document.createElement("div");vTitle.textContent="📖 آية اليوم";vTitle.style.cssText="color:#fbbf24;font-weight:800;margin-bottom:5px";
+    var vText=document.createElement("div");vText.textContent=verse.text;vText.style.cssText="font-size:1.05rem;line-height:1.9;text-align:center;color:#fff";
+    var vRef=document.createElement("div");vRef.textContent=verse.ref;vRef.style.cssText="text-align:center;color:#cbd5e1;font-size:.78rem;margin:2px 0 12px";
+    var hTitle=document.createElement("div");hTitle.textContent="🌿 حديث اليوم";hTitle.style.cssText="color:#fbbf24;font-weight:800;margin-bottom:5px";
+    var hText=document.createElement("div");hText.textContent=hadith.text;hText.style.cssText="font-size:.98rem;line-height:1.85;text-align:center;color:#fff";
+    var hRef=document.createElement("div");hRef.textContent=hadith.ref;hRef.style.cssText="text-align:center;color:#cbd5e1;font-size:.78rem;margin-top:2px";
+    function tick(){
+      var d=new Date();
+      clock.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(d);
+      date.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(d)+" · توقيت الجزائر";
+    }
+    tick();setInterval(tick,1000);
+    box.appendChild(clock);box.appendChild(date);box.appendChild(vTitle);box.appendChild(vText);box.appendChild(vRef);box.appendChild(hTitle);box.appendChild(hText);box.appendChild(hRef);
+    var welcome=header.querySelector(".header-welcome");
+    if(welcome&&welcome.parentNode)welcome.parentNode.insertBefore(box,welcome.nextSibling);else header.appendChild(box);
+  }
+
   function addPublicCounters(){
     var host=document.querySelector("header")||document.querySelector(".hero");
     if(!host || el("anrsh-public-counters")) return;
@@ -1535,7 +1578,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   document.addEventListener("DOMContentLoaded",function(){
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
-    adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
+    adminPanel();addStatus();addDailyContent();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
     var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
   });
 })();
