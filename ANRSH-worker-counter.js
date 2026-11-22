@@ -538,10 +538,13 @@ async function handleAdminApprove(id, request, env) {
   const actor = await requireAdmin(request, env);
   if (!actor) return json({ error: "unauthorized" }, 401);
   const row = await env.DB.prepare(
-    "SELECT id, ref, bureau, name, phone, profile, status FROM members WHERE id = ?"
+    "SELECT id, ref, bureau, name, phone, profile, status, otp_hash, otp_exp, otp_tries FROM members WHERE id = ?"
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
   if (actor.role !== "national" && row.bureau !== actor.bureau) return json({ error: "forbidden" }, 403);
+  if (!["pending_payment", "code_sent"].includes(row.status)) {
+    return json({ error: "member_not_awaiting_confirmation" }, 409);
+  }
   const payment = await env.DB.prepare(
     "SELECT id,status,amount_dzd FROM member_payments WHERE member_id=? AND membership_year=? ORDER BY created_at DESC LIMIT 1"
   ).bind(id,new Date().getFullYear()).first();
@@ -549,22 +552,36 @@ async function handleAdminApprove(id, request, env) {
     return json({ error: "payment_not_verified" }, 409);
   }
   const profile = parseJson(row.profile, {});
-  if (!cleanText(profile.email,160) || !env.RESEND_API_KEY || !env.RESEND_FROM) {
+  const email = cleanText(profile.email,160);
+  if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !env.RESEND_API_KEY || !env.RESEND_FROM) {
     return json({ error: "member_email_delivery_not_configured" }, 503);
   }
+
   const code = randomDigits(6), hash = await sha256(row.ref + ":" + code);
   const expires = Date.now() + 10 * 60 * 1000;
-  await env.DB.prepare(`
-    UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=0,status='code_sent' WHERE id=?
-  `).bind(hash,expires,id).run();
-  const sent = await sendEmail(env,cleanText(profile.email,160),"ANRSH — Code de confirmation",
-    "Votre paiement de 500 DZD a été vérifié.\nDemande : "+row.ref+"\nCode : "+code+"\nCe code expire dans 10 minutes et ne peut être utilisé qu'une fois.");
+  const issued = await env.DB.prepare(`
+    UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=0,status='code_sent'
+    WHERE id=? AND status=? AND EXISTS (
+      SELECT 1 FROM member_payments
+      WHERE member_id=? AND membership_year=? AND status='verified' AND amount_dzd=500
+    )
+  `).bind(hash,expires,id,row.status,id,new Date().getFullYear()).run();
+  if (!issued.meta || issued.meta.changes !== 1) {
+    return json({ error: "member_approval_conflict" }, 409);
+  }
+
+  const sent = await sendEmail(env,email,"ANRSH — Code de confirmation",
+    "Votre paiement de 500 DZD a été vérifié.\\nDemande : "+row.ref+"\\nCode : "+code+"\\nCe code expire dans 10 minutes et ne peut être utilisé qu'une fois.");
   if (!sent.sent) {
-    await env.DB.prepare("UPDATE members SET otp_hash=NULL,otp_exp=NULL,status='pending_payment' WHERE id=?").bind(id).run();
+    // Restore the previous state only if this exact OTP is still current.
+    await env.DB.prepare(`
+      UPDATE members SET otp_hash=?,otp_exp=?,otp_tries=?,status=?
+      WHERE id=? AND status='code_sent' AND otp_hash=?
+    `).bind(row.otp_hash,row.otp_exp,row.otp_tries||0,row.status,id,hash).run();
     return json({ error: "member_notification_failed" },503);
   }
   await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,provider_message_id,status,created_at,sent_at) VALUES (?,?,?,'email','approved',NULL,'sent',?,?)")
-    .bind(crypto.randomUUID(),id,cleanText(profile.email,160),Date.now(),Date.now()).run();
+    .bind(crypto.randomUUID(),id,email,Date.now(),Date.now()).run();
   await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"member_approval_code_sent",id).run();
   return json({ok:true,status:"code_sent",requestNumber:row.ref,expiresAt:expires,emailSent:true});
 }
@@ -591,7 +608,7 @@ async function handleAdminPaymentReview(id, request, env) {
   if(decision==="verified") statements.push(env.DB.prepare(`
     INSERT INTO payment_allocations (id,payment_id,member_id,bureau,membership_year,gross_amount_dzd,national_share_dzd,regional_share_dzd,allocated_at)
     SELECT ?,id,member_id,bureau,membership_year,500,100,400,?
-    FROM member_payments WHERE id=? AND status='verified'
+    FROM member_payments WHERE id=? AND status='verified' AND changes()=1
   `).bind(crypto.randomUUID(),now,id));
   let reviewResults;
   try { reviewResults=await env.DB.batch(statements); }
