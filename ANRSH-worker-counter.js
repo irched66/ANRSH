@@ -760,15 +760,24 @@ async function authAcceptInvitation(request,env) {
   const invite=await env.DB.prepare("SELECT id,email,role,bureau,expires_at,used_at FROM admin_invitations WHERE token_hash=?").bind(tokenHash).first();
   if(!invite||invite.used_at||Number(invite.expires_at)<Date.now()) return json({error:"invitation_expired_or_used"},410);
   const id=crypto.randomUUID(),salt=randomHex(16),hash=await passwordDigest(password,salt);
-  const result=await env.DB.prepare("UPDATE admin_invitations SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>?")
-    .bind(Date.now(),invite.id,Date.now()).run();
-  if(!result.meta||result.meta.changes!==1) return json({error:"invitation_already_used"},409);
+  // Consume the invitation and create the inactive account in one D1 batch.
+  // This prevents a failed account insert from permanently burning a valid invitation.
+  let results;
   try {
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) VALUES (?,?,?, ?,0,?)").bind(id,invite.email,invite.role,invite.bureau,Date.now()),
-      env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) VALUES (?,?,?,?,0,NULL)").bind(id,hash,salt,Date.now())
+    results=await env.DB.batch([
+      env.DB.prepare("UPDATE admin_invitations SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>?")
+        .bind(Date.now(),invite.id,Date.now()),
+      env.DB.prepare("INSERT INTO admin_users (id,email,role,bureau,active,created_at) VALUES (?,?,?, ?,0,?)")
+        .bind(id,invite.email,invite.role,invite.bureau,Date.now()),
+      env.DB.prepare("INSERT INTO admin_credentials (admin_id,password_hash,password_salt,password_changed_at,failed_attempts,locked_until) VALUES (?,?,?,?,0,NULL)")
+        .bind(id,hash,salt,Date.now())
     ]);
-  } catch(e) { return json({error:"account_creation_failed_contact_national_office"},409); }
+  } catch(e) {
+    return json({error:"account_creation_failed_invitation_not_consumed"},409);
+  }
+  if(!results?.[0]?.meta||results[0].meta.changes!==1) {
+    return json({error:"invitation_already_used_or_expired"},409);
+  }
   return json({ok:true,status:"pending_national_approval"});
 }
 async function authActivateOfficer(request,env,id) {
