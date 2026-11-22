@@ -33,18 +33,25 @@
         }
 
         body {
-            background-color: var(--bg-dark);
-            background-image: linear-gradient(180deg,rgba(5,10,20,.24),rgba(5,10,20,.48)),url("assets/regional-offices/EL_MENIAA.jpg");
-            background-position: center top;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background: transparent !important;
             color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
+            isolation: isolate;
         }
-        @media(max-width:768px){body{background-attachment:scroll;background-position:center top;background-size:auto 100vh}}
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            background-color: #08111f;
+            background-image: linear-gradient(180deg,rgba(5,10,20,.22),rgba(5,10,20,.52)),var(--anrsh-bg-photo,url("assets/regional-offices/EL_MENIAA.jpg"));
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
 
         .bg-cinematic {
             position: fixed; inset: 0; width: 100vw; height: 100vh;
@@ -1582,7 +1589,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   var anrshBackgroundIndex=0;
   function rotateANRSHBackground(){
     var photo=anrshBackgrounds[anrshBackgroundIndex%anrshBackgrounds.length],img=new Image();
-    img.onload=function(){document.body.style.backgroundImage='linear-gradient(180deg,rgba(5,10,20,.30),rgba(5,10,20,.58)),url("'+photo+'")';};
+    img.onload=function(){document.body.style.setProperty("--anrsh-bg-photo",'url("'+photo+'")');};
     img.onerror=function(){console.warn("ANRSH background unavailable:",photo);};
     img.src=photo;anrshBackgroundIndex++;
   }
