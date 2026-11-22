@@ -6,6 +6,7 @@ db.execute("PRAGMA foreign_keys = ON")
 db.executescript("""
 CREATE TABLE admin_users (id TEXT PRIMARY KEY);
 CREATE TABLE members (id TEXT PRIMARY KEY);
+CREATE TABLE office_wilayas (bureau TEXT NOT NULL, wilaya_code TEXT NOT NULL, wilaya_name TEXT, UNIQUE(bureau,wilaya_code));
 """)
 sql = Path("migrations/2026-11-21-security-phase-1-proposal.sql").read_text(encoding="utf-8")
 db.executescript(sql)
@@ -26,5 +27,13 @@ VALUES ('report-test','bureau-test',2026,1,1790000000000,'2026-01-01','2026-03-3
 db.execute("""INSERT INTO notification_log
 (id,recipient,channel,event_type,status,created_at)
 VALUES ('notice-test','admin@example.invalid','email','quarterly_report','sent',1790000000000)""")
+# The same wilaya cannot be assigned to a second regional office.
+db.execute("INSERT INTO office_wilayas(bureau,wilaya_code,wilaya_name) VALUES ('office-a','16','Alger')")
+try:
+    db.execute("INSERT INTO office_wilayas(bureau,wilaya_code,wilaya_name) VALUES ('office-b','16','Alger')")
+    raise AssertionError("Global wilaya uniqueness constraint did not reject a duplicate")
+except sqlite3.IntegrityError:
+    pass
+
 assert db.execute("PRAGMA foreign_key_check").fetchall() == []
 print("D1 proposal migration passed SQLite schema, FK, payment allocation, card, report and notification checks.")
