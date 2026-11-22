@@ -537,8 +537,9 @@ textarea{resize:vertical;font-family:inherit}
         .anrsh-quote{font-size:.94rem;line-height:1.9;color:#f8fafc;min-height:54px}
         .anrsh-quote small{display:block;color:#fbbf24;font-size:.78rem;margin-top:2px}
         .anrsh-privacy-btn{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px;padding:9px 14px;border:1px solid #d97706;border-radius:10px;background:#1e293b;color:#fbbf24;font-weight:800;cursor:pointer}
-        #adhesionForm.anrsh-private input:not([type=file]),#adhesionForm.anrsh-private select,#adhesionForm.anrsh-private textarea{filter:blur(5px);transition:filter .2s}
-        #adhesionForm.anrsh-private input:focus,#adhesionForm.anrsh-private select:focus,#adhesionForm.anrsh-private textarea:focus{filter:none}
+        #adhesionForm.anrsh-private>*{filter:blur(5px);transition:filter .2s;pointer-events:none;user-select:none}
+        #adhesionForm.anrsh-private{position:relative}
+        #adhesionForm.anrsh-private::after{content:"🔒 بيانات الاستمارة مخفية للخصوصية — اضغط زر العين لإظهارها";display:block;position:sticky;bottom:12px;margin:12px auto;padding:12px;border:1px solid rgba(245,158,11,.65);border-radius:12px;background:rgba(8,15,30,.96);color:#fbbf24;text-align:center;font-weight:800;z-index:3;filter:none}
         @media(prefers-reduced-motion:reduce){.bg-cinematic::before,.bg-cinematic::after{animation:none}}
 
     </style>
@@ -596,7 +597,7 @@ textarea{resize:vertical;font-family:inherit}
                 <h2 style="color: var(--gold-light); font-size: 1.25rem; font-weight: 900; margin-bottom: 6px;" id="t-form-title">استمارة الانخراط واستخراج بطاقة العضوية 2026</h2>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="t-form-desc">يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.</p>
 
-                <button type="button" class="anrsh-privacy-btn" id="anrshPrivacyToggle" aria-pressed="false" onclick="toggleANRSHPrivacy()">👁️ إخفاء بيانات الاستمارة</button>
+                <button type="button" class="anrsh-privacy-btn" id="anrshPrivacyToggle" aria-pressed="false" onclick="toggleANRSHPrivacy()">👁️ إخفاء الاستمارة</button>
                 <form id="adhesionForm" oninput="syncBadgeLive()">
                     <div class="form-section-title">👤 <span id="t-sec-civil">البيانات الشخصية والمدنية</span></div>
                     
@@ -1582,7 +1583,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     if(!form||!btn)return;
     var hidden=form.classList.toggle("anrsh-private");
     btn.setAttribute("aria-pressed",hidden?"true":"false");
-    btn.textContent=hidden?"👁️‍🗨️ إظهار بيانات الاستمارة":"👁️ إخفاء بيانات الاستمارة";
+    btn.textContent=hidden?"👁️ إظهار الاستمارة":"👁️ إخفاء بيانات الاستمارة";
   }
 
   document.addEventListener("DOMContentLoaded",function(){
