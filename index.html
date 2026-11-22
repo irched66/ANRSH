@@ -50,6 +50,8 @@
             position: fixed; inset: 0; width: 100vw; height: 100vh;
             z-index: -1; pointer-events:none; background:transparent;
         }
+        /* The old opaque aurora layer covered the photo background. */
+        .bg-cinematic, .bg-cinematic::before, .bg-cinematic::after { display:none !important; background:transparent !important; animation:none !important; }
 
         .audio-assistant-bar {
             background: linear-gradient(90deg, #1e3a8a, #0284c7);
