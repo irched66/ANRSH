@@ -1,6 +1,6 @@
 # ANRSH DIGITAL — Security Phase 1: implementation audit
 
-Audit date: 2026-11-22
+Audit date: 2026-11-22 (updated after CI run 45024973683)
 Target branch: `security-phase-1`
 Production safety: `main`, live D1, deployed Worker and Pages have not been changed by this audit.
 
@@ -29,13 +29,15 @@ A concrete reliability fix was committed during this audit: regional invitation 
 - New member submission creates a pending 500 DZD payment record and requires the configured core documents. Payment must still be manually verified by an authorized reviewer.
 - The Worker requires configuration including `FILE_ENCRYPTION_KEY`, `CARD_SIGNING_SECRET`, `ANRSH_BOOTSTRAP_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, and D1 binding `DB`. Presence and correctness of production values were not verified here. Never commit or send their values in chat.
 - The reviewed SQL file `migrations/2026-11-21-security-phase-1-proposal.sql` is a proposal only. It creates payment ledger/allocation, card-token, quarterly-report and notification-log tables. It has not been executed against live D1.
-- Static/schema check scripts and a GitHub Actions workflow exist: `tests/check-javascript.mjs`, `tests/check-migration.py`, and `.github/workflows/security-phase-1-checks.yml`. The workflow is configured for pushes to `security-phase-1` and PRs to `main`. No workflow run result was available for the latest audit commit; these checks have not been certified as passed.
+- Static/schema check scripts and a GitHub Actions workflow exist: `tests/check-javascript.mjs`, `tests/check-migration.py`, and `.github/workflows/security-phase-1-checks.yml`. The workflow is configured for pushes to `security-phase-1` and PRs to `main`. The run for commit `9f18509074d73bcb46548e70d8e8356966c82d52` completed successfully: Worker syntax, all inline JavaScript syntax, and the additive D1 proposal migration checks passed (GitHub Actions run `45024973683`). These are static/schema checks only; they do not certify Cloudflare configuration, live email delivery, runtime behavior, or end-to-end security.
 - No Worker or Pages deployment was performed.
 
 ## Changes made during this audit
 
 - `ANRSH-worker-counter.js`: made regional invitation acceptance atomic by batching invitation consumption, inactive admin-user insertion and password-credential insertion. This avoids consuming a valid invitation if account creation fails.
 - Commit: `1e7d69bf0d9b77d9e0aa454b61efa31758301b4c`.
+- Fixed a malformed literal newline in the HTML report-download JavaScript that caused the CI syntax check to fail. The corrected source now uses escaped newline characters.
+- Fix commit: `9f18509074d73bcb46548e70d8e8356966c82d52`; successful static/schema workflow: `45024973683`.
 
 ## Release checklist — must pass before handover
 
