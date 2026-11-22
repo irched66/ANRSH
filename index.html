@@ -524,7 +524,24 @@
 .badge-body{margin:4px 0!important}
 @media print{body.pr *{visibility:hidden!important}body.pr #badge3D,body.pr #badge3D *{visibility:hidden!important}body.pr #section-reports,body.pr #section-reports *{visibility:visible!important;color:#000!important}body.pr #section-reports{position:absolute;top:0;left:0;width:100%;background:#fff}}
 textarea{resize:vertical;font-family:inherit}
-</style>
+
+        /* ANRSH cinematic ambience, live clock and privacy veil */
+        .bg-cinematic::before,.bg-cinematic::after{content:"";position:fixed;inset:-20%;pointer-events:none;z-index:-1}
+        .bg-cinematic::before{background:radial-gradient(ellipse at 18% 25%,rgba(14,116,144,.28),transparent 42%),radial-gradient(ellipse at 82% 70%,rgba(180,83,9,.22),transparent 40%),linear-gradient(135deg,#090d16,#14243a 48%,#090d16);background-size:180% 180%;animation:anrshAurora 22s ease-in-out infinite alternate}
+        .bg-cinematic::after{background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.035) 50%,transparent 65%);transform:translateX(-100%);animation:anrshShimmer 13s linear infinite}
+        @keyframes anrshAurora{0%{background-position:0% 20%}100%{background-position:100% 80%}}
+        @keyframes anrshShimmer{to{transform:translateX(100%)}}
+        .anrsh-welcome-panel{width:100%;max-width:900px;margin:12px auto 18px;padding:13px 16px;border:1px solid rgba(245,158,11,.45);border-radius:16px;background:rgba(7,12,22,.78);box-shadow:0 8px 28px rgba(0,0,0,.24);text-align:center}
+        .anrsh-clock{font-size:1.3rem;font-weight:900;color:#fbbf24;letter-spacing:1px;direction:ltr}
+        .anrsh-date{font-size:.78rem;color:#cbd5e1;margin:3px 0 10px}
+        .anrsh-quote{font-size:.94rem;line-height:1.9;color:#f8fafc;min-height:54px}
+        .anrsh-quote small{display:block;color:#fbbf24;font-size:.78rem;margin-top:2px}
+        .anrsh-privacy-btn{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px;padding:9px 14px;border:1px solid #d97706;border-radius:10px;background:#1e293b;color:#fbbf24;font-weight:800;cursor:pointer}
+        #adhesionForm.anrsh-private input:not([type=file]),#adhesionForm.anrsh-private select,#adhesionForm.anrsh-private textarea{filter:blur(5px);transition:filter .2s}
+        #adhesionForm.anrsh-private input:focus,#adhesionForm.anrsh-private select:focus,#adhesionForm.anrsh-private textarea:focus{filter:none}
+        @media(prefers-reduced-motion:reduce){.bg-cinematic::before,.bg-cinematic::after{animation:none}}
+
+    </style>
 </head>
 <body>
 
@@ -547,6 +564,13 @@ textarea{resize:vertical;font-family:inherit}
             <p class="header-welcome" id="t-welcome">
                 المنصة الرقمية المتكاملة الرسمية للانخراط والتقارير الدورية لسنة 2026. ترحب بكافة المتقاعدين والمتقاعدات وذوي الحقوق عبر كافة ربوع الوطن.
             </p>
+
+
+            <section class="anrsh-welcome-panel" aria-label="الساعة والذكر اليومي">
+                <div id="anrshClock" class="anrsh-clock" aria-live="off">--:--:--</div>
+                <div id="anrshDate" class="anrsh-date"></div>
+                <div id="anrshQuote" class="anrsh-quote">﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾<small>سورة الشرح – الآية 6</small></div>
+            </section>
 
             <div class="lang-strip">
                 <button type="button" class="lang-pill active" onclick="setLanguage('ar', this)">العربية</button>
@@ -573,6 +597,7 @@ textarea{resize:vertical;font-family:inherit}
                 <h2 style="color: var(--gold-light); font-size: 1.25rem; font-weight: 900; margin-bottom: 6px;" id="t-form-title">استمارة الانخراط واستخراج بطاقة العضوية 2026</h2>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="t-form-desc">يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.</p>
 
+                <button type="button" class="anrsh-privacy-btn" id="anrshPrivacyToggle" aria-pressed="false" onclick="toggleANRSHPrivacy()">👁️ إخفاء بيانات الاستمارة</button>
                 <form id="adhesionForm" oninput="syncBadgeLive()">
                     <div class="form-section-title">👤 <span id="t-sec-civil">البيانات الشخصية والمدنية</span></div>
                     
@@ -1533,7 +1558,36 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     api("/api/health").then(function(r){badge.textContent=r.ok?"🟢 المنصة متصلة بقاعدة البيانات · "+r.active_wilayas+" ولاية · "+r.active_regional_offices+" مكتب جهوي":"🔴 تعذر الاتصال بقاعدة البيانات";})
       .catch(function(){badge.textContent="🔴 تعذر الاتصال بخادم ANRSH؛ تحقق من نشر Worker والربط.";});
   }
+
+  function updateANRSHClock(){
+    var now=new Date();
+    var c=document.getElementById("anrshClock"),d=document.getElementById("anrshDate");
+    if(c)c.textContent=new Intl.DateTimeFormat("fr-FR",{timeZone:"Africa/Algiers",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(now);
+    if(d)d.textContent=new Intl.DateTimeFormat("ar-DZ",{timeZone:"Africa/Algiers",weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(now);
+  }
+  var anrshQuotes=[
+    {text:"﴿فَإِنَّ مَعَ الْعُسْرِ يُسْرًا﴾",source:"سورة الشرح – الآية 6"},
+    {text:"﴿وَقُلِ اعْمَلُوا فَسَيَرَى اللَّهُ عَمَلَكُمْ وَرَسُولُهُ وَالْمُؤْمِنُونَ﴾",source:"سورة التوبة – الآية 105"},
+    {text:"قال رسول الله ﷺ: «يَسِّرُوا وَلَا تُعَسِّرُوا، وَبَشِّرُوا وَلَا تُنَفِّرُوا»",source:"متفق عليه"}
+  ];
+  var anrshQuoteIndex=0;
+  function rotateANRSHQuote(){
+    var box=document.getElementById("anrshQuote");if(!box)return;
+    var q=anrshQuotes[anrshQuoteIndex%anrshQuotes.length];
+    box.innerHTML="";
+    var t=document.createTextNode(q.text),small=document.createElement("small");
+    small.textContent=q.source;box.appendChild(t);box.appendChild(small);anrshQuoteIndex++;
+  }
+  function toggleANRSHPrivacy(){
+    var form=document.getElementById("adhesionForm"),btn=document.getElementById("anrshPrivacyToggle");
+    if(!form||!btn)return;
+    var hidden=form.classList.toggle("anrsh-private");
+    btn.setAttribute("aria-pressed",hidden?"true":"false");
+    btn.textContent=hidden?"👁️‍🗨️ إظهار بيانات الاستمارة":"👁️ إخفاء بيانات الاستمارة";
+  }
+
   document.addEventListener("DOMContentLoaded",function(){
+     updateANRSHClock();setInterval(updateANRSHClock,1000);setInterval(rotateANRSHQuote,9000);
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
     var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
