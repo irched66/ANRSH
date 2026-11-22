@@ -1,5 +1,5 @@
 var CACHE = "anrsh-v4";
-var FILES = ["./", "index.html", "config.js", "manifest.webmanifest", "intro.mp4", "assets/anrsh-background.png", "icon-192.png", "icon-512.png"];
+var FILES = ["./", "index.html", "config.js", "manifest.webmanifest", "intro.mp4", "assets/anrsh-background.png", "icon.svg"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
