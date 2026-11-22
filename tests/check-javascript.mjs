@@ -34,4 +34,6 @@ assert.ok(worker.includes("async function requireAdmin"), "Session authenticatio
 assert.ok(!worker.includes("adminKeyOk(request, env)"), "Shared admin API key must not authorize routes");
 assert.ok(worker.includes("payment_not_verified"), "Member approval must require verified payment");
 assert.ok(worker.includes("FILE_ENCRYPTION_KEY"), "New document uploads must require encryption key");
+assert.ok(!html.includes("ANRSH-2026-CHANGE"), "Fixed legacy browser OTP key must not exist");
+assert.ok(html.includes("window.validateSecurityOTP=async function()"), "Member OTP must be verified through the Worker API");
 console.log("Syntax checks passed: Worker + " + checked + " inline script(s); security invariants checked.");
