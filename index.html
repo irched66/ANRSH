@@ -1413,7 +1413,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var state=el("requestState");
       if(r.state==="otp_ready"){
         if(el("otpEntry"))el("otpEntry").hidden=false;
-        if(state)state.textContent="✅ تمت المصادقة على إثبات الدفع وصدر رمز التأكيد. أدخل الرمز الذي وصلك عبر القناة المعتمدة.";
+        if(state)state.textContent="✅ تمت المصادقة على الدفع وصدر رمز التأكيد. استلمه من القناة التي أكدها المكتب؛ وإذا لم يصلك، تواصل مع مكتبك الجهوي قبل إدخاله.";
       }else if(r.state==="verified"){
         if(state)state.textContent="تم التحقق من الرمز مسبقاً.";
       }else{
@@ -1497,7 +1497,11 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});
       var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 24 ساعة):";out.appendChild(title);
       var code=document.createElement("div");code.dir="ltr";code.style.cssText="font-size:2rem;letter-spacing:7px;color:var(--gold-light);font-weight:bold";code.textContent=r.code;out.appendChild(code);
-      var note=document.createElement("p");note.textContent=r.emailSent?"تم إرسال الرمز إلى البريد المسجل أيضاً.":"لم يثبت إرسال بريد إلكتروني؛ أرسل الرمز للمنخرط يدوياً.";out.appendChild(note);
+      var note=document.createElement("p");
+      if(r.otpChannel==="email") note.textContent=r.emailSent?"تم إرسال الرمز إلى البريد الإلكتروني المسجل.":"تعذر إرسال البريد الإلكتروني؛ أرسل الرمز يدوياً بعد التحقق من عنوان البريد.";
+      else if(r.otpChannel==="whatsapp") note.textContent="القناة المختارة WhatsApp؛ افتح رابط واتساب أدناه لإرسال الرمز يدوياً.";
+      else note.textContent="القناة المختارة SMS؛ لا يوجد إرسال آلي حالياً. أرسل الرمز يدوياً برسالة SMS من هاتف الجمعية.";
+      out.appendChild(note);
       if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
