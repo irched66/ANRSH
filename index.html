@@ -34,7 +34,7 @@
 
         body {
             background-color: var(--bg-dark);
-            background-image: linear-gradient(180deg,rgba(5,10,20,.24),rgba(5,10,20,.48)),url("assets/anrsh-background.svg");
+            background-image: linear-gradient(180deg,rgba(5,10,20,.24),rgba(5,10,20,.48)),url("assets/regional-offices/EL_MENIAA.jpg");
             background-position: center top;
             background-size: cover;
             background-repeat: no-repeat;
@@ -1576,6 +1576,15 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       .catch(function(){badge.textContent="🔴 تعذر الاتصال بخادم ANRSH؛ تحقق من نشر Worker والربط.";});
   }
 
+  var anrshBackgrounds=["assets/regional-offices/EL_MENIAA.jpg","assets/regional-offices/ALGIERS.jpg","assets/regional-offices/BEJAIA.jpg","assets/regional-offices/BISKRA.webp","assets/regional-offices/LAGHOUAT.jpg","assets/regional-offices/OUED_SOUF.jpg","assets/regional-offices/SKIKDA.jpg","assets/regional-offices/TIMIMOUN.jpg","assets/anrsh-background.png"];
+  var anrshBackgroundIndex=0;
+  function rotateANRSHBackground(){
+    var photo=anrshBackgrounds[anrshBackgroundIndex%anrshBackgrounds.length],img=new Image();
+    img.onload=function(){document.body.style.backgroundImage='linear-gradient(180deg,rgba(5,10,20,.30),rgba(5,10,20,.58)),url("'+photo+'")';};
+    img.onerror=function(){console.warn("ANRSH background unavailable:",photo);};
+    img.src=photo;anrshBackgroundIndex++;
+  }
+
   function updateANRSHClock(){
     var now=new Date();
     var c=document.getElementById("anrshClock"),d=document.getElementById("anrshDate");
@@ -1604,7 +1613,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
 
   document.addEventListener("DOMContentLoaded",function(){
-     updateANRSHClock();setInterval(updateANRSHClock,1000);setInterval(rotateANRSHQuote,9000);
+     updateANRSHClock();setInterval(updateANRSHClock,1000);rotateANRSHBackground();setInterval(rotateANRSHBackground,12000);setInterval(rotateANRSHQuote,9000);
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
     var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
