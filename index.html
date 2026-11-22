@@ -41,11 +41,10 @@
         }
 
         .bg-cinematic {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -2;
-            background: radial-gradient(circle at 50% 15%, #1e293b 0%, #070a10 100%);
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            z-index: -2; pointer-events:none; background-color:#080d18;
+            background-image:linear-gradient(180deg,rgba(5,10,20,.30),rgba(5,10,20,.58)),url("assets/anrsh-background.svg");
+            background-position:center; background-size:cover; background-repeat:no-repeat;
         }
 
         .audio-assistant-bar {
@@ -579,6 +578,15 @@ textarea{resize:vertical;font-family:inherit}
                 <button type="button" class="lang-pill" onclick="setLanguage('en', this)">English</button>
                 <button type="button" class="lang-pill" id="btnInstall" onclick="doInstall()">📲 تثبيت التطبيق</button>
             </div>
+
+            <section class="install-guide" id="anrshInstallGuide" aria-label="تثبيت المنصة">
+                <h2>📲 تثبيت منصة ANRSH على هاتفك</h2>
+                <p id="anrshInstallStatus">يمكنك إضافة المنصة إلى الشاشة الرئيسية لتفتح كتطبيق مستقل.</p>
+                <h3>Android – Google Chrome</h3>
+                <p>اضغط «تثبيت التطبيق» أعلاه إذا ظهر الخيار. أو افتح قائمة ⋮ في Chrome ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».</p>
+                <h3>بعد التثبيت</h3>
+                <p>ستجد أيقونة ANRSH على شاشة الهاتف. افتحها مباشرة مثل بقية التطبيقات. قد تتطلب البيانات الجديدة اتصالاً بالإنترنت.</p>
+            </section>
 
             <div class="tabs-nav">
                 <button type="button" class="tab-btn active" id="tab-reg" onclick="switchMainTab('register')">📝 طلب الانخراط والبطاقة</button>
@@ -1312,13 +1320,18 @@ function submitReport(){if(!JWT){alert("سجّل الدخول من فضاء ال
 function loadReports(){sbFetch("/rest/v1/reports?select=id,created_at,bureau,kind,year,period,consolidated,literary,data&order=created_at.desc&limit=100").then(function(r){RPS=r||[];var h=$("rp_hist");h.innerHTML="";var t=document.createElement("b");t.textContent="التقارير المحفوظة في المنصة";h.appendChild(t);RPS.forEach(function(x,i){var row=document.createElement("div");row.style.margin="6px 0";row.appendChild(document.createTextNode((x.consolidated?"📌 موحّد · ":"")+x.year+" · "+x.kind+" · "+x.bureau+" · "+new Date(x.created_at).toLocaleDateString("fr-DZ")+" "));row.appendChild(btn("عرض",function(){showRp(i)}));h.appendChild(row)});var pre=document.createElement("pre");pre.id="rp_view";pre.style.cssText="white-space:pre-wrap;margin-top:8px";h.appendChild(pre)}).catch(function(){})}
 function showRp(i){var x=RPS[i];$("rp_view").textContent=(x.data&&x.data.text)||x.literary||""}
 function loadOffices(){sbFetch("/rest/v1/offices?select=*&order=sort").then(function(r){if(!r||!r.length)return;DIR=r.map(function(o){return[o.name_ar,o.head_ar||o.head_fr||"",o.tel||"",o.role_ar||""]});r.forEach(function(o){if(o.code&&o.head_fr)HEADS[o.code]=o.head_fr});renderDir();syncBadgeLive();applyLang()}).catch(function(){})}
-var _inst=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_inst=e;$("btnInstall").style.display=""});
+var _inst=null;
+function setInstallStatus(t){var n=$("anrshInstallStatus");if(n)n.textContent=t}
+window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();_inst=e;$("btnInstall").style.display="";$("btnInstall").textContent="📲 تثبيت التطبيق";setInstallStatus("التثبيت متاح الآن. اضغط زر «تثبيت التطبيق» أعلاه.")});
+window.addEventListener("appinstalled",function(){_inst=null;$("btnInstall").textContent="✅ تم تثبيت ANRSH";setInstallStatus("تم تثبيت المنصة بنجاح. افتحها من أيقونة ANRSH على هاتفك.")});
 function doInstall(){
- if(_inst){_inst.prompt();_inst=null;return}
+ if(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches){setInstallStatus("المنصة مثبتة بالفعل على هذا الجهاز.");alert("منصة ANRSH مثبتة بالفعل.");return}
+ if(_inst){_inst.prompt();_inst.userChoice.then(function(choice){if(choice.outcome==="accepted"){setInstallStatus("تم قبول تثبيت المنصة. أكمل رسالة التأكيد التي تظهر على الهاتف.")}else{setInstallStatus("لم يتم التثبيت بعد. يمكنك إعادة المحاولة من قائمة Chrome ⋮.")}});_inst=null;return}
  var ua=navigator.userAgent||"";
- var msg=/iPhone|iPad|iPod/i.test(ua)?"افتح المنصة في Safari، ثم اضغط مشاركة واختر «إضافة إلى الشاشة الرئيسية».":/Android/i.test(ua)?"افتح المنصة في Google Chrome، ثم قائمة ⋮ واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».":"افتح المنصة في Chrome أو Edge، ثم قائمة المتصفح واختر «تثبيت الصفحة كتطبيق».";
- alert(msg);
+ var msg=/iPhone|iPad|iPod/i.test(ua)?"افتح المنصة في Safari، ثم اضغط مشاركة واختر «إضافة إلى الشاشة الرئيسية».":/Android/i.test(ua)?"في Google Chrome: اضغط ⋮ أعلى الشاشة ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية». إذا لم يظهر الخيار، حدّث الصفحة وانتظر قليلاً.":"في Chrome أو Edge افتح قائمة المتصفح واختر «تثبيت الصفحة كتطبيق».";
+ setInstallStatus(msg);alert(msg);
 }
+if(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches){$("btnInstall").textContent="✅ التطبيق مثبت";setInstallStatus("أنت تستخدم نسخة ANRSH المثبتة على هذا الجهاز.");}
 if("serviceWorker" in navigator&&/^https?:/.test(location.protocol)&&!/claude\.ai|claudeusercontent/.test(location.host)){navigator.serviceWorker.register("sw.js").catch(function(){})}
 $("rp_bureau").innerHTML=$("user_bureau").innerHTML;if(SB)loadOffices();rpBal();rpHist();dueInfo();
 $("payInfo").innerHTML=(PAY[$("user_bureau").value]||"رقم الحساب البريدي أو البنكي لمكتبك يزوّدك به المكتب عبر واتساب (0657709457). الدفع ببطاقة الذهبية (Edahabia) أو CIB أو بريدي موب.");
