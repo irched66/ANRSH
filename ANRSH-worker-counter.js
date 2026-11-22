@@ -803,8 +803,8 @@ async function handleReports(request,env,method) {
   const year=Number(body.year),quarter=Number(body.quarter);
   if(!bureau||!Number.isInteger(year)||year<2020||year>2100||![1,2,3,4].includes(quarter)) return json({error:"invalid_report_period"},400);
   const periodStart=year+"-"+String((quarter-1)*3+1).padStart(2,"0")+"-01";
-  const periodEnd=quarter===4?year+"-12-31":year+"-"+String(quarter*3+1).padStart(2,"0")+"-01";
-  const id=crypto.randomUUID(), periodFrom=Date.parse(periodStart+"T00:00:00Z"), periodTo=Date.parse(periodEnd+"T23:59:59Z");
+  const periodEnd=new Date(Date.UTC(year,quarter*3,0)).toISOString().slice(0,10);
+  const id=crypto.randomUUID(), periodFrom=Date.parse(periodStart+"T00:00:00.000Z"), periodTo=Date.parse(periodEnd+"T23:59:59.999Z");
   const financial=await env.DB.prepare(`
     SELECT COUNT(*) AS payment_count,COALESCE(SUM(amount_dzd),0) AS gross_dzd
     FROM member_payments WHERE bureau=? AND status='verified' AND membership_year=? AND reviewed_at BETWEEN ? AND ?
