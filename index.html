@@ -1395,7 +1395,11 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       invalid_code:"رمز التحقق غير صحيح.",
       too_many_attempts:"تم تجاوز عدد المحاولات المسموح بها.",
       unauthorized:"مفتاح الإدارة غير صحيح أو غير مصرح به.",
-      not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي."
+      not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي.",
+      finance_record_failed:"تعذر تسجيل العملية المالية. تأكد من تطبيق ترحيل قاعدة البيانات 006 ونشر Worker الجديد.",
+      invalid_date_range:"الفترة الزمنية غير صحيحة.",
+      invalid_transfer_data:"بيانات التحويل البنكي غير مكتملة أو غير صحيحة.",
+      transfer_exceeds_outstanding:"قيمة التحويل أكبر من مستحقات المكتب المتبقية للفترة المحددة."
     };
     var key=j&&j.error||"";
     return map[key] || (j&&j.message) || ("خطأ في الاتصال بالخادم ("+status+").");
