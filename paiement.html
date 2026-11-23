@@ -135,7 +135,10 @@ function showLink() {
   };
   const chosen = CFG.LINKS[m] ? {url: CFG.LINKS[m], label: 'افتح منصة ' + METHOD_NAMES[m]} : official[m];
   box.replaceChildren();
-  if (chosen) const link = h('a', { href: chosen.url, class: 'act sec', target: '_self', text: chosen.label, style: 'display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer' }); box.append(link);
+  if (chosen) {
+    const link = h('a', { href: chosen.url, class: 'act sec', target: '_self', text: chosen.label, style: 'display:inline-flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer' });
+    box.append(link);
+  }
 }
 $('#meth').onchange = showLink; showLink();
 
