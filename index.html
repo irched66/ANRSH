@@ -1589,7 +1589,10 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adFinanceLoad=async function(){
     var from=val("fin_from"),to=val("fin_to"),bureau=val("fin_bureau");
-    if(!from){from=new Date(Date.now()-182*86400000).toISOString().slice(0,10);el("fin_from").value=from;}
+    if(!from){
+      var now=new Date(),startMonth=now.getMonth()<6?0:6;
+      from=now.getFullYear()+"-"+String(startMonth+1).padStart(2,"0")+"-01";el("fin_from").value=from;
+    }
     if(!to){to=new Date().toISOString().slice(0,10);el("fin_to").value=to;}
     try{
       var q="?from="+encodeURIComponent(from)+"&to="+encodeURIComponent(to)+(bureau?"&bureau="+encodeURIComponent(bureau):"");
