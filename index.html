@@ -619,7 +619,7 @@ textarea{resize:vertical;font-family:inherit}
                 <h2 style="color: var(--gold-light); font-size: 1.25rem; font-weight: 900; margin-bottom: 6px;" id="t-form-title">استمارة الانخراط واستخراج بطاقة العضوية 2026</h2>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;" id="t-form-desc">يرجى إدخال البيانات بدقة وإرفاق الوثائق المطلوبة لتأكيد الدفع الإلكتروني واستلام رمز الطباعة.</p>
 
-                <button type="button" class="anrsh-privacy-btn" id="anrshPrivacyToggle" aria-pressed="false" onclick="toggleANRSHPrivacy()">👁️ إخفاء الاستمارة</button>
+                <button type="button" class="anrsh-privacy-btn" id="anrshPrivacyToggle" onclick="openANRSHReview()">👁️ معاينة الاستمارة قبل الحفظ</button>
                 <form id="adhesionForm" oninput="syncBadgeLive()">
                     <div class="form-section-title">👤 <span id="t-sec-civil">البيانات الشخصية والمدنية</span></div>
                     
@@ -644,11 +644,11 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="form-row two-col">
                         <div class="field-group">
                             <label id="t-lbl-ln">اللقب (Nom):</label>
-                            <input type="text" id="last_name" required placeholder="علاوة / ALLAOUA">
+                            <input type="text" id="last_name" required placeholder="اكتب اللقب">
                         </div>
                         <div class="field-group">
                             <label id="t-lbl-fn">الاسم (Prénom):</label>
-                            <input type="text" id="first_name" required placeholder="العيد / LAID">
+                            <input type="text" id="first_name" required placeholder="اكتب الاسم">
                         </div>
                     </div>
 
@@ -722,7 +722,7 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="form-row two-col">
                         <div class="field-group">
                             <label id="t-lbl-mat">رقم التسجيل بسوناطراك (Matricule SH):</label>
-                            <input type="text" id="matricule_sh" required placeholder="24570N" dir="ltr">
+                            <input type="text" id="matricule_sh" required placeholder="رقم التسجيل بسوناطراك" dir="ltr">
                         </div>
                         <div class="field-group">
                             <label id="t-lbl-direction">النشاط أو القسم بمجمع سوناطراك:</label>
@@ -825,10 +825,26 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p><div class="payment-card-gallery" aria-label="وسائل الدفع"><figure><a class="payment-card-link" href="https://play.google.com/store/apps/details?id=ru.bpc.mobilebank.bpc" target="_self" aria-label="افتح صفحة بريدي موب الرسمية"><img src="assets/payment/edahabia-illustration.svg" alt="رسم توضيحي للبطاقة الذهبية"></a><figcaption>البطاقة الذهبية Edahabia — اضغط للانتقال إلى بريدي موب</figcaption></figure><figure><a class="payment-card-link" href="https://www.satim.dz/index.php/ar/cib-khdmat/cib" target="_self" aria-label="معلومات الدفع الإلكتروني عبر CIB من ساتيم"><img src="assets/payment/cib-illustration.svg" alt="رسم توضيحي لبطاقة CIB"></a><figcaption>البطاقة البنكية CIB — اضغط لمعلومات الدفع عبر ساتيم</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p></div>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
-                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
-                        <span>🔐</span> <span id="t-btn-submit">تأكيد التسجيل والدفع وطلب رمز التحقق الأمني</span>
+                    <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="openANRSHReview()">
+                        <span>👁️</span> <span id="t-btn-submit">معاينة الاستمارة والتحقق من المعلومات قبل الإرسال</span>
                     </button>
                 </form>
+
+                <!-- معاينة الاستمارة قبل حفظها -->
+                <div id="anrshReviewModal" role="dialog" aria-modal="true" aria-labelledby="anrshReviewTitle" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.88);padding:14px;overflow-y:auto">
+                  <div style="max-width:820px;margin:20px auto;background:#101b2d;color:#fff;border:1px solid #c9a44c;border-radius:18px;padding:18px;box-shadow:0 20px 60px #000">
+                    <h2 id="anrshReviewTitle" style="color:#f2d27a;text-align:center;margin:0 0 8px">👁️ معاينة استمارة الانخراط</h2>
+                    <p style="text-align:center;margin:0 0 14px;color:#dbe4f0">راجع المعلومات والوثائق المرفقة قبل تأكيد الإرسال.</p>
+                    <div id="anrshReviewContent" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px"></div>
+                    <div style="margin:18px 0 12px;padding:13px;border:1px solid #d6b65c;border-radius:12px;background:#17243a;line-height:1.8;font-weight:700;text-align:center">
+                      يرجى التحقق من جميع المعلومات والوثائق قبل المصادقة عليها. يتحمل صاحب الطلب مسؤولية صحة البيانات المقدمة.
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap">
+                      <button type="button" onclick="closeANRSHReview()" style="flex:1;min-width:140px;padding:13px;border:0;border-radius:10px;background:#475569;color:#fff;font-weight:800">✏️ رجوع للتعديل</button>
+                      <button type="button" id="anrshReviewConfirm" onclick="confirmANRSHReview()" style="flex:1;min-width:180px;padding:13px;border:0;border-radius:10px;background:#15803d;color:#fff;font-weight:800">✅ تأكيد صحة المعلومات وإرسال الطلب</button>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- نافذة التحقق OTP -->
                 <div id="otpBox" class="otp-verification-box">
@@ -1640,6 +1656,64 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var t=document.createTextNode(q.text),small=document.createElement("small");
     small.textContent=q.source;box.appendChild(t);box.appendChild(small);anrshQuoteIndex++;
   }
+  var anrshReviewObjectUrls=[];
+  function openANRSHReview(){
+    var form=document.getElementById("adhesionForm");
+    if(!form)return;
+    if(!form.reportValidity())return;
+    var box=document.getElementById("anrshReviewContent");
+    var modal=document.getElementById("anrshReviewModal");
+    if(!box||!modal)return;
+    anrshReviewObjectUrls.forEach(function(u){URL.revokeObjectURL(u)});anrshReviewObjectUrls=[];
+    box.innerHTML="";
+    function addCard(title,value,extra){
+      var card=document.createElement("div");
+      card.style.cssText="padding:11px;border:1px solid rgba(214,182,92,.35);border-radius:10px;background:#0b1424;min-width:0";
+      var h=document.createElement("div");h.textContent=title;h.style.cssText="color:#f2d27a;font-weight:800;margin-bottom:5px";
+      var v=document.createElement("div");v.textContent=value;v.style.cssText="white-space:pre-wrap;overflow-wrap:anywhere;color:#f8fafc";
+      card.appendChild(h);card.appendChild(v);if(extra)card.appendChild(extra);box.appendChild(card);
+    }
+    form.querySelectorAll("input,select,textarea").forEach(function(el){
+      if(el.type==="hidden"||el.type==="button"||el.type==="submit")return;
+      var label=(el.closest(".field-group")&&el.closest(".field-group").querySelector("label"));
+      if(el.type==="file"){
+        var files=Array.from(el.files||[]);
+        var title=label?label.textContent.trim():el.id;
+        if(!files.length){addCard(title,"لم يتم اختيار ملف");return}
+        files.forEach(function(file){
+          var extra=null;
+          if(file.type.indexOf("image/")===0){
+            extra=document.createElement("img");var u=URL.createObjectURL(file);anrshReviewObjectUrls.push(u);
+            extra.src=u;extra.alt="معاينة "+file.name;extra.style.cssText="display:block;max-width:100%;max-height:180px;object-fit:contain;margin-top:8px;border-radius:8px";
+          }else if(file.type==="application/pdf"||/\.pdf$/i.test(file.name)){
+            extra=document.createElement("a");var pu=URL.createObjectURL(file);anrshReviewObjectUrls.push(pu);
+            extra.href=pu;extra.target="_blank";extra.rel="noopener";extra.textContent="📄 فتح ملف PDF";extra.style.cssText="display:inline-block;margin-top:8px;color:#f2d27a";
+          }
+          addCard(title,file.name+" — "+Math.max(1,Math.round(file.size/1024))+" كيلوبايت",extra);
+        });
+        return;
+      }
+      var title=label?label.textContent.trim():el.id;
+      var value=el.type==="checkbox"?(el.checked?"نعم، موافق":"لم تتم الموافقة"):el.tagName==="SELECT"?(el.selectedOptions[0]?el.selectedOptions[0].textContent.trim():"—"):(el.value.trim()||"—");
+      addCard(title,value);
+    });
+    modal.style.display="block";
+    document.body.style.overflow="hidden";
+  }
+  function closeANRSHReview(){
+    var modal=document.getElementById("anrshReviewModal");if(modal)modal.style.display="none";
+    document.body.style.overflow="";
+    anrshReviewObjectUrls.forEach(function(u){URL.revokeObjectURL(u)});anrshReviewObjectUrls=[];
+  }
+  function confirmANRSHReview(){
+    var b=document.getElementById("anrshReviewConfirm");if(b)b.disabled=true;
+    closeANRSHReview();
+    try{requestSecurityOTP()}finally{if(b)b.disabled=false}
+  }
+  window.openANRSHReview=openANRSHReview;
+  window.closeANRSHReview=closeANRSHReview;
+  window.confirmANRSHReview=confirmANRSHReview;
+
   function toggleANRSHPrivacy(){
     var form=document.getElementById("adhesionForm"),btn=document.getElementById("anrshPrivacyToggle");
     if(!form||!btn)return;
