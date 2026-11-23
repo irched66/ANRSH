@@ -37,6 +37,7 @@ table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{border:1px solid var(--bd);padding:6px 8px;text-align:center;white-space:nowrap}
 .code{font-size:2rem;letter-spacing:6px;font-weight:700;text-align:center;direction:ltr;padding:10px;background:var(--bg);border-radius:8px}
 footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
+.payment-card-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.payment-card-gallery figure{margin:0;text-align:center}.payment-card-gallery img{width:100%;height:auto;display:block;border:1px solid var(--gold);border-radius:10px}.payment-card-gallery figcaption{font-size:.85rem;font-weight:700;margin-top:5px}.payment-safety{font-size:.82rem;color:var(--red);margin:8px 0;line-height:1.6}@media(max-width:420px){.payment-card-gallery{grid-template-columns:1fr}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -66,6 +67,7 @@ footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
       <option value="edahabia">البطاقة الذهبية (Edahabia)</option>
       <option value="cib">البطاقة البنكية (CIB)</option>
     </select>
+<div class="payment-card-gallery" aria-label="وسائل الدفع"><figure><img src="assets/payment/edahabia-illustration.svg" alt="رسم توضيحي للبطاقة الذهبية"><figcaption>البطاقة الذهبية Edahabia</figcaption></figure><figure><img src="assets/payment/cib-illustration.svg" alt="رسم توضيحي لبطاقة CIB"><figcaption>البطاقة البنكية CIB</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p>
     <div id="linkBox"></div>
     <p class="hint">بعد الدفع ارفع صورة الوصل وأدخل رقم العملية ليؤكدها مكتب ولايتك.</p>
     <label for="rno">رقم العملية</label>
