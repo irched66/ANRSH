@@ -56,7 +56,7 @@ function corsHeaders(request) {
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
     "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
-    "access-control-allow-headers": "Content-Type, x-admin-key",
+    "access-control-allow-headers": "Content-Type, x-admin-key, Authorization",
     "access-control-max-age": "86400",
     "vary": "Origin"
   };
@@ -585,6 +585,132 @@ async function handleAdminDelete(id, request, env) {
   return json({ ok: true, deleted: true });
 }
 
+
+/* ===== Independent regional-office authentication ===== */
+const OFFICE_SESSION_TTL = 8 * 60 * 60;
+const OFFICE_PASSWORD_ITERATIONS = 210000;
+async function deriveOfficePassword(password, saltHex, iterations) {
+  const salt = new Uint8Array((saltHex.match(/../g) || []).map(x => parseInt(x, 16)));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, key, 256);
+  return [...new Uint8Array(bits)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+async function handleOfficeActivationIssue(bureau, request, env) {
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  bureau = cleanText(bureau, 80);
+  const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau = ? AND active = 1").bind(bureau).first();
+  if (!office) return json({ error: "invalid_or_inactive_office" }, 404);
+  const account = await env.DB.prepare("SELECT bureau FROM anrsh_office_accounts WHERE bureau = ?").bind(bureau).first();
+  if (account) return json({ error: "office_account_already_activated" }, 409);
+  const code = randomHex(24);
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB.prepare(`INSERT INTO anrsh_office_activation_tokens (bureau, token_hash, expires_at, used_at, created_at)
+    VALUES (?, ?, ?, NULL, ?)
+    ON CONFLICT(bureau) DO UPDATE SET token_hash=excluded.token_hash, expires_at=excluded.expires_at, used_at=NULL, created_at=excluded.created_at`)
+    .bind(bureau, await sha256(bureau + ":" + code), now + 24 * 60 * 60, now).run();
+  return json({ ok: true, bureau, activationCode: code, expiresIn: 86400, message: "activation_code_show_once" }, 201);
+}
+async function handleOfficeActivate(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const bureau = cleanText(body.bureau, 80);
+  const activationCode = String(body.activationCode || "");
+  const password = String(body.password || "");
+  const confirmation = String(body.confirmPassword || "");
+  if (!bureau || !/^[a-f0-9]{48}$/i.test(activationCode)) return json({ error: "invalid_activation_data" }, 400);
+  if (password.length < 12 || password.length > 128 || password !== confirmation) return json({ error: "password_policy_failed" }, 400);
+  const now = Math.floor(Date.now() / 1000);
+  const token = await env.DB.prepare("SELECT token_hash, expires_at, used_at FROM anrsh_office_activation_tokens WHERE bureau = ?").bind(bureau).first();
+  if (!token || token.used_at || Number(token.expires_at) < now ||
+      !safeEqual(token.token_hash, await sha256(bureau + ":" + activationCode))) {
+    return json({ error: "activation_code_invalid_or_expired" }, 403);
+  }
+  const existing = await env.DB.prepare("SELECT bureau FROM anrsh_office_accounts WHERE bureau = ?").bind(bureau).first();
+  if (existing) return json({ error: "office_account_already_activated" }, 409);
+  const salt = randomHex(16);
+  const hash = await deriveOfficePassword(password, salt, OFFICE_PASSWORD_ITERATIONS);
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO anrsh_office_accounts
+      (bureau, password_salt, password_hash, password_iterations, activated_at, updated_at, failed_login_count, locked_until)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 0)`).bind(bureau, salt, hash, OFFICE_PASSWORD_ITERATIONS, now, now),
+    env.DB.prepare("UPDATE anrsh_office_activation_tokens SET used_at = ? WHERE bureau = ? AND used_at IS NULL").bind(now, bureau)
+  ]);
+  return json({ ok: true, activated: true, bureau, message: "office_account_activated_login_now" }, 201);
+}
+async function handleOfficeLogin(request, env) {
+  const body = await request.json().catch(() => ({}));
+  const bureau = cleanText(body.bureau, 80);
+  const password = String(body.password || "");
+  if (!bureau || !password || password.length > 128) return json({ error: "invalid_login" }, 400);
+  const now = Math.floor(Date.now() / 1000);
+  const account = await env.DB.prepare("SELECT * FROM anrsh_office_accounts WHERE bureau = ?").bind(bureau).first();
+  if (!account) return json({ error: "invalid_credentials" }, 401);
+  if (Number(account.locked_until || 0) > now) return json({ error: "office_login_temporarily_locked" }, 429);
+  const candidate = await deriveOfficePassword(password, account.password_salt, Number(account.password_iterations) || OFFICE_PASSWORD_ITERATIONS);
+  if (!safeEqual(candidate, account.password_hash)) {
+    const failures = Number(account.failed_login_count || 0) + 1;
+    await env.DB.prepare("UPDATE anrsh_office_accounts SET failed_login_count = ?, locked_until = ? WHERE bureau = ?")
+      .bind(failures >= 8 ? 0 : failures, failures >= 8 ? now + 15 * 60 : 0, bureau).run();
+    return json({ error: "invalid_credentials" }, 401);
+  }
+  const raw = randomHex(32);
+  const tokenHash = await sha256(raw);
+  await env.DB.prepare("UPDATE anrsh_office_accounts SET failed_login_count = 0, locked_until = 0 WHERE bureau = ?").bind(bureau).run();
+  await env.DB.prepare("INSERT INTO anrsh_office_sessions (token_hash, bureau, created_at, expires_at, last_seen) VALUES (?, ?, ?, ?, ?)")
+    .bind(tokenHash, bureau, now, now + OFFICE_SESSION_TTL, now).run();
+  return json({ ok: true, token: raw, expiresIn: OFFICE_SESSION_TTL, bureau });
+}
+async function officeSession(request, env) {
+  const header = request.headers.get("authorization") || "";
+  const raw = header.startsWith("Bearer ") ? header.slice(7) : "";
+  if (!/^[a-f0-9]{64}$/i.test(raw)) return null;
+  const now = Math.floor(Date.now() / 1000);
+  const hash = await sha256(raw);
+  const session = await env.DB.prepare(`SELECT s.bureau, o.office_name
+    FROM anrsh_office_sessions s JOIN regional_offices o ON o.bureau = s.bureau
+    WHERE s.token_hash = ? AND s.expires_at > ? AND o.active = 1`).bind(hash, now).first();
+  if (!session) return null;
+  await env.DB.prepare("UPDATE anrsh_office_sessions SET last_seen = ? WHERE token_hash = ?").bind(now, hash).run();
+  return { bureau: session.bureau, officeName: session.office_name, tokenHash: hash };
+}
+async function handleOfficeMe(request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
+  return json({ ok: true, role: "regional_office", bureau: session.bureau, officeName: session.officeName });
+}
+async function handleOfficeLogout(request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ ok: true });
+  await env.DB.prepare("DELETE FROM anrsh_office_sessions WHERE token_hash = ?").bind(session.tokenHash).run();
+  return json({ ok: true, loggedOut: true });
+}
+async function handleOfficeRequests(request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
+  const r = await env.DB.prepare(`SELECT id, ref, bureau, name, phone, profile, files, status, created_at
+    FROM members WHERE bureau = ? ORDER BY created_at DESC LIMIT 500`).bind(session.bureau).all();
+  return json((r.results || []).map(row => ({
+    id: row.id, memberId: row.id, requestNumber: row.ref, name: row.name, phone: row.phone,
+    bureau: row.bureau, status: row.status, createdAt: row.created_at,
+    profile: parseJson(row.profile, {}), files: Object.keys(parseJson(row.files, {}))
+  })));
+}
+async function handleOfficeFile(id, type, request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
+  if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
+  const row = await env.DB.prepare("SELECT files FROM members WHERE id = ? AND bureau = ?").bind(id, session.bureau).first();
+  if (!row) return json({ error: "member_not_found" }, 404);
+  const file = parseJson(row.files, {})[type];
+  if (!file || !file.data) return json({ error: "file_not_found" }, 404);
+  const bytes = base64ToBytes(file.data);
+  return new Response(bytes, { status: 200, headers: {
+    ...JSON_HEADERS, "content-type": file.type || "application/octet-stream",
+    "content-length": String(bytes.byteLength),
+    "content-disposition": `inline; filename="${fileName(file.name)}"`,
+    "cache-control": "private, no-store", "x-content-type-options": "nosniff"
+  }});
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -601,6 +727,17 @@ async function route(request, env) {
       message: "Association Nationale des Retraités de Sonatrach"
     });
   }
+
+  if (request.method === "POST" && path === "/api/office/activate") return handleOfficeActivate(request, env);
+  if (request.method === "POST" && path === "/api/office/login") return handleOfficeLogin(request, env);
+  if (request.method === "GET" && path === "/api/office/me") return handleOfficeMe(request, env);
+  if (request.method === "POST" && path === "/api/office/logout") return handleOfficeLogout(request, env);
+  if (request.method === "GET" && path === "/api/office/requests") return handleOfficeRequests(request, env);
+  const officeFileMatch = path.match(/^\/api\/office\/requests\/([^/]+)\/files\/([^/]+)$/);
+  if (request.method === "GET" && officeFileMatch) return handleOfficeFile(decodeURIComponent(officeFileMatch[1]), decodeURIComponent(officeFileMatch[2]), request, env);
+  const activationMatch = path.match(/^\/api\/admin\/offices\/([^/]+)\/activation$/);
+  if (request.method === "POST" && activationMatch) return handleOfficeActivationIssue(decodeURIComponent(activationMatch[1]), request, env);
+
   if (request.method === "GET" && path === "/api/health") return handleHealth(env);
   if (request.method === "GET" && path === "/api/public-stats") return handlePublicStats(env);
   if (request.method === "POST" && path === "/api/visitor-visit") return handleVisitorVisit(request, env);
