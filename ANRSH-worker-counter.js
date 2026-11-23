@@ -506,7 +506,7 @@ async function handleAdminApprove(id, request, env) {
 async function handleAdminFinance(url, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
-  const validDate = v => /^\\d{4}-\\d{2}-\\d{2}$/.test(v || "");
+  const validDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || "");
   const from = url.searchParams.get("from") || new Date(Date.now() - 183 * 86400000).toISOString().slice(0, 10);
   const to = url.searchParams.get("to") || new Date().toISOString().slice(0, 10);
   const bureau = cleanText(url.searchParams.get("bureau") || "", 80);
@@ -555,9 +555,9 @@ async function handleAdminFinanceTransfer(request, env) {
   const transferDate = cleanText(body.transferDate, 10);
   const bankReference = cleanText(body.bankReference, 100);
   if (!bureau || !Number.isSafeInteger(amount) || amount <= 0 ||
-      !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodStart) ||
-      !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodEnd) ||
-      !/^\\d{4}-\\d{2}-\\d{2}$/.test(transferDate) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(periodStart) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(periodEnd) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(transferDate) ||
       !bankReference || periodStart > periodEnd) return json({ error: "invalid_transfer_data" }, 400);
   const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau = ? AND active = 1").bind(bureau).first();
   if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
