@@ -29,7 +29,8 @@ const JSON_HEADERS = {
 const ALLOWED_ORIGINS = new Set([
   "https://irched66.github.io",
   "https://anrsh.netlify.app",
-  "https://animated-moonbeam-256371.netlify.app"
+  "https://animated-moonbeam-256371.netlify.app",
+  "https://luxury-malabi-c2f0fb.netlify.app"
 ]);
 
 // D1 stores attachment metadata and base64 content in a single member row.
