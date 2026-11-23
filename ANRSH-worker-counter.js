@@ -454,6 +454,33 @@ async function handleAdminApprove(id, request, env) {
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
 
+  const profile = parseJson(row.profile, {});
+  const confirmedAt = new Date().toISOString();
+  const financeId = crypto.randomUUID();
+  // Payment is treated as confirmed only at this authenticated national-office approval step.
+  // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
+  try {
+    await env.DB.batch([
+      env.DB.prepare(`
+        UPDATE members SET status = 'code_sent' WHERE id = ?
+      `).bind(id),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO anrsh_membership_finance
+          (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
+           fee_amount, national_rate, national_amount, regional_rate, regional_amount,
+           payment_status, payment_confirmed_at, confirmed_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 500, 20, 100, 80, 400, 'confirmed', ?, 'national_admin')
+      `).bind(
+        financeId, row.id, row.ref, cleanText(profile.bureau, 80),
+        cleanText(profile.wilaya_name || profile.wilaya, 120),
+        cleanText(row.name, 200), cleanText(profile.demand_type, 60), confirmedAt
+      )
+    ]);
+  } catch (e) {
+    console.error("finance confirmation", e);
+    return json({ error: "finance_record_failed" }, 500);
+  }
+
   const code = randomDigits(6);
   const hash = await sha256(row.ref + ":" + code);
   const expires = Date.now() + OTP_TTL_MS;
@@ -461,8 +488,6 @@ async function handleAdminApprove(id, request, env) {
     UPDATE members SET otp_hash = ?, otp_exp = ?, otp_tries = 0, status = 'code_sent'
     WHERE id = ?
   `).bind(hash, expires, id).run();
-
-  const profile = parseJson(row.profile, {});
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
@@ -481,6 +506,79 @@ async function handleAdminApprove(id, request, env) {
     whatsappUrl: digits ? `https://wa.me/${digits}?text=${waText}` : null,
     expiresAt: expires
   });
+}
+
+async function handleAdminFinance(url, request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const validDate = v => /^\\d{4}-\\d{2}-\\d{2}$/.test(v || "");
+  const from = url.searchParams.get("from") || new Date(Date.now() - 183 * 86400000).toISOString().slice(0, 10);
+  const to = url.searchParams.get("to") || new Date().toISOString().slice(0, 10);
+  const bureau = cleanText(url.searchParams.get("bureau") || "", 80);
+  if (!validDate(from) || !validDate(to) || from > to) return json({ error: "invalid_date_range" }, 400);
+  const where = "payment_status = 'confirmed' AND date(payment_confirmed_at) >= date(?) AND date(payment_confirmed_at) <= date(?)";
+  const args = [from, to];
+  const officeFilter = bureau ? " AND bureau = ?" : "";
+  if (bureau) args.push(bureau);
+  const [summary, offices, entries, transfers] = await Promise.all([
+    env.DB.prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(fee_amount),0) AS gross,
+      COALESCE(SUM(national_amount),0) AS national, COALESCE(SUM(regional_amount),0) AS regional
+      FROM anrsh_membership_finance WHERE ${where}${officeFilter}`).bind(...args).first(),
+    env.DB.prepare(`SELECT bureau, COUNT(*) AS count, COALESCE(SUM(fee_amount),0) AS gross,
+      COALESCE(SUM(national_amount),0) AS national, COALESCE(SUM(regional_amount),0) AS regional
+      FROM anrsh_membership_finance WHERE ${where}
+      GROUP BY bureau ORDER BY bureau`).bind(from, to).all(),
+    env.DB.prepare(`SELECT id, request_ref, bureau, wilaya, member_name, demand_type, fee_amount,
+      national_amount, regional_amount, payment_confirmed_at
+      FROM anrsh_membership_finance WHERE ${where}${officeFilter}
+      ORDER BY payment_confirmed_at DESC LIMIT 5000`).bind(...args).all(),
+    env.DB.prepare(`SELECT id, bureau, amount, period_start, period_end, transfer_date, bank_reference, note
+      FROM anrsh_regional_transfers WHERE transfer_date >= ? AND transfer_date <= ?${bureau ? " AND bureau = ?" : ""}
+      ORDER BY transfer_date DESC`).bind(...(bureau ? [from, to, bureau] : [from, to])).all()
+  ]);
+  const paidByOffice = {};
+  for (const t of transfers.results || []) paidByOffice[t.bureau] = (paidByOffice[t.bureau] || 0) + Number(t.amount || 0);
+  const officeRows = (offices.results || []).map(o => ({
+    ...o, transferred: paidByOffice[o.bureau] || 0,
+    outstanding: Math.max(0, Number(o.regional || 0) - (paidByOffice[o.bureau] || 0))
+  }));
+  return json({
+    ok: true, period: { from, to }, policy: { fee: 500, nationalRate: 20, nationalAmount: 100, regionalRate: 80, regionalAmount: 400 },
+    summary: summary || { count: 0, gross: 0, national: 0, regional: 0 },
+    offices: officeRows, entries: entries.results || [], transfers: transfers.results || []
+  });
+}
+
+async function handleAdminFinanceTransfer(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const bureau = cleanText(body.bureau, 80);
+  const amount = Number(body.amount);
+  const periodStart = cleanText(body.periodStart, 10);
+  const periodEnd = cleanText(body.periodEnd, 10);
+  const transferDate = cleanText(body.transferDate, 10);
+  const bankReference = cleanText(body.bankReference, 100);
+  if (!bureau || !Number.isSafeInteger(amount) || amount <= 0 ||
+      !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodStart) ||
+      !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodEnd) ||
+      !/^\\d{4}-\\d{2}-\\d{2}$/.test(transferDate) ||
+      !bankReference || periodStart > periodEnd) return json({ error: "invalid_transfer_data" }, 400);
+  const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau = ? AND active = 1").bind(bureau).first();
+  if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
+  const earned = await env.DB.prepare(`SELECT COALESCE(SUM(regional_amount),0) AS n FROM anrsh_membership_finance
+    WHERE bureau = ? AND payment_status = 'confirmed' AND date(payment_confirmed_at) >= date(?) AND date(payment_confirmed_at) <= date(?)`)
+    .bind(bureau, periodStart, periodEnd).first();
+  const transferred = await env.DB.prepare(`SELECT COALESCE(SUM(amount),0) AS n FROM anrsh_regional_transfers
+    WHERE bureau = ? AND period_start = ? AND period_end = ?`).bind(bureau, periodStart, periodEnd).first();
+  const outstanding = Number(earned?.n || 0) - Number(transferred?.n || 0);
+  if (amount > outstanding) return json({ error: "transfer_exceeds_outstanding", outstanding }, 409);
+  const id = crypto.randomUUID();
+  await env.DB.prepare(`INSERT INTO anrsh_regional_transfers
+    (id, bureau, amount, period_start, period_end, transfer_date, bank_reference, note, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'national_admin')`)
+    .bind(id, bureau, amount, periodStart, periodEnd, transferDate, bankReference, cleanText(body.note, 300)).run();
+  return json({ ok: true, id, bureau, amount, outstandingAfter: outstanding - amount }, 201);
 }
 
 async function handleAdminDelete(id, request, env) {
@@ -521,6 +619,8 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/print-check") return handlePrintCheck(url, env);
 
   if (path === "/api/admin/requests" && request.method === "GET") return handleAdminList(request, env);
+  if (path === "/api/admin/finance" && request.method === "GET") return handleAdminFinance(url, request, env);
+  if (path === "/api/admin/finance/transfers" && request.method === "POST") return handleAdminFinanceTransfer(request, env);
 
   const fileMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && fileMatch) {
