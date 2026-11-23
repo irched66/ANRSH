@@ -830,6 +830,16 @@ textarea{resize:vertical;font-family:inherit}
 
                     <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
                     <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p><div class="payment-card-gallery" aria-label="وسائل الدفع"><figure><a class="payment-card-link" href="https://play.google.com/store/apps/details?id=ru.bpc.mobilebank.bpc" target="_self" aria-label="افتح صفحة بريدي موب الرسمية"><img src="assets/payment/edahabia-illustration.svg" alt="رسم توضيحي للبطاقة الذهبية"></a><figcaption>البطاقة الذهبية Edahabia — اضغط للانتقال إلى بريدي موب</figcaption></figure><figure><a class="payment-card-link" href="https://www.satim.dz/index.php/ar/cib-khdmat/cib" target="_self" aria-label="معلومات الدفع الإلكتروني عبر CIB من ساتيم"><img src="assets/payment/cib-illustration.svg" alt="رسم توضيحي لبطاقة CIB"></a><figcaption>البطاقة البنكية CIB — اضغط لمعلومات الدفع عبر ساتيم</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p></div>
+                    <div class="form-section-title">🌐 <span>الاسم واللقب باللغة الأخرى / Name in the other language</span></div>
+                    <div class="form-row two-col" id="nameArabicRow" style="display:none">
+                      <div class="field-group"><label for="last_name_ar">اللقب باللغة العربية *</label><input type="text" id="last_name_ar" autocomplete="off" dir="rtl" placeholder="اكتب اللقب بالعربية" required></div>
+                      <div class="field-group"><label for="first_name_ar">الاسم باللغة العربية *</label><input type="text" id="first_name_ar" autocomplete="off" dir="rtl" placeholder="اكتب الاسم بالعربية" required></div>
+                    </div>
+                    <div class="form-row two-col" id="nameLatinRow">
+                      <div class="field-group"><label for="last_name_latin">Nom (en français) *</label><input type="text" id="last_name_latin" autocomplete="off" dir="ltr" placeholder="Saisir le nom en français" required></div>
+                      <div class="field-group"><label for="first_name_latin">Prénom (en français) *</label><input type="text" id="first_name_latin" autocomplete="off" dir="ltr" placeholder="Saisir le prénom en français" required></div>
+                    </div>
+                    <p style="font-size:.78rem;color:#fbbf24;line-height:1.7;margin:4px 0 12px">اكتب الاسم واللقب بنفسك باللغة الأخرى؛ لن تتم ترجمتهما آلياً. ستظهر الكتابة الفرنسية في الوجه الأمامي والعربية في الوجه الخلفي للبطاقة.</p>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
                     <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="openANRSHReview()">
@@ -894,7 +904,7 @@ textarea{resize:vertical;font-family:inherit}
                             </div></div>
                             <div class="badge-face back"><div class="badge-content-wrap"><img class="wm lg" alt="">
                                 <div style="text-align:center;line-height:1.4"><div style="display:flex;align-items:center;justify-content:center;gap:9px"><svg role="img" aria-label="العلم الجزائري" width="32" height="22" viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="1.5" height="2" fill="#006233"/><rect x="1.5" width="1.5" height="2" fill="#fff"/><path d="M1.83 .43a.59.59 0 1 0 0 1.14.66.66 0 1 1 0-1.14" fill="#d21034"/><path d="m1.98 .66.09.27h.29l-.23.17.09.27-.24-.17-.23.17.09-.27-.24-.17h.29z" fill="#d21034"/></svg><img src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Sonatrach.svg" alt="شعار سوناطراك" style="width:30px;height:40px;object-fit:contain"><img class="lg" alt="شعار ANRSH" style="width:44px;height:44px;border-radius:10px"><div><b style="color:#fbbf24;font-size:.8rem">الجمعية الوطنية لمتقاعدي سوناطراك</b><br><b style="font-size:.78rem">المكتب الوطني ANRSH</b></div></div><small style="color:#e2e8f0;font-size:.62rem">Association Nationale des Retraités de Sonatrach · Bureau National ANRSH</small></div>
-                                <div style="text-align:center;margin:6px 0;border-top:1px solid rgba(251,191,36,.5);border-bottom:1px solid rgba(251,191,36,.5);padding:5px 0"><b style="color:#fbbf24;font-size:1.15rem;display:block">بطاقة الانخراط الإلكترونية</b><b style="font-size:.85rem">CARTE D’ADHÉRENT ÉLECTRONIQUE</b></div>
+                                <div style="text-align:center;margin:5px 0"><small style="color:#cbd5e1">اسم ولقب المنخرط</small><b id="bdNameAr" dir="rtl" style="display:block;color:#fff;font-size:1.05rem">—</b></div><div style="text-align:center;margin:6px 0;border-top:1px solid rgba(251,191,36,.5);border-bottom:1px solid rgba(251,191,36,.5);padding:5px 0"><b style="color:#fbbf24;font-size:1.15rem;display:block">بطاقة الانخراط الإلكترونية</b><b style="font-size:.85rem">CARTE D’ADHÉRENT ÉLECTRONIQUE</b></div>
                                 <div style="display:flex;gap:14px;align-items:center;justify-content:center;margin:6px 0"><div id="bdQR" style="background:#fff;padding:6px;border-radius:8px;min-width:100px;min-height:100px"></div><div class="badge-info"><div class="badge-info-line"><span>زمرة الدم</span><b id="bdBlood">—</b></div><div class="badge-info-line"><span>تاريخ الازدياد</span><b id="bdDob">—</b></div><div class="badge-info-line"><span>البلدية</span><b id="bdCom">—</b></div></div></div>
                                 <small style="text-align:center;color:#cbd5e1;font-size:.62rem">البطاقة سنوية: احتفظ بالرقم عند التجديد وقدّمها عند الطلب · 0657709457</small>
                             </div></div>
@@ -1006,9 +1016,16 @@ function v(i){return ($(i).value||"").trim()}
 var HEADS={"Skikda":"Allaoua Laid","Constantine":"Allaoua Laid","Oran":"Touati Hassan","Hassi Messaoud":"Abdelli Abdelhamid","National":"Himmi Lachemi"};
 var curNo="";
 function drawBar(){try{JsBarcode("#bdBar",curRef||"ANRSH-2026",{height:28,displayValue:false,width:1.2,lineColor:"#fbbf24",background:"transparent"})}catch(x){}}
+function updateNameLanguageFields(){
+ var ar=lang==="ar", arRow=$("nameArabicRow"), latinRow=$("nameLatinRow");
+ if(arRow)arRow.style.display=ar?"none":"grid";
+ if(latinRow)latinRow.style.display=ar?"grid":"none";
+ ["last_name_ar","first_name_ar"].forEach(function(id){var e=$(id);if(e)e.required=!ar;});
+ ["last_name_latin","first_name_latin"].forEach(function(id){var e=$(id);if(e)e.required=ar;});
+}
 function syncBadgeLive(){
  $("bdSig").textContent=HEADS[$("user_bureau").value]||"—";
- $("bdName").textContent=(v("first_name")+" "+v("last_name")).trim()||"—";
+ var latinName=(lang==="ar"?v("first_name_latin")+" "+v("last_name_latin"):v("first_name")+" "+v("last_name")).trim(); $("bdName").textContent=latinName||"—"; var arabicName=(lang==="ar"?v("first_name")+" "+v("last_name"):v("first_name_ar")+" "+v("last_name_ar")).trim(); if($("bdNameAr"))$("bdNameAr").textContent=arabicName||"—";
  $("bdMat").textContent=v("matricule_sh").toUpperCase()||"—";
  $("bdType").textContent=v("user_type")||"—";
  $("bdSpec").textContent=v("last_structure")||"—";
@@ -1264,6 +1281,7 @@ function applyLang(){
   var t=lang==="ar"?o.a:trS(o.a,lang);if(n.nodeValue!==t)n.nodeValue=t;o.t=t}
  document.querySelectorAll("[placeholder]").forEach(function(e){if(!e.dataset.p0)e.dataset.p0=e.placeholder;e.placeholder=lang==="ar"?e.dataset.p0:trS(e.dataset.p0,lang)});
  var h=document.documentElement;h.lang=lang==="ber"?"zgh":lang;h.dir=lang==="ar"?"rtl":"ltr";
+ updateNameLanguageFields();
  try{dueInfo();if(curRef)otpDesc()}catch(x){}
  obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 }
@@ -1425,7 +1443,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   function val(id){return el(id)?el(id).value.trim():""}
   function profile(){
     return {
-      bureau:val("user_bureau"), first_name:val("first_name"), last_name:val("last_name"),
+      bureau:val("user_bureau"), first_name:val("first_name"), last_name:val("last_name"), first_name_ar:(lang==="ar"?val("first_name"):val("first_name_ar")), last_name_ar:(lang==="ar"?val("last_name"):val("last_name_ar")), first_name_fr:(lang==="ar"?val("first_name_latin"):val("first_name")), last_name_fr:(lang==="ar"?val("last_name_latin"):val("last_name")),
       birth_date:val("birth_date"), birth_place:val("birth_place"), birth_wilaya:val("birth_wilaya"), birth_daira:val("birth_daira"), birth_commune:val("birth_commune"), blood_group:val("blood_group"),
       user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"), wilaya_name:el("user_wilaya")&&el("user_wilaya").selectedOptions[0]?el("user_wilaya").selectedOptions[0].textContent:"",
       daira:val("user_daira"), commune:val("user_commune"), postal_code:val("user_postal_code"), address:val("user_address"),
@@ -1795,7 +1813,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   document.addEventListener("DOMContentLoaded",function(){
      updateANRSHClock();setInterval(updateANRSHClock,1000);rotateANRSHBackground();setInterval(rotateANRSHBackground,12000);setInterval(rotateANRSHQuote,9000);
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
-    adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
+    adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();updateNameLanguageFields();
     var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
   });
 })();
