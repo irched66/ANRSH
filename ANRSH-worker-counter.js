@@ -42,6 +42,8 @@ const ALLOWED_FILE_TYPES = new Set([
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
 const OTP_TTL_MS = 24 * 60 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
+const DEFAULT_MEMBERSHIP_FEE_DZD = 500;
+const MAX_MEMBERSHIP_FEE_DZD = 1000000;
 const MAX_OTP_TRIES = 5;
 
 function json(data, status = 200, extra = {}) {
@@ -55,7 +57,7 @@ function corsHeaders(request) {
   const origin = request.headers.get("Origin") || "";
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
-    "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+    "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
     "access-control-allow-headers": "Content-Type, x-admin-key, Authorization",
     "access-control-max-age": "86400",
     "vary": "Origin"
@@ -130,6 +132,13 @@ function normalizePhone(v) {
 function validRef(v) {
   return /^[A-Za-z0-9_-]{8,80}$/.test(String(v || ""));
 }
+async function currentMembershipFee(env) {
+  const row = await env.DB.prepare("SELECT fee_dzd FROM anrsh_platform_settings WHERE id = 1").first();
+  const amount = Number(row && row.fee_dzd);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
+  return amount;
+}
+
 function adminKeyOk(request, env) {
   const configured = env.ADMIN_API_KEY;
   const supplied = request.headers.get("x-admin-key") || "";
@@ -301,6 +310,10 @@ async function handleCreateRequest(request, env) {
   ).bind(bureau).first();
   if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
 
+  let membershipFeeDzd;
+  try { membershipFeeDzd = await currentMembershipFee(env); }
+  catch (e) { console.error("membership settings", e); return json({ error: "settings_unavailable" }, 503); }
+
   const files = {};
   let total = 0;
   for (const key of FILE_KEYS) {
@@ -351,7 +364,7 @@ async function handleCreateRequest(request, env) {
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
     nss: cleanText(p.nss, 40), cnr: cleanText(p.cnr, 40),
-    consent: true, submitted_at: new Date().toISOString()
+    consent: true, membership_fee_dzd: membershipFeeDzd, submitted_at: new Date().toISOString()
   };
 
   try {
@@ -457,6 +470,10 @@ async function handleAdminApprove(id, request, env) {
   const profile = parseJson(row.profile, {});
   const confirmedAt = new Date().toISOString();
   const financeId = crypto.randomUUID();
+  const feeAmount = Number(profile.membership_fee_dzd);
+  if (!Number.isSafeInteger(feeAmount) || feeAmount < 1 || feeAmount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee_snapshot" }, 409);
+  const nationalAmount = Math.round(feeAmount * 0.20);
+  const regionalAmount = feeAmount - nationalAmount;
   // Payment is treated as confirmed only at this authenticated national-office approval step.
   // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
   try {
@@ -465,11 +482,11 @@ async function handleAdminApprove(id, request, env) {
           (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
            fee_amount, national_rate, national_amount, regional_rate, regional_amount,
            payment_status, payment_confirmed_at, confirmed_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 500, 20, 100, 80, 400, 'confirmed', ?, 'national_admin')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 20, ?, 80, ?, 'confirmed', ?, 'national_admin')
       `).bind(
         financeId, row.id, row.ref, cleanText(profile.bureau, 80),
         cleanText(profile.wilaya_name || profile.wilaya, 120),
-        cleanText(row.name, 200), cleanText(profile.demand_type, 60), confirmedAt
+        cleanText(row.name, 200), cleanText(profile.demand_type, 60), feeAmount, nationalAmount, regionalAmount, confirmedAt
       ).run();
   } catch (e) {
     console.error("finance confirmation", e);
@@ -515,6 +532,9 @@ async function handleAdminFinance(url, request, env) {
   const args = [from, to];
   const officeFilter = bureau ? " AND bureau = ?" : "";
   if (bureau) args.push(bureau);
+  let currentFee;
+  try { currentFee = await currentMembershipFee(env); }
+  catch (e) { return json({ error: "settings_unavailable" }, 503); }
   const [summary, offices, entries, transfers] = await Promise.all([
     env.DB.prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(fee_amount),0) AS gross,
       COALESCE(SUM(national_amount),0) AS national, COALESCE(SUM(regional_amount),0) AS regional
@@ -538,10 +558,28 @@ async function handleAdminFinance(url, request, env) {
     outstanding: Math.max(0, Number(o.regional || 0) - (paidByOffice[o.bureau] || 0))
   }));
   return json({
-    ok: true, period: { from, to }, policy: { fee: 500, nationalRate: 20, nationalAmount: 100, regionalRate: 80, regionalAmount: 400 },
+    ok: true, period: { from, to }, policy: { fee: currentFee, nationalRate: 20, nationalAmount: Math.round(currentFee * 0.20), regionalRate: 80, regionalAmount: currentFee - Math.round(currentFee * 0.20) },
     summary: summary || { count: 0, gross: 0, national: 0, regional: 0 },
     offices: officeRows, entries: entries.results || [], transfers: transfers.results || []
   });
+}
+
+async function handlePublicSettings(env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  try { return json({ ok: true, membershipFeeDzd: await currentMembershipFee(env) }); }
+  catch (e) { console.error("public settings", e); return json({ error: "settings_unavailable" }, 503); }
+}
+
+async function handleAdminMembershipFeeUpdate(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const amount = Number(body.amountDzd);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee" }, 400);
+  try {
+    await env.DB.prepare("UPDATE anrsh_platform_settings SET fee_dzd = ?, updated_at = CAST(strftime('%s','now') AS INTEGER), updated_by = 'national_admin' WHERE id = 1").bind(amount).run();
+    return json({ ok: true, membershipFeeDzd: amount });
+  } catch (e) { console.error("membership fee update", e); return json({ error: "settings_unavailable" }, 503); }
 }
 
 async function handleAdminFinanceTransfer(request, env) {
@@ -740,6 +778,8 @@ async function route(request, env) {
 
   if (request.method === "GET" && path === "/api/health") return handleHealth(env);
   if (request.method === "GET" && path === "/api/public-stats") return handlePublicStats(env);
+  if (request.method === "GET" && path === "/api/public-settings") return handlePublicSettings(env);
+  if (request.method === "PUT" && path === "/api/admin/settings/membership-fee") return handleAdminMembershipFeeUpdate(request, env);
   if (request.method === "POST" && path === "/api/visitor-visit") return handleVisitorVisit(request, env);
   if (request.method === "GET" && path === "/api/wilayas") return handleWilayas(env);
   if (request.method === "GET" && path === "/api/offices") return handleOffices(env);
