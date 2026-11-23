@@ -37,7 +37,7 @@ table{border-collapse:collapse;width:100%;font-size:.88rem}
 th,td{border:1px solid var(--bd);padding:6px 8px;text-align:center;white-space:nowrap}
 .code{font-size:2rem;letter-spacing:6px;font-weight:700;text-align:center;direction:ltr;padding:10px;background:var(--bg);border-radius:8px}
 footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
-.payment-card-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.payment-card-gallery figure{margin:0;text-align:center}.payment-card-gallery img{width:100%;height:auto;display:block;border:1px solid var(--gold);border-radius:10px}.payment-card-gallery figcaption{font-size:.85rem;font-weight:700;margin-top:5px}.payment-safety{font-size:.82rem;color:var(--red);margin:8px 0;line-height:1.6}@media(max-width:420px){.payment-card-gallery{grid-template-columns:1fr}}
+.payment-card-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.payment-card-gallery figure{margin:0;text-align:center}.payment-card-link{display:block;border-radius:10px}.payment-card-link:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.payment-card-gallery img{width:100%;height:auto;display:block;border:1px solid var(--gold);border-radius:10px}.payment-card-gallery figcaption{font-size:.85rem;font-weight:700;margin-top:5px}.payment-safety{font-size:.82rem;color:var(--red);margin:8px 0;line-height:1.6}@media(max-width:420px){.payment-card-gallery{grid-template-columns:1fr}}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -67,7 +67,7 @@ footer{text-align:center;color:var(--mut);font-size:.85rem;padding:12px}
       <option value="edahabia">البطاقة الذهبية (Edahabia)</option>
       <option value="cib">البطاقة البنكية (CIB)</option>
     </select>
-<div class="payment-card-gallery" aria-label="وسائل الدفع"><figure><img src="assets/payment/edahabia-illustration.svg" alt="رسم توضيحي للبطاقة الذهبية"><figcaption>البطاقة الذهبية Edahabia</figcaption></figure><figure><img src="assets/payment/cib-illustration.svg" alt="رسم توضيحي لبطاقة CIB"><figcaption>البطاقة البنكية CIB</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p>
+<div class="payment-card-gallery" aria-label="وسائل الدفع"><figure><a class="payment-card-link" href="https://play.google.com/store/apps/details?id=ru.bpc.mobilebank.bpc" target="_blank" rel="noopener noreferrer" aria-label="افتح تطبيق بريدي موب الرسمي"><img src="assets/payment/edahabia-illustration.svg" alt="رسم توضيحي للبطاقة الذهبية"></a><figcaption>البطاقة الذهبية Edahabia — اضغط لفتح بريدي موب</figcaption></figure><figure><a class="payment-card-link" href="https://www.satim.dz/index.php/ar/cib-khdmat/2021-04-22-08-10-47" target="_blank" rel="noopener noreferrer" aria-label="معلومات الدفع الإلكتروني عبر CIB من ساتيم"><img src="assets/payment/cib-illustration.svg" alt="رسم توضيحي لبطاقة CIB"></a><figcaption>البطاقة البنكية CIB — اضغط لمعلومات ساتيم</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p>
     <div id="linkBox"></div>
     <p class="hint">بعد الدفع ارفع صورة الوصل وأدخل رقم العملية ليؤكدها مكتب ولايتك.</p>
     <label for="rno">رقم العملية</label>
@@ -127,9 +127,15 @@ $('#tabOff').onclick = () => show('off');
 // ===== دفع المنخرط =====
 CFG.WILAYAS.forEach(w => $('#wil').append(h('option', { value: w, text: w })));
 function showLink() {
-  const m = $('#meth').value, u = CFG.LINKS[m], box = $('#linkBox');
+  const m = $('#meth').value, box = $('#linkBox');
+  const official = {
+    baridimob: {url: 'https://play.google.com/store/apps/details?id=ru.bpc.mobilebank.bpc', label: 'افتح تطبيق بريدي موب الرسمي'},
+    edahabia: {url: 'https://play.google.com/store/apps/details?id=ru.bpc.mobilebank.bpc', label: 'افتح بريدي موب للدفع بالبطاقة الذهبية'},
+    cib: {url: 'https://www.satim.dz/index.php/ar/cib-khdmat/2021-04-22-08-10-47', label: 'معلومات الدفع الإلكتروني CIB عبر ساتيم'}
+  };
+  const chosen = CFG.LINKS[m] ? {url: CFG.LINKS[m], label: 'افتح منصة ' + METHOD_NAMES[m]} : official[m];
   box.replaceChildren();
-  if (u) box.append(h('a', { href: u, target: '_blank', rel: 'noopener' }, h('button', { class: 'act sec', type: 'button', text: 'افتح منصة ' + METHOD_NAMES[m] + ' للدفع' })));
+  if (chosen) box.append(h('a', { href: chosen.url, target: '_blank', rel: 'noopener noreferrer' }, h('button', { class: 'act sec', type: 'button', text: chosen.label })));
 }
 $('#meth').onchange = showLink; showLink();
 
