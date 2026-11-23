@@ -1676,6 +1676,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     form.querySelectorAll("input,select,textarea").forEach(function(el){
       if(el.type==="hidden"||el.type==="button"||el.type==="submit")return;
       var label=(el.closest(".field-group")&&el.closest(".field-group").querySelector("label"));
+      if(!label&&el.type==="checkbox"&&el.closest("label"))label=el.closest("label");
       if(el.type==="file"){
         var files=Array.from(el.files||[]);
         var title=label?label.textContent.trim():el.id;
