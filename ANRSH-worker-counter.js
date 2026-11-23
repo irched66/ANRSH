@@ -521,14 +521,14 @@ async function handleAdminFinance(url, request, env) {
       FROM anrsh_membership_finance WHERE ${where}${officeFilter}`).bind(...args).first(),
     env.DB.prepare(`SELECT bureau, COUNT(*) AS count, COALESCE(SUM(fee_amount),0) AS gross,
       COALESCE(SUM(national_amount),0) AS national, COALESCE(SUM(regional_amount),0) AS regional
-      FROM anrsh_membership_finance WHERE ${where}
-      GROUP BY bureau ORDER BY bureau`).bind(from, to).all(),
+      FROM anrsh_membership_finance WHERE ${where}${officeFilter}
+      GROUP BY bureau ORDER BY bureau`).bind(...args).all(),
     env.DB.prepare(`SELECT id, request_ref, bureau, wilaya, member_name, demand_type, fee_amount,
       national_amount, regional_amount, payment_confirmed_at
       FROM anrsh_membership_finance WHERE ${where}${officeFilter}
       ORDER BY payment_confirmed_at DESC LIMIT 5000`).bind(...args).all(),
     env.DB.prepare(`SELECT id, bureau, amount, period_start, period_end, transfer_date, bank_reference, note
-      FROM anrsh_regional_transfers WHERE transfer_date >= ? AND transfer_date <= ?${bureau ? " AND bureau = ?" : ""}
+      FROM anrsh_regional_transfers WHERE period_start >= ? AND period_end <= ?${bureau ? " AND bureau = ?" : ""}
       ORDER BY transfer_date DESC`).bind(...(bureau ? [from, to, bureau] : [from, to])).all()
   ]);
   const paidByOffice = {};
