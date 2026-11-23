@@ -1618,7 +1618,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var d=window.ANRSH_FINANCE_DATA;if(!d){alert("حمّل التقرير المالي أولاً.");return;}
     var rows=[["رقم الطلب","الاسم","الولاية","المكتب الجهوي","نوع العملية","المبلغ","حصة المكتب الوطني","حصة المكتب الجهوي","تاريخ تأكيد الدفع"]];
     (d.entries||[]).forEach(function(o){rows.push([o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.national_amount,o.regional_amount,o.payment_confirmed_at]);});
-    var csv="\\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\\n");
+    var csv="\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
     dlBlob("ANRSH-rapport-financier-"+d.period.from+"-"+d.period.to+".csv",new Blob([csv],{type:"text/csv;charset=utf-8"}));
   };
   window.adCsv=function(){
