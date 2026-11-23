@@ -460,11 +460,7 @@ async function handleAdminApprove(id, request, env) {
   // Payment is treated as confirmed only at this authenticated national-office approval step.
   // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
   try {
-    await env.DB.batch([
-      env.DB.prepare(`
-        UPDATE members SET status = 'code_sent' WHERE id = ?
-      `).bind(id),
-      env.DB.prepare(`
+    await env.DB.prepare(`
         INSERT OR IGNORE INTO anrsh_membership_finance
           (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
            fee_amount, national_rate, national_amount, regional_rate, regional_amount,
@@ -474,8 +470,7 @@ async function handleAdminApprove(id, request, env) {
         financeId, row.id, row.ref, cleanText(profile.bureau, 80),
         cleanText(profile.wilaya_name || profile.wilaya, 120),
         cleanText(row.name, 200), cleanText(profile.demand_type, 60), confirmedAt
-      )
-    ]);
+      ).run();
   } catch (e) {
     console.error("finance confirmation", e);
     return json({ error: "finance_record_failed" }, 500);
