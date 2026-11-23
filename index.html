@@ -805,7 +805,7 @@ textarea{resize:vertical;font-family:inherit}
                     <!-- الوثائق وإثبات الدفع -->
                     <div class="form-row two-col"><div class="field-group"><label>رقم الضمان الاجتماعي:</label><input type="text" id="nss_no" dir="ltr"></div><div class="field-group"><label>رقم التسجيل بالصندوق الوطني للتقاعد (CNR):</label><input type="text" id="cnr_no" dir="ltr"></div></div>
                     <div class="docs-box">
-                        <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج):</h4>
+                        <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات دفع الاشتراك السنوي:</h4>
                         <div class="form-row two-col">
                             <div class="field-group">
                                 <label id="t-lbl-photo">📸 الصورة الشمسية الرسمية (للبطاقة البيومترية):</label>
@@ -829,7 +829,7 @@ textarea{resize:vertical;font-family:inherit}
                     </div>
 
                     <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
-                    <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p><div class="payment-card-gallery" aria-label="الدفع الإلكتروني"><figure><a class="payment-card-link" href="paiement.html" target="_self" aria-label="اضغط لفتح صفحة الدفع الإلكتروني ANRSH"><img src="assets/payment/file_00000000d84081f4821d2ad20c0987b4.png" alt="بطاقة بنك الجزائر الخارجي BEA"></a><figcaption>بطاقة بنك الجزائر الخارجي BEA — اضغط للدخول إلى صفحة الدفع</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p></div>
+                    <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: <span id="anrshFeeValue">500</span> دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p><div class="payment-card-gallery" aria-label="الدفع الإلكتروني"><figure><a class="payment-card-link" href="paiement.html" target="_self" aria-label="اضغط لفتح صفحة الدفع الإلكتروني ANRSH"><img src="assets/payment/file_00000000d84081f4821d2ad20c0987b4.png" alt="بطاقة بنك الجزائر الخارجي BEA"></a><figcaption>بطاقة بنك الجزائر الخارجي BEA — اضغط للدخول إلى صفحة الدفع</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p></div>
                     <div class="form-section-title">🌐 <span>الاسم واللقب باللغة الأخرى / Name in the other language</span></div>
                     <div class="form-row two-col" id="nameArabicRow" style="display:none">
                       <div class="field-group"><label for="last_name_ar">اللقب باللغة العربية *</label><input type="text" id="last_name_ar" autocomplete="off" dir="rtl" placeholder="اكتب اللقب بالعربية" required></div>
@@ -972,7 +972,7 @@ textarea{resize:vertical;font-family:inherit}
 
         <div id="section-admin" class="glass-card" style="display:none">
             <h2 style="color:var(--gold-light)">🔐 فضاء مسؤول المكتب</h2>
-            <p style="margin:10px 0;font-size:.88rem;color:var(--text-muted)">بعد التحقق من وصل الدفع (500 دج): أدخل مفتاح المكتب ورقم طلب العضو لتوليد رمز التأكيد، ثم أرسله له عبر واتساب.</p>
+            <p style="margin:10px 0;font-size:.88rem;color:var(--text-muted)">بعد التحقق من وصل دفع الاشتراك بالمبلغ المعتمد: أدخل مفتاح المكتب ورقم طلب العضو لتوليد رمز التأكيد، ثم أرسله له عبر واتساب.</p>
             <div class="form-row two-col"><div class="field-group"><label>مفتاح المكتب</label><input id="ad_key" type="password" dir="ltr"></div><div class="field-group"><label>رقم الطلب (REF)</label><input id="ad_ref" dir="ltr" placeholder="ANRSH-2026-24570N-1234"></div></div>
             <div class="field-group"><label>هاتف العضو</label><input id="ad_tel" type="tel" dir="ltr" placeholder="06XXXXXXXX"></div>
             <button type="button" class="btn-card btn-dl" style="width:100%;margin-top:12px" onclick="adminCode()">🔑 توليد رمز التأكيد</button>
@@ -1562,12 +1562,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       '<p style="font-size:.85rem;color:var(--text-muted);margin:8px 0">الدخول بمفتاح الإدارة السري المعرّف في إعدادات Worker. لا تحفظ المفتاح على جهاز مشترك.</p>'+
       '<div id="anrshAdminLogin"><label>مفتاح الإدارة السري</label><input id="anrsh_admin_key" type="password" autocomplete="off" dir="ltr" style="width:100%;margin:8px 0;padding:12px;border-radius:8px">'+
       '<button type="button" class="btn-card btn-dl" style="width:100%" id="anrsh_admin_enter">دخول الإدارة</button></div>'+
-      '<div id="anrshAdminPanel" style="display:none"><div class="card-actions-bar"><input id="ad_q" placeholder="بحث بالاسم أو رقم الطلب أو المكتب" oninput="adRender()">'+
+      '<div id="anrshAdminPanel" style="display:none"><section id="anrshFeeSettings" style="margin:14px 0;padding:14px;border:1px solid rgba(245,158,11,.5);border-radius:14px;background:rgba(0,0,0,.22)"><h3 style="color:var(--gold-light)">💳 إعداد مبلغ الانخراط السنوي</h3><p style="font-size:.84rem;margin:6px 0">هذا الإعداد متاح للمكتب الوطني فقط. يُطبّق المبلغ الجديد على الطلبات الجديدة، وتبقى الطلبات السابقة محفوظة بمبلغها الأصلي.</p><label for="anrsh_fee_input">المبلغ الجديد بالدينار الجزائري</label><input id="anrsh_fee_input" type="number" min="1" max="1000000" step="1" inputmode="numeric"><button type="button" class="btn-card btn-dl" id="anrsh_fee_save" style="margin-top:8px">💾 حفظ مبلغ الانخراط</button><div id="anrsh_fee_msg" role="status" style="margin-top:8px;font-size:.85rem"></div></section><div class="card-actions-bar"><input id="ad_q" placeholder="بحث بالاسم أو رقم الطلب أو المكتب" oninput="adRender()'+
       '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button></div>'+
       '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div>'+
       '<section id="anrshFinancePanel" style="margin-top:22px;padding:14px;border:1px solid rgba(245,158,11,.5);border-radius:14px;background:rgba(0,0,0,.22)">'+
       '<h3 style="color:var(--gold-light)">📊 الحسابات المالية للمكاتب الجهوية — 20% و80%</h3>'+
-      '<p style="font-size:.82rem;margin:6px 0 12px">500 دج لكل اشتراك مؤكد: 100 دج للمكتب الوطني و400 دج للمكتب الجهوي. لا تُحتسب إلا العمليات المصادق عليها.</p>'+
+      '<p style="font-size:.82rem;margin:6px 0 12px">يُحتسب نصيب المكتب الوطني بنسبة 20% والمكتب الجهوي بنسبة 80% من قيمة كل اشتراك مؤكد، وفق المبلغ المعتمد وقت الطلب.</p>'+
       '<div class="form-row two-col"><div class="field-group"><label>من تاريخ</label><input id="fin_from" type="date"></div><div class="field-group"><label>إلى تاريخ</label><input id="fin_to" type="date"></div></div>'+
       '<div class="form-row two-col"><div class="field-group"><label>المكتب الجهوي</label><select id="fin_bureau"><option value="">كل المكاتب</option></select></div><div class="field-group" style="justify-content:end"><button type="button" class="btn-card btn-dl" onclick="adFinanceLoad()">🔄 إنشاء / تحديث التقرير</button></div></div>'+
       '<div id="fin_summary" style="margin:10px 0;padding:10px;background:rgba(255,255,255,.06);border-radius:10px">لم يتم تحميل التقرير بعد.</div>'+
@@ -1586,14 +1586,38 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     el("anrsh_admin_enter").onclick=window.adLogin;
     el("anrsh_refresh").onclick=window.adLoad;
     el("anrsh_csv").onclick=window.adCsv;
+    el("anrsh_fee_save").onclick=window.adFeeSave;
   }
   window.adLogin=async function(){
     var key=val("anrsh_admin_key"), out=el("ad_out");
     if(key.length<32){out.textContent="مفتاح الإدارة يجب أن يكون صحيحاً (32 حرفاً على الأقل).";return;}
     ADMIN_KEY=key;
-    try{await api("/api/admin/requests");el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";ADMIN_ME={ok:true};await adLoad();await adFinanceLoad();}
+    try{await api("/api/admin/requests");el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";ADMIN_ME={ok:true};await adLoad();await adFeeLoad();await adFinanceLoad();}
     catch(e){ADMIN_KEY="";out.textContent="تعذر الدخول: "+e.message;}
   };
+  window.adFeeLoad=async function(){
+    try{var s=await api("/api/public-settings");el("anrsh_fee_input").value=s.membershipFeeDzd;el("anrsh_fee_msg").textContent="المبلغ الحالي المعتمد: "+s.membershipFeeDzd.toLocaleString("fr-DZ")+" دج.";}catch(e){el("anrsh_fee_msg").textContent="تعذر قراءة المبلغ الحالي: "+e.message;}
+  };
+  window.adFeeSave=async function(){
+    var input=el("anrsh_fee_input"),msg=el("anrsh_fee_msg"),amount=Number(input&&input.value);
+    if(!Number.isSafeInteger(amount)||amount<1||amount>1000000){msg.textContent="أدخل مبلغاً صحيحاً بين 1 و1,000,000 دج.";return;}
+    if(!confirm("تأكيد اعتماد مبلغ انخراط جديد قدره "+amount.toLocaleString("fr-DZ")+" دج للطلبات الجديدة؟"))return;
+    msg.textContent="جارٍ حفظ المبلغ...";
+    try{var s=await api("/api/admin/settings/membership-fee",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({amountDzd:amount})});
+      updateMembershipFee(s.membershipFeeDzd);msg.textContent="تم اعتماد المبلغ الجديد: "+s.membershipFeeDzd.toLocaleString("fr-DZ")+" دج. سيُطبّق على الطلبات الجديدة فقط.";
+      await adFinanceLoad();
+    }catch(e){msg.textContent="لم يتم حفظ المبلغ: "+e.message;}
+  };
+  async function loadCurrentMembershipFee(){try{var s=await api("/api/public-settings");updateMembershipFee(s.membershipFeeDzd);}catch(e){console.warn("ANRSH membership fee",e);}}
+  function updateMembershipFee(amount){
+    amount=Number(amount);if(!Number.isSafeInteger(amount)||amount<1||amount>1000000)return;
+    window.ANRSH_MEMBERSHIP_FEE=amount;
+    var value=el("anrshFeeValue");if(value)value.textContent=amount.toLocaleString("fr-DZ");
+    var title=el("t-doc-title");if(title)title.textContent="📎 الوثائق الإلزامية وإثبات دفع الاشتراك السنوي ("+amount.toLocaleString("fr-DZ")+" دج):";
+    if(typeof OT!=="undefined"){OT.ar[1]="أرسل وصل دفع "+amount.toLocaleString("fr-DZ")+" دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة.";OT.fr[1]="Envoyez le reçu de "+amount.toLocaleString("fr-FR")+" DA et les documents via WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres.";OT.en[1]="Send the "+amount.toLocaleString("en-US")+" DZD receipt and documents. After verification, the office manager sends you a 6-digit code."}
+    var info=el("payInfo");if(info)info.innerHTML="الاشتراك السنوي المعتمد: <b>"+amount.toLocaleString("fr-DZ")+" دج</b>. <a href=\"paiement.html\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--gold-light);text-decoration:underline;font-weight:bold\">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.";
+    if(curRef&&typeof otpDesc==="function")otpDesc();
+  }
   window.adLoad=async function(){
     try{ADMIN_ROWS=await api("/api/admin/requests");window.ROWSM=ADMIN_ROWS;adRender();}
     catch(e){if(el("ad_out"))el("ad_out").textContent="تعذر تحميل الطلبات: "+e.message;}
@@ -1828,7 +1852,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
      updateANRSHClock();setInterval(updateANRSHClock,1000);rotateANRSHBackground();setInterval(rotateANRSHBackground,12000);setInterval(rotateANRSHQuote,9000);
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();updateNameLanguageFields();
-    var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
+    loadCurrentMembershipFee();
   });
 })();
 /* ===== end D1 integration ===== */
