@@ -32,10 +32,12 @@ const ALLOWED_ORIGINS = new Set([
   "https://animated-moonbeam-256371.netlify.app"
 ]);
 
-const MAX_FILE_BYTES = 220 * 1024;
-const MAX_TOTAL_BYTES = 760 * 1024;
+// D1 stores attachment metadata and base64 content in a single member row.
+// Keep the combined raw attachment size below 1 MiB to stay within safe row limits.
+const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_TOTAL_BYTES = 1024 * 1024;
 const ALLOWED_FILE_TYPES = new Set([
-  "image/jpeg", "image/png", "image/webp", "application/pdf"
+  "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"
 ]);
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
 const OTP_TTL_MS = 24 * 60 * 60 * 1000;
