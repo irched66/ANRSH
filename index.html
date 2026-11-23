@@ -290,7 +290,7 @@
             background: rgba(245, 158, 11, 0.05);
         }
 
-        .payment-card-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.payment-card-gallery figure{margin:0;text-align:center}.payment-card-link{display:block;position:relative;z-index:5;border-radius:12px;cursor:pointer;pointer-events:auto}.payment-card-link:focus-visible{outline:3px solid var(--gold-light);outline-offset:3px}.payment-card-gallery img{pointer-events:none;display:block;width:100%;height:auto;border-radius:12px;border:1px solid rgba(245,158,11,.45)}.payment-card-gallery figcaption{font-size:.78rem;color:#f8fafc;margin-top:6px;font-weight:700}.payment-safety{font-size:.75rem;color:#fde68a;margin-top:10px;line-height:1.6}@media(max-width:420px){.payment-card-gallery{grid-template-columns:1fr}}
+        .payment-card-gallery{display:flex;gap:0;margin-top:14px;border:2px solid var(--gold-primary);border-radius:14px;overflow:hidden;background:rgba(15,23,42,.72)}.payment-card-gallery figure{flex:1 1 50%;min-width:0;margin:0;padding:8px;text-align:center}.payment-card-gallery figure+figure{border-inline-start:2px solid var(--gold-primary)}.payment-card-link{display:block;position:relative;z-index:5;border-radius:10px;cursor:default;pointer-events:none}.payment-card-gallery img{pointer-events:none;display:block;width:100%;height:clamp(90px,22vw,180px);object-fit:contain;border-radius:10px;border:1px solid rgba(245,158,11,.45)}.payment-card-gallery figcaption{font-size:.78rem;color:#f8fafc;margin-top:6px;font-weight:700}.payment-safety{font-size:.75rem;color:#fde68a;margin-top:10px;line-height:1.6}@media(max-width:420px){.payment-card-gallery{display:flex}.payment-card-gallery figure{padding:5px}.payment-card-gallery img{height:105px}}
         .req { color: #f87171; font-weight: 800; }
 
         .otp-verification-box {
@@ -1267,6 +1267,20 @@ WIL.forEach(function(n,i){D[n]=[WIL_L[i],WIL_L[i],n]});
 Object.keys(PL).forEach(function(k){if(!D[k])D[k]=[PL[k],PL[k],k]});
 [["ناحية","Région ","region"],["المكتب الجهوي","Bureau régional ","regional office"]].forEach(function(g){Object.keys(PL).forEach(function(k){D[g[0]+" "+k]=[g[1]+PL[k],PL[k]+" "+g[2],g[1]+PL[k]]})});
 D["ناحية حاسي مسعود (DP)"]=["Région Hassi Messaoud (DP)","Hassi Messaoud region (DP)"];D["ناحية سكيكدة (المنطقة البتروكيماوية)"]=["Région Skikda (zone pétrochimique)","Skikda region (petrochemical zone)"];D["ناحية أوهانت / إن صالح"]=["Région Ohanet / In Salah","Ohanet / In Salah region"];D["ناحية تقرت وحوض الحمراء"]=["Région Touggourt et Hamra","Touggourt & Hamra region"];D["ناحية TFT"]=["Région TFT","TFT region"];D["ناحية الجزائر العاصمة والوسط"]=["Région Alger et Centre","Algiers & Centre region"];D["ناحية غرد الباغل"]=["Région Gourd El Baghel","Gourd El Baghel region"];D["المكتب الجهوي الجزائر العاصمة والوسط"]=["Bureau régional Alger et Centre","Algiers & Centre regional office"];
+Object.assign(D,{
+"دائرة الازدياد":["Daïra de naissance","Birth district"],
+"بلدية الازدياد":["Commune de naissance","Birth municipality"],
+"-- اختر ولاية الازدياد --":["-- Choisir la wilaya de naissance --","-- Select birth wilaya --"],
+"-- اختر دائرة الازدياد --":["-- Choisir la daïra de naissance --","-- Select birth district --"],
+"-- اختر بلدية الازدياد --":["-- Choisir la commune de naissance --","-- Select birth municipality --"],
+"الرمز البريدي":["Code postal","Postal code"],
+"يظهر تلقائياً بعد اختيار البلدية":["S’affiche automatiquement après le choix de la commune","Appears automatically after selecting the municipality"],
+"اكتب اللقب":["Saisissez le nom","Enter last name"],
+"اكتب الاسم":["Saisissez le prénom","Enter first name"],
+"حي عدل CSCEC، عمارة 05":["Cité AADL CSCEC, bâtiment 05","AADL CSCEC residence, building 05"],
+"رقم بطاقة التعريف البيومترية":["Numéro de la carte d’identité biométrique","Biometric national ID number"],
+"رقم التسجيل بسوناطراك":["Matricule Sonatrach","Sonatrach registration number"]
+});
 for(var k in D){if(D[k].length<3)D[k][2]=k}
 
 function trS(s,l){var m=s.match(/^([^\u0600-\u06FFA-Za-z0-9(\-]*)([\s\S]*?)([\s:*.]*)$/);if(!m||!m[2])return s;var c=m[2].trim(),d=D[c],e=m[3];if(!d){d=D[c+"."];if(d)e=e.replace(".","")}return d?m[1]+d[IDX[l]]+e:s}
