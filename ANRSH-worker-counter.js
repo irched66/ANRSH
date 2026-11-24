@@ -175,6 +175,33 @@ async function checkPrintToken(token, env) {
   } catch { return false; }
 }
 
+async function sendTextBeeSMS(env, phone, code) {
+  const apiKey = env.TEXTBEE_API_KEY;
+  const deviceId = "6b05933f96bbd64a7027a511";
+  if (!apiKey) return { sent: false, reason: "sms_not_configured" };
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = "213" + digits.slice(1);
+  else if (!digits.startsWith("213")) digits = "213" + digits;
+  const recipient = "+" + digits;
+  if (!/^\+213\d{8,10}$/.test(recipient)) return { sent: false, reason: "invalid_phone" };
+  // Mobilis SIM 1 first; Ooredoo SIM 2 only if the primary attempt fails.
+  for (const simSlotIndex of [0, 1]) {
+    try {
+      const response = await fetch("https://api.textbee.dev/api/v1/gateway/send-sms", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "content-type": "application/json" },
+        body: JSON.stringify({ recipients: [recipient], message: String(code), deviceId, simSlotIndex })
+      });
+      if (response.ok) return { sent: true, simSlotIndex };
+      console.error("TextBee SMS error", response.status, (await response.text().catch(() => "")).slice(0, 300));
+    } catch (e) {
+      console.error("TextBee SMS network error", String(e).slice(0, 300));
+    }
+  }
+  return { sent: false, reason: "sms_provider_error" };
+}
+
 async function sendEmail(env, to, subject, text) {
   if (!env.RESEND_API_KEY || !env.RESEND_FROM || !to) return { sent: false, reason: "email_not_configured" };
   try {
@@ -501,6 +528,7 @@ async function handleAdminApprove(id, request, env) {
     UPDATE members SET otp_hash = ?, otp_exp = ?, otp_tries = 0, status = 'code_sent'
     WHERE id = ?
   `).bind(hash, expires, id).run();
+  const smsResult = await sendTextBeeSMS(env, row.phone, code);
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
@@ -515,7 +543,8 @@ async function handleAdminApprove(id, request, env) {
   );
   return json({
     ok: true, status: "code_sent", requestNumber: row.ref,
-    code, emailSent: emailResult.sent,
+    code, smsSent: smsResult.sent, smsSimSlotIndex: smsResult.simSlotIndex ?? null,
+    emailSent: emailResult.sent,
     whatsappUrl: digits ? `https://wa.me/${digits}?text=${waText}` : null,
     expiresAt: expires
   });
