@@ -212,6 +212,33 @@ async function checkPrintToken(token, env) {
   } catch { return false; }
 }
 
+function algerianE164(value) {
+  const digits=String(value||"").replace(/\D/g,"");
+  if(/^213[5-7]\d{8}$/.test(digits)) return "+"+digits;
+  if(/^0[5-7]\d{8}$/.test(digits)) return "+213"+digits.slice(1);
+  if(/^[5-7]\d{8}$/.test(digits)) return "+213"+digits;
+  return null;
+}
+async function sendTextbeeSMS(env, recipient, message) {
+  if(!env.TEXTBEE_API_KEY || !recipient) return {sent:false,reason:"sms_not_configured"};
+  try {
+    const response=await fetch("https://api.textbee.dev/api/v1/gateway/send-sms",{
+      method:"POST",
+      headers:{"x-api-key":env.TEXTBEE_API_KEY,"content-type":"application/json"},
+      body:JSON.stringify({recipients:[recipient],message})
+    });
+    if(!response.ok) {
+      const detail=await response.text().catch(()=>"");
+      console.error("Textbee SMS error",response.status,detail.slice(0,300));
+      return {sent:false,reason:"sms_provider_error"};
+    }
+    return {sent:true};
+  } catch(e) {
+    console.error("Textbee SMS network error",String(e).slice(0,200));
+    return {sent:false,reason:"sms_provider_unavailable"};
+  }
+}
+
 async function sendEmail(env, to, subject, text) {
   if (!env.RESEND_API_KEY || !env.RESEND_FROM || !to) return { sent: false, reason: "email_not_configured" };
   try {
@@ -607,8 +634,10 @@ async function handleAdminApprove(id, request, env) {
   }
   const email = cleanText(profile.email,160);
   const at = email.indexOf('@'), dot = email.lastIndexOf('.');
-  if (!email || at < 1 || dot < at + 2 || dot >= email.length - 1 || email.includes(' ') || !env.RESEND_API_KEY || !env.RESEND_FROM) {
-    return json({ error: "member_email_delivery_not_configured" }, 503);
+  const validEmail = !!email && at > 0 && dot > at + 1 && dot < email.length - 1 && !email.includes(' ');
+  const smsRecipient = algerianE164(row.phone);
+  if ((!env.TEXTBEE_API_KEY || !smsRecipient) && (!validEmail || !env.RESEND_API_KEY || !env.RESEND_FROM)) {
+    return json({ error: "member_notification_delivery_not_configured" }, 503);
   }
 
   const code = randomDigits(6), hash = await sha256(row.ref + ":" + code);
@@ -628,8 +657,17 @@ async function handleAdminApprove(id, request, env) {
     return json({ error: "member_approval_conflict" }, 409);
   }
 
-  const sent = await sendEmail(env,email,"ANRSH — Code de confirmation",
-    "Votre paiement de "+expectedFee+" DZD a été vérifié."+String.fromCharCode(10)+"Demande : "+row.ref+String.fromCharCode(10)+"Code : "+code+String.fromCharCode(10)+"Ce code expire dans 10 minutes et ne peut être utilisé qu'une seule fois.");
+  const otpMessage="ANRSH — Code de confirmation : "+code+". Demande : "+row.ref+". Expire dans 10 minutes. Utilisable une seule fois. Ne le communiquez à personne.";
+  let sent={sent:false,reason:"no_delivery_channel"},channel="email",recipient=email;
+  if(env.TEXTBEE_API_KEY && smsRecipient) {
+    channel="sms"; recipient=smsRecipient;
+    sent=await sendTextbeeSMS(env,smsRecipient,otpMessage);
+  }
+  if(!sent.sent && validEmail && env.RESEND_API_KEY && env.RESEND_FROM) {
+    channel="email"; recipient=email;
+    sent=await sendEmail(env,email,"ANRSH — Code de confirmation",
+      "Votre paiement de "+expectedFee+" DZD a été vérifié."+String.fromCharCode(10)+"Demande : "+row.ref+String.fromCharCode(10)+"Code : "+code+String.fromCharCode(10)+"Ce code expire dans 10 minutes et ne peut être utilisé qu'une seule fois.");
+  }
   if (!sent.sent) {
     // Restore the previous state only if this exact OTP is still current.
     await env.DB.prepare(`
@@ -644,10 +682,10 @@ async function handleAdminApprove(id, request, env) {
   if (!activated.meta || activated.meta.changes !== 1) {
     return json({ error: "member_approval_conflict" }, 409);
   }
-  await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,provider_message_id,status,created_at,sent_at) VALUES (?,?,?,'email','approved',NULL,'sent',?,?)")
-    .bind(crypto.randomUUID(),id,email,Date.now(),Date.now()).run();
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"member_approval_code_sent",id).run();
-  return json({ok:true,status:"code_sent",requestNumber:row.ref,expiresAt:expires,emailSent:true});
+  await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,provider_message_id,status,created_at,sent_at) VALUES (?,?,?,?,?,NULL,'sent',?,?)")
+    .bind(crypto.randomUUID(),id,recipient,channel,"approved",Date.now(),Date.now()).run();
+  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"member_approval_code_sent_"+channel,id).run();
+  return json({ok:true,status:"code_sent",requestNumber:row.ref,expiresAt:expires,channel,emailSent:channel==="email",smsSent:channel==="sms"});
 }
 
 async function handleAdminPaymentReview(id, request, env) {
