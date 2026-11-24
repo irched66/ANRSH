@@ -897,7 +897,7 @@ async function authActivateOfficer(request,env,id) {
   return json({ok:true,active:true});
 }
 function validIsoDate(value) {
-  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const time = Date.parse(value + "T00:00:00.000Z");
   return Number.isFinite(time) && new Date(time).toISOString().slice(0,10) === value;
 }
@@ -920,7 +920,8 @@ async function handleAdminFinance(request, env) {
     const officeQuery = "SELECT o.bureau,COUNT(a.id) AS count,COALESCE(SUM(a.gross_amount_dzd),0) AS gross,COALESCE(SUM(a.national_share_dzd),0) AS national,COALESCE(SUM(a.regional_share_dzd),0) AS regional,COALESCE(t.transferred,0) AS transferred,COALESCE(SUM(a.regional_share_dzd),0)-COALESCE(t.transferred,0) AS outstanding FROM regional_offices o LEFT JOIN payment_allocations a ON a.bureau=o.bureau AND a.allocated_at BETWEEN ? AND ? LEFT JOIN (SELECT bureau,SUM(amount_dzd) AS transferred FROM anrsh_regional_transfers WHERE transfer_date BETWEEN ? AND ? GROUP BY bureau) t ON t.bureau=o.bureau WHERE o.active=1" + (bureau ? " AND o.bureau=?" : "") + " GROUP BY o.bureau,t.transferred ORDER BY o.bureau";
     const officeStmt = env.DB.prepare(officeQuery);
     const offices = bureau ? await officeStmt.bind(fromMs,toMs,from,to,bureau).all() : await officeStmt.bind(fromMs,toMs,from,to).all();
-    const entriesQuery = "SELECT m.ref AS request_ref,m.name AS member_name,COALESCE(json_extract(m.profile,'$.wilaya_name'),json_extract(m.profile,'$.wilaya'), '') AS wilaya,a.bureau,COALESCE(json_extract(m.profile,'$.demand_type'),'') AS demand_type,a.gross_amount_dzd AS fee_amount,a.national_share_dzd AS national_amount,a.regional_share_dzd AS regional_amount,datetime(a.allocated_at/1000,'unixepoch') AS payment_confirmed_at FROM payment_allocations a JOIN members m ON m.id=a.member_id WHERE a.allocated_at BETWEEN ? AND ?" + suffix + " ORDER BY a.allocated_at DESC LIMIT 1000";
+    const entriesSuffix = bureau ? " AND a.bureau = ?" : "";
+    const entriesQuery = "SELECT m.ref AS request_ref,m.name AS member_name,COALESCE(json_extract(m.profile,'$.wilaya_name'),json_extract(m.profile,'$.wilaya'), '') AS wilaya,a.bureau,COALESCE(json_extract(m.profile,'$.demand_type'),'') AS demand_type,a.gross_amount_dzd AS fee_amount,a.national_share_dzd AS national_amount,a.regional_share_dzd AS regional_amount,datetime(a.allocated_at/1000,'unixepoch') AS payment_confirmed_at FROM payment_allocations a JOIN members m ON m.id=a.member_id WHERE a.allocated_at BETWEEN ? AND ?" + entriesSuffix + " ORDER BY a.allocated_at DESC LIMIT 1000";
     const entriesStmt = env.DB.prepare(entriesQuery);
     const entries = bureau ? await entriesStmt.bind(fromMs,toMs,bureau).all() : await entriesStmt.bind(fromMs,toMs).all();
     return json({ ok:true, period:{from,to}, summary:{count:Number(summaryRow?.count||0),gross:Number(summaryRow?.gross||0),national:Number(summaryRow?.national||0),regional:Number(summaryRow?.regional||0)}, offices:offices.results||[], entries:entries.results||[] });
