@@ -1499,7 +1499,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       }
       if(out.size>1024*1024)throw new Error("الملف "+f.name+" أكبر من 1 ميغابايت حتى بعد محاولة تصغيره. اختر صورة عادية أو ملفاً أصغر.");
       total+=out.size;
-      if(total>3*1024*1024)throw new Error("مجموع الوثائق أكبر من 3 ميغابايت. تم تصغير الصور تلقائياً؛ قلّل حجم ملفات PDF أو اختر نسخاً أصغر.");
+      if(total>1024*1024)throw new Error("مجموع الوثائق يتجاوز 1 ميغابايت. صوّر الوثائق بالكاميرا لتصغيرها تلقائياً، أو اختر ملفات PDF أصغر.");
       prepared[k]=out;
     }
     return prepared;
