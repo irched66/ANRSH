@@ -261,3 +261,32 @@ Commits: [archive d5d42d3](https://github.com/irched66/ANRSH/commit/d5d42d3880b1
 | حفظ الصفحة القديمة في الأرشيف | PASS |
 | عدم وجود رابط الصفحة القديمة في نموذج التسجيل | PASS |
 | بوابة دفع CIB/Edahabia آلية | NOT IMPLEMENTED |
+
+
+## آخر تحديث أمني واختبارات — 2026-11-24
+
+- أضيف رفض الأدوار الإدارية غير المعتمدة، واشتراط bureau للحساب الجهوي في كل جلسة، مع منع تسجيل الدخول بأدوار غير `national` أو `regional`.
+- أصبح إنشاء دعوة المكتب الجهوي يحفظ الدعوة وسجل التدقيق قبل إرسال البريد، ويرفض البريد الذي له حساب/دعوة سارية، ويبطل الدعوة إذا فشل الإرسال. قبول الدعوة يقتصر على دور regional ومكتب لا يزال نشطاً.
+- مُنع مسار التسجيل القديم الذي كان يرسل بيانات المنخرط عبر WhatsApp؛ يبقى التسجيل الآمن عبر D1 Worker فقط.
+- أضيف منع تداخل الفترات المحاسبية للتحويلات الجهوية، مع السماح بعدة تحويلات لنفس الفترة ما دام مجموعها لا يتجاوز المستحق.
+
+Commits: [88bd6bf](https://github.com/irched66/ANRSH/commit/88bd6bf51b80b14db6f424641bd83df82157311d) · [329caa4](https://github.com/irched66/ANRSH/commit/329caa4360409de6203aafa52c78002da7115192) · [88e1c0c](https://github.com/irched66/ANRSH/commit/88e1c0c47f5227433e02c0433ffa1c0de4ece8d8) · [da9c9a1](https://github.com/irched66/ANRSH/commit/da9c9a178db3dab0d63d088ee3a81a4fb15cca34) · [1a37750](https://github.com/irched66/ANRSH/commit/1a377500a24bc0de316092a288b5647dc9443b13) · [ea9a4eb](https://github.com/irched66/ANRSH/commit/ea9a4eb70019d770fc9b78bfac76fd395c2b8c3c)
+
+### فحص نهائي ساكن بعد هذه التعديلات
+| الاختبار | النتيجة |
+|---|---|
+| صياغة Worker | PASS |
+| صياغة جميع scripts داخل index.html | PASS |
+| صياغة scripts داخل paiement.html الجديدة | PASS |
+| صياغة sw.js وتحليل manifest JSON | PASS |
+| مسارات الرسوم والمالية موجودة في Worker | PASS |
+| فصل صلاحيات national/regional والتحقق من bureau | PASS |
+| حفظ رسوم الطلب التاريخية وعدم وجود مقارنة دفع ثابتة مع 500 | PASS |
+| التحقق من الملفات وتحديد حجم الطلب | PASS |
+| تعطيل WhatsApp legacy fallback | PASS |
+| عدم وجود Supabase في صفحة الدفع النشطة | PASS |
+| حفظ صفحة Supabase القديمة في الأرشيف | PASS |
+| مقترحات migrations موجودة وغير منفذة | PASS |
+| اختبارات D1 الحية والمتصفح الحقيقي وSMS | UNVERIFIED |
+
+لا يوجد تقرير CI ناجح أو فاشل مرتبط بهذه commits في GitHub؛ التحقق المتاح هنا تحليل ساكن واختبارات SQLite محلية مصغرة فقط.
