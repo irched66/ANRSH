@@ -781,7 +781,7 @@ async function authLogin(request, env) {
   const candidate = await passwordDigest(password, row.password_salt);
   if (!safeEqual(candidate, row.password_hash)) {
     const lockUntil = Date.now() + 15 * 60 * 1000;
-    const failed = await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=failed_attempts+1,locked_until=CASE WHEN failed_attempts+1>=8 THEN ? ELSE locked_until END WHERE admin_id=? AND (locked_until IS NULL OR locked_until<=?)")
+    const failed = await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=COALESCE(failed_attempts,0)+1,locked_until=CASE WHEN COALESCE(failed_attempts,0)+1>=8 THEN ? ELSE locked_until END WHERE admin_id=? AND (locked_until IS NULL OR locked_until<=?)")
       .bind(lockUntil,row.id,Date.now()).run();
     if (!failed.meta || failed.meta.changes !== 1) return json({ error: "account_temporarily_locked" }, 423);
     return json({ error: "invalid_credentials" }, 401);
