@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1220"><title>ANRSH — فحص الاتصال</title>
+<style>
+body{margin:0;padding:20px;background:#0b1220;color:#f5f3ed;font:16px/1.7 Tahoma,Arial,sans-serif}
+main{max-width:720px;margin:auto}h1{font-size:1.3rem;color:#e5b95c}
+.card{background:#142033;border:1px solid #35445a;border-radius:12px;padding:14px;margin:12px 0}
+button{padding:12px 18px;border:0;border-radius:8px;background:#d6a84b;color:#17120a;font-weight:bold;font-size:1rem}
+.status{font-weight:bold}.ok{color:#75d49a}.bad{color:#ff8e8e}.pending{color:#e5b95c}
+small{color:#b9c3d2}pre{white-space:pre-wrap;overflow-wrap:anywhere}
+</style></head>
+<body><main>
+<h1>ANRSH DIGITAL — فحص اتصال قاعدة البيانات</h1>
+<p>هذه الصفحة تنفذ طلبات قراءة فقط إلى Worker. لا تنشئ عضويات ولا تعدل أي بيانات.</p>
+<button id="run">ابدأ الفحص</button>
+<div id="results" aria-live="polite"></div>
+<div class="card"><strong>تنبيه</strong><p>إذا ظهر خطأ CORS أو تعذر الاتصال، فهذا لا يعني بالضرورة أن قاعدة D1 فقدت بياناتها؛ قد تكون نسخة Worker غير منشورة أو إعداد CORS غير محدث.</p></div>
+<script>
+(function(){
+"use strict";
+var API="https://anrsh-ap-dev.irched2521.workers.dev";
+var out=document.getElementById("results"),btn=document.getElementById("run");
+function item(name,status,detail){var d=document.createElement("div");d.className="card";var t=document.createElement("div");t.className="status "+(status==="PASS"?"ok":status==="RUNNING"?"pending":"bad");t.textContent=name+" — "+status;var p=document.createElement("p");p.textContent=detail;d.append(t,p);out.appendChild(d)}
+async function check(path,name,summary){
+ item(name,"RUNNING","جارٍ الاتصال…");
+ var card=out.lastChild;
+ try{
+  var r=await fetch(API+path,{method:"GET",cache:"no-store",headers:{Accept:"application/json"}});
+  var data=await r.json();
+  var ok=r.ok&&data&&data.ok!==false;
+  card.querySelector(".status").className="status "+(ok?"ok":"bad");
+  card.querySelector(".status").textContent=name+" — "+(ok?"PASS":"FAIL ("+r.status+")");
+  card.querySelector("p").textContent=ok?summary(data):"HTTP "+r.status+" — "+String(data.error||"استجابة غير متوقعة");
+  return ok;
+ }catch(e){
+  card.querySelector(".status").className="status bad";
+  card.querySelector(".status").textContent=name+" — FAIL";
+  card.querySelector("p").textContent="تعذر الاتصال أو CORS: "+String(e&&e.message||e);
+  return false;
+ }
+}
+btn.addEventListener("click",async function(){
+ btn.disabled=true;out.replaceChildren();
+ var results=await Promise.all([
+  check("/api/health","اتصال D1",d=>"D1: "+d.database+" | الولايات النشطة: "+d.active_wilayas+" | المكاتب النشطة: "+d.active_regional_offices),
+  check("/api/settings/membership-fee","قيمة الاشتراك",d=>"المبلغ المعتمد: "+d.fee_dzd+" دج"),
+  check("/api/wilayas","قائمة الولايات",d=>"عدد الولايات المحملة: "+d.count),
+  check("/api/offices","المكاتب الجهوية",d=>"عدد المكاتب المحملة: "+d.count)
+ ]);
+ item("النتيجة الإجمالية",results.every(Boolean)?"PASS":"FAIL",results.every(Boolean)?"نجحت جميع اختبارات القراءة.":"راجع العناصر الفاشلة وأرسل صورة النتائج بعد إخفاء أي بيانات شخصية.");
+ btn.disabled=false;
+});
+})();
+</script></main></body></html>
