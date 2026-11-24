@@ -290,3 +290,33 @@ Commits: [88bd6bf](https://github.com/irched66/ANRSH/commit/88bd6bf51b80b14db6f4
 | اختبارات D1 الحية والمتصفح الحقيقي وSMS | UNVERIFIED |
 
 لا يوجد تقرير CI ناجح أو فاشل مرتبط بهذه commits في GitHub؛ التحقق المتاح هنا تحليل ساكن واختبارات SQLite محلية مصغرة فقط.
+
+
+## تجهيز اختبار D1 وSMS من Android — 2026-11-24
+
+### Textbee
+- أضيفت دالة إرسال SMS من Worker عبر `POST https://api.textbee.dev/api/v1/gateway/send-sms` باستخدام Secret باسم `TEXTBEE_API_KEY`.
+- عند اعتماد وصل المنخرط، يرسل Worker OTP إلى رقم المنخرط عبر شريحة الهاتف أولاً إذا كان Secret مضبوطاً، ثم يعود إلى البريد عبر Resend إذا فشل SMS.
+- يدعم تنسيق أرقام الجزائر `05/06/07` و`+213` و`00213`.
+- تبقى صلاحية OTP عشر دقائق، وتخزينه hash فقط. يسجل `notification_log.channel` القناة الفعلية.
+- لم تُرسل رسائل حقيقية ولم يُضف API key إلى المستودع.
+- الخطة المجانية المعلنة في صفحة الأسعار: جهاز Android واحد، 50 رسالة يومياً و300 شهرياً؛ تكلفة إرسال المشغل تعتمد على باقة SIM.
+
+### اختبار D1
+- أضيف `d1-diagnostic.html` لاختبار health/fee/wilayas/offices من المتصفح عبر GET فقط.
+- أضيف `docs/D1_LIVE_READ_ONLY_CHECKS_2026-11-24.sql` ويحتوي SELECT وPRAGMA فقط؛ لا ينفذ INSERT أو UPDATE أو DELETE.
+- صفحة التشخيص لم تُنشر بعد، وD1 الحية لم تُفحص من هذه الجلسة لعدم وجود اتصال مصرح به بحساب Cloudflare.
+- يلزم نشر نسخة اختبار منفصلة أو فتح صفحة التشخيص من Preview بعد الموافقة، ثم فحص النتائج من هاتف Android.
+- OTP دخول الإدارة يبقى عبر Resend email في هذه المرحلة؛ تكامل Textbee الحالي لرمز تأكيد المنخرط.
+
+Commits: [c0f22d7 — read-only D1 SQL checks](https://github.com/irched66/ANRSH/commit/c0f22d79d53c75d0da4b89f5dad6136606f67071) · [7b25b52 — Android/Textbee setup guide](https://github.com/irched66/ANRSH/commit/7b25b5201c69d88e87f3b143246597d5985e4870) · [0718d13 — D1 diagnostic page](https://github.com/irched66/ANRSH/commit/0718d133551ac55ef2d6307fd1027c5449c69d94) · [24ac8d9 — document SMS/D1 test](https://github.com/irched66/ANRSH/commit/24ac8d9914fe7a8e177c406c2df31880d8ef6c33)
+
+| اختبار | النتيجة |
+|---|---|
+| صياغة Worker بعد تكامل Textbee | PASS |
+| صياغة صفحة التشخيص وصفحة المنصة | PASS |
+| فحص مسار SMS الأساسي والعودة للبريد | PASS — ساكن |
+| التحقق من تطبيع أرقام الجزائر | PASS — ساكن |
+| استعلامات D1 الحية | UNVERIFIED |
+| إرسال SMS حقيقي واستلامه | UNVERIFIED |
+| تسجيل ودخول حقيقي من Android | UNVERIFIED |
