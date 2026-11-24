@@ -43,6 +43,7 @@ const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
 const OTP_TTL_MS = 24 * 60 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
 const MAX_OTP_TRIES = 5;
+const MAX_MEMBERSHIP_FEE_DZD = 1000000;
 
 function json(data, status = 200, extra = {}) {
   return new Response(JSON.stringify(data), {
@@ -140,6 +141,18 @@ function normalizePhone(v) {
 function validRef(v) {
   return /^[A-Za-z0-9_-]{8,80}$/.test(String(v || ""));
 }
+async function currentMembershipFee(env) {
+  const row = await env.DB.prepare("SELECT fee_dzd FROM anrsh_platform_settings WHERE id = 1").first();
+  const amount = Number(row && row.fee_dzd);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
+  return amount;
+}
+async function handleMembershipFee(env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  try { return json({ ok: true, fee_dzd: await currentMembershipFee(env), currency: "DZD" }); }
+  catch (e) { console.error("membership settings unavailable"); return json({ error: "membership_fee_unavailable" }, 503); }
+}
+
 function fileName(name) {
   return cleanText(name, 100).replace(/[^\w.\-ء-ي]/g, "_") || "document";
 }
@@ -325,6 +338,10 @@ async function handleCreateRequest(request, env) {
   ).bind(bureau).first();
   if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
 
+  let membershipFeeDzd;
+  try { membershipFeeDzd = await currentMembershipFee(env); }
+  catch (e) { console.error("membership settings unavailable"); return json({ error: "membership_fee_unavailable" }, 503); }
+
   const files = {};
   let total = 0;
   for (const key of FILE_KEYS) {
@@ -375,7 +392,7 @@ async function handleCreateRequest(request, env) {
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
     nss: cleanText(p.nss, 40), cnr: cleanText(p.cnr, 40),
-    consent: true, submitted_at: new Date().toISOString()
+    consent: true, membership_fee_dzd: membershipFeeDzd, submitted_at: new Date().toISOString()
   };
 
   try {
@@ -391,8 +408,8 @@ async function handleCreateRequest(request, env) {
       env.DB.prepare(`
         INSERT INTO member_payments
           (id, member_id, member_ref, bureau, membership_year, amount_dzd, currency, payment_method, receipt_ref, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 500, 'DZD', 'other', ?, 'pending_review', ?)
-      `).bind(crypto.randomUUID(), id, ref, bureau, new Date().getFullYear(), ref, Date.now())
+        VALUES (?, ?, ?, ?, ?, ?, 'DZD', 'other', ?, 'pending_review', ?)
+      `).bind(crypto.randomUUID(), id, ref, bureau, new Date().getFullYear(), membershipFeeDzd, ref, Date.now())
     ]);
 
     return json({
@@ -418,7 +435,7 @@ async function handleVerify(ref, request, env) {
     WHERE m.ref=? AND EXISTS (
       SELECT 1 FROM member_payments p WHERE p.member_id=m.id
         AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
-        AND p.status='verified' AND p.amount_dzd=500
+        AND p.status='verified' AND p.amount_dzd>0
     )
   `).bind(ref).first();
   if (!row || !row.otp_hash || !row.otp_exp) return json({ error: "code_not_issued" }, 400);
@@ -469,7 +486,7 @@ async function handleCardVerify(url,env) {
     JOIN members m ON m.id=c.member_id
     JOIN member_payments p ON p.member_id=m.id
     WHERE c.token_hash=? AND c.active=1 AND c.revoked_at IS NULL
-      AND m.status='unlocked' AND p.status='verified' AND p.amount_dzd=500
+      AND m.status='unlocked' AND p.status='verified' AND p.amount_dzd>0
       AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
     ORDER BY p.created_at DESC LIMIT 1
   `).bind(hash).first();
@@ -485,7 +502,7 @@ async function handlePrintCheck(url, env) {
       SELECT m.status FROM members m WHERE m.ref=? AND m.status='unlocked'
       AND EXISTS (SELECT 1 FROM member_payments p WHERE p.member_id=m.id
         AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
-        AND p.status='verified' AND p.amount_dzd=500)
+        AND p.status='verified' AND p.amount_dzd>0)
     `).bind(body.ref).first();
     if(!row) return json({ok:false,error:"membership_inactive"},403);
     return json({ok:true});
@@ -563,13 +580,15 @@ async function handleAdminApprove(id, request, env) {
   if (!["pending_payment", "code_sent"].includes(row.status) && !staleOtpLock) {
     return json({ error: "member_not_awaiting_confirmation" }, 409);
   }
+  const profile = parseJson(row.profile, {});
+  const expectedFee = Number.isSafeInteger(Number(profile.membership_fee_dzd)) && Number(profile.membership_fee_dzd) > 0
+    ? Number(profile.membership_fee_dzd) : 500;
   const payment = await env.DB.prepare(
     "SELECT id,status,amount_dzd FROM member_payments WHERE member_id=? AND membership_year=? ORDER BY created_at DESC LIMIT 1"
   ).bind(id,new Date().getFullYear()).first();
-  if (!payment || payment.status !== "verified" || Number(payment.amount_dzd) !== 500) {
+  if (!payment || payment.status !== "verified" || Number(payment.amount_dzd) !== expectedFee) {
     return json({ error: "payment_not_verified" }, 409);
   }
-  const profile = parseJson(row.profile, {});
   const email = cleanText(profile.email,160);
   const at = email.indexOf('@'), dot = email.lastIndexOf('.');
   if (!email || at < 1 || dot < at + 2 || dot >= email.length - 1 || email.includes(' ') || !env.RESEND_API_KEY || !env.RESEND_FROM) {
@@ -586,7 +605,7 @@ async function handleAdminApprove(id, request, env) {
       OR (status='otp_sending' AND otp_exp < ?)
     ) AND EXISTS (
       SELECT 1 FROM member_payments
-      WHERE member_id=? AND membership_year=? AND status='verified' AND amount_dzd=500
+      WHERE member_id=? AND membership_year=? AND status='verified' AND amount_dzd>0
     )
   `).bind(hash,lockUntil,id,Date.now(),id,new Date().getFullYear()).run();
   if (!issued.meta || issued.meta.changes !== 1) {
@@ -594,7 +613,7 @@ async function handleAdminApprove(id, request, env) {
   }
 
   const sent = await sendEmail(env,email,"ANRSH — Code de confirmation",
-    "Votre paiement de 500 DZD a été vérifié."+String.fromCharCode(10)+"Demande : "+row.ref+String.fromCharCode(10)+"Code : "+code+String.fromCharCode(10)+"Ce code expire dans 10 minutes et ne peut être utilisé qu'une seule fois.");
+    "Votre paiement de "+expectedFee+" DZD a été vérifié."+String.fromCharCode(10)+"Demande : "+row.ref+String.fromCharCode(10)+"Code : "+code+String.fromCharCode(10)+"Ce code expire dans 10 minutes et ne peut être utilisé qu'une seule fois.");
   if (!sent.sent) {
     // Restore the previous state only if this exact OTP is still current.
     await env.DB.prepare(`
@@ -628,7 +647,10 @@ async function handleAdminPaymentReview(id, request, env) {
   if (!payment) return json({error:"payment_not_found"},404);
   if (actor.role !== "national" && payment.bureau !== actor.bureau) return json({error:"forbidden"},403);
   if (payment.status !== "pending_review") return json({error:"payment_not_pending"},409);
-  if (decision === "verified" && Number(payment.amount_dzd) !== 500) return json({error:"invalid_payment_amount"},409);
+  const grossAmount = Number(payment.amount_dzd);
+  if (decision === "verified" && (!Number.isSafeInteger(grossAmount) || grossAmount < 1 || grossAmount > MAX_MEMBERSHIP_FEE_DZD)) return json({error:"invalid_payment_amount"},409);
+  const nationalShare = Math.floor(grossAmount * 0.20);
+  const regionalShare = grossAmount - nationalShare;
   const now=Date.now();
   const statements=[
     env.DB.prepare("UPDATE member_payments SET status=?,reviewed_by=?,reviewed_at=?,rejection_reason=? WHERE id=? AND status='pending_review'")
@@ -636,9 +658,9 @@ async function handleAdminPaymentReview(id, request, env) {
   ];
   if(decision==="verified") statements.push(env.DB.prepare(`
     INSERT INTO payment_allocations (id,payment_id,member_id,bureau,membership_year,gross_amount_dzd,national_share_dzd,regional_share_dzd,allocated_at)
-    SELECT ?,id,member_id,bureau,membership_year,500,100,400,?
+    SELECT ?,id,member_id,bureau,membership_year,?,?,?,?
     FROM member_payments WHERE id=? AND status='verified' AND changes()=1
-  `).bind(crypto.randomUUID(),now,id));
+  `).bind(crypto.randomUUID(),grossAmount,nationalShare,regionalShare,now,id));
   let reviewResults;
   try { reviewResults=await env.DB.batch(statements); }
   catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
@@ -961,6 +983,7 @@ async function route(request, env) {
     });
   }
   if (request.method === "GET" && path === "/api/health") return handleHealth(env);
+  if (request.method === "GET" && path === "/api/settings/membership-fee") return handleMembershipFee(env);
   if (request.method === "GET" && path === "/api/public-stats") return handlePublicStats(env);
   if (request.method === "POST" && path === "/api/visitor-visit") return handleVisitorVisit(request, env);
   if (request.method === "GET" && path === "/api/wilayas") return handleWilayas(env);
@@ -1021,7 +1044,7 @@ async function generateRenewalReminders(env,nowDate=new Date()) {
     SELECT m.id,m.ref,m.name,m.profile,m.bureau
     FROM members m WHERE m.status='unlocked' AND EXISTS (
       SELECT 1 FROM member_payments p WHERE p.member_id=m.id
-        AND p.membership_year=? AND p.status='verified' AND p.amount_dzd=500
+        AND p.membership_year=? AND p.status='verified' AND p.amount_dzd>0
     )
   `).bind(nextYear-1).all();
   let sentCount=0;
@@ -1033,7 +1056,7 @@ async function generateRenewalReminders(env,nowDate=new Date()) {
       .bind(member.id,"renewal_"+nextYear).first();
     if(already) continue;
     const sent=await sendEmail(env,email,"ANRSH — تذكير بتجديد الانخراط",
-      "نذكركم بقرب انتهاء اشتراك ANRSH لسنة "+(nextYear-1)+". يمكنكم تجديد الانخراط السنوي بمبلغ 500 دج للسنة "+nextYear+" عبر مكتبكم الجهوي.");
+      "نذكركم بقرب انتهاء اشتراك ANRSH لسنة "+(nextYear-1)+". يمكنكم تجديد الانخراط السنوي بالسعر المعتمد لدى مكتبكم للسنة "+nextYear+" عبر مكتبكم الجهوي.");
     await env.DB.prepare("INSERT INTO notification_log (id,member_id,recipient,channel,event_type,status,error_code,created_at,sent_at) VALUES (?,?,?,'email','renewal_due',?,?,?,?)")
       .bind(crypto.randomUUID(),member.id,email,sent.sent?"sent":"failed","renewal_"+nextYear,Date.now(),sent.sent?Date.now():null).run();
     if(sent.sent) sentCount++;
