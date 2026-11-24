@@ -1347,6 +1347,23 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     if(ct.indexOf("json")>=0)return response.json();
     return response;
   }
+  async function loadMembershipFee(){
+    var info=el("payInfo");
+    try{
+      var result=await api("/api/settings/membership-fee");
+      var fee=Number(result.fee_dzd);
+      if(!Number.isSafeInteger(fee)||fee<1)throw new Error("invalid_membership_fee");
+      var formatted=fee.toLocaleString("fr-DZ");
+      var heading=el("t-doc-title");
+      if(heading)heading.textContent="📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني ("+formatted+" دج):";
+      var feeLabel=document.querySelector(".docs-box b");
+      if(feeLabel)feeLabel.textContent="💳 الاشتراك السنوي: "+formatted+" دج";
+      if(info)info.innerHTML='الاشتراك السنوي المعتمد: <b>'+formatted+' دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
+    }catch(e){
+      if(info)info.textContent="تعذر تحميل قيمة الاشتراك المعتمدة. يرجى إعادة المحاولة لاحقاً أو التواصل مع المكتب الوطني.";
+      console.warn("ANRSH membership fee",e);
+    }
+  }
   function el(id){return document.getElementById(id)}
   function val(id){return el(id)?el(id).value.trim():""}
   function profile(){
@@ -1507,7 +1524,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var tr=document.createElement("tr");addCell(tr,r.requestNumber);addCell(tr,r.name);addCell(tr,r.bureau);addCell(tr,r.phone);addCell(tr,r.status);addCell(tr,r.paymentStatus);
       var td=document.createElement("td");
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
-       if(r.paymentId&&r.paymentStatus==="pending_review"){var pay=document.createElement("button");pay.type="button";pay.className="btn-card btn-dl";pay.style.cssText="padding:5px;margin:2px";pay.textContent="💳 تأكيد استلام 500 دج";pay.onclick=function(){adPaymentReview(r.paymentId)};td.appendChild(pay);}
+       if(r.paymentId&&r.paymentStatus==="pending_review"){var pay=document.createElement("button");pay.type="button";pay.className="btn-card btn-dl";pay.style.cssText="padding:5px;margin:2px";pay.textContent="💳 تأكيد استلام "+Number(r.paymentAmount||0).toLocaleString("fr-DZ")+" دج";pay.onclick=function(){adPaymentReview(r.paymentId)};td.appendChild(pay);}
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
       
       tr.appendChild(td);table.appendChild(tr);
@@ -1518,7 +1535,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     catch(e){el("ad_out").textContent="تعذر فتح الوثيقة: "+e.message;}
    };
    window.adPaymentReview=async function(id){
-     if(!confirm("هل راجعت وصل الدفع وتأكدت فعلياً من استلام 500 دج؟"))return;
+     if(!confirm("هل راجعت وصل الدفع وتأكدت فعلياً من استلام المبلغ المسجل في الطلب؟"))return;
      try{await api("/api/admin/payments/"+encodeURIComponent(id)+"/review",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({decision:"verify"})});el("ad_out").textContent="تم تسجيل مراجعة الدفع. يمكنك الآن إصدار رمز التحقق.";await adLoad();}
      catch(e){el("ad_out").textContent="تعذرت مراجعة الدفع: "+e.message;}
    };
@@ -1601,7 +1618,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   document.addEventListener("DOMContentLoaded",function(){
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
-    var info=el("payInfo");if(info)info.innerHTML='الاشتراك السنوي: <b>500 دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
+    loadMembershipFee();
   });
 })();
 /* ===== end D1 integration ===== */
