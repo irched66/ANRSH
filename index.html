@@ -1645,7 +1645,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});
       var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 5 دقائق):";out.appendChild(title);
       var code=document.createElement("div");code.dir="ltr";code.style.cssText="font-size:2rem;letter-spacing:7px;color:var(--gold-light);font-weight:bold";code.textContent=r.code;out.appendChild(code);
-      var note=document.createElement("p");note.textContent=r.smsSent?"تم إرسال الرمز عبر SMS ("+(r.smsSimSlotIndex===0?"Mobilis":"Ooredoo")+")، وقد أُرسل أيضاً إلى البريد إذا كان مفعلاً.":(r.emailSent?"تعذر SMS؛ تم إرسال الرمز إلى البريد المسجل.":"تعذر الإرسال الآلي؛ استعمل واتساب لإرسال الرمز يدوياً.");out.appendChild(note);
+      var note=document.createElement("p");note.textContent=r.smsSent?"قبل مزود الرسائل طلب إرسال الرمز عبر SMS ("+(r.smsSimSlotIndex===0?"Mobilis":"Ooredoo")+"). هذا لا يؤكد وصول الرسالة إلى الهاتف بعد.":(r.emailSent?"تعذر SMS؛ قبل مزود البريد طلب الإرسال إلى العنوان المسجل.":"تعذر الإرسال الآلي؛ استعمل واتساب لإرسال الرمز يدوياً.");out.appendChild(note);
       if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
