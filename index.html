@@ -753,7 +753,7 @@ textarea{resize:vertical;font-family:inherit}
                     <!-- الوثائق وإثبات الدفع -->
                     <div class="form-row two-col"><div class="field-group"><label>رقم الضمان الاجتماعي:</label><input type="text" id="nss_no" dir="ltr"></div><div class="field-group"><label>رقم التسجيل بالصندوق الوطني للتقاعد (CNR):</label><input type="text" id="cnr_no" dir="ltr"></div></div>
                     <div class="docs-box">
-                        <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج):</h4>
+                        <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني:</h4>
                         <div class="form-row two-col">
                             <div class="field-group">
                                 <label id="t-lbl-photo">📸 الصورة الشمسية الرسمية (للبطاقة البيومترية):</label>
@@ -777,7 +777,7 @@ textarea{resize:vertical;font-family:inherit}
                     </div>
 
                     <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
-                    <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: 500 دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p></div>
+                    <div class="docs-box"><b style="color:var(--gold-light)">💳 جاري تحميل قيمة الاشتراك المعتمدة...</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p></div>
                     <label style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="accept_rules" required style="width:auto"> أصرّح بصحة المعلومات وأحترم القانون الداخلي للجمعية *</label>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:.8rem"><input type="checkbox" id="accept_privacy" required style="width:auto;margin-top:3px"> <span>أوافق على معالجة بياناتي الشخصية (الهوية والصور ووثائق التقاعد) لغرض تسيير انخراطي في الجمعية فقط، وفق القانون 18-07 المتعلق بحماية المعطيات الشخصية، ولي حق الاطلاع والتعديل والحذف بمراسلة anrsh1994@gmail.com *</span></label>
                     <button type="button" class="btn-card btn-wa-card" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-top: 18px;" onclick="requestSecurityOTP()">
@@ -1351,19 +1351,26 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     return response;
   }
   async function loadMembershipFee(){
-    var info=el("payInfo");
+    var info=el("payInfo"), currentLang=document.documentElement.lang||"ar";
+    var copy={
+      ar:{docs:"📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني",fee:"💳 الاشتراك السنوي: ",unit:"دج",approved:"الاشتراك السنوي المعتمد: ",link:"فتح صفحة الدفع ANRSH",after:"بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.",failed:"تعذر تحميل قيمة الاشتراك المعتمدة. يرجى إعادة المحاولة لاحقاً أو التواصل مع المكتب الوطني."},
+      fr:{docs:"📎 Documents obligatoires et preuve de paiement",fee:"💳 Cotisation annuelle : ",unit:"DA",approved:"Cotisation annuelle approuvée : ",link:"Ouvrir la page de paiement ANRSH",after:"Après paiement, joignez le reçu au dossier. La carte est délivrée après vérification du reçu, validation du bureau et confirmation par code.",failed:"Impossible de charger le montant officiel. Réessayez plus tard ou contactez le bureau national."},
+      en:{docs:"📎 Required documents and payment proof",fee:"💳 Annual membership fee: ",unit:"DZD",approved:"Approved annual membership fee: ",link:"Open ANRSH payment page",after:"After payment, attach the receipt to your application. The card is issued after receipt review, office approval and code confirmation.",failed:"Unable to load the approved membership fee. Please retry later or contact the National Office."}
+    };
+    var t=copy[currentLang]||copy.ar;
+    var heading=el("t-doc-title"), feeLabel=document.querySelector(".docs-box b");
     try{
       var result=await api("/api/settings/membership-fee");
       var fee=Number(result.fee_dzd);
       if(!Number.isSafeInteger(fee)||fee<1)throw new Error("invalid_membership_fee");
       var formatted=fee.toLocaleString("fr-DZ");
-      var heading=el("t-doc-title");
-      if(heading)heading.textContent="📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني ("+formatted+" دج):";
-      var feeLabel=document.querySelector(".docs-box b");
-      if(feeLabel)feeLabel.textContent="💳 الاشتراك السنوي: "+formatted+" دج";
-      if(info)info.innerHTML='الاشتراك السنوي المعتمد: <b>'+formatted+' دج</b>. <a href="https://irched66.github.io/ANRSH/paiement.html?v=8" target="_blank" rel="noopener noreferrer" style="color:var(--gold-light);text-decoration:underline;font-weight:bold">فتح صفحة الدفع ANRSH</a>. بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.';
+      if(heading)heading.textContent=t.docs+" ("+formatted+" "+t.unit+"):";
+      if(feeLabel)feeLabel.textContent=t.fee+formatted+" "+t.unit;
+      if(info)info.innerHTML=t.approved+"<b>"+formatted+" "+t.unit+"</b>. <a href=\"https://irched66.github.io/ANRSH/paiement.html?v=8\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--gold-light);text-decoration:underline;font-weight:bold\">"+t.link+"</a>. "+t.after;
     }catch(e){
-      if(info)info.textContent="تعذر تحميل قيمة الاشتراك المعتمدة. يرجى إعادة المحاولة لاحقاً أو التواصل مع المكتب الوطني.";
+      if(heading)heading.textContent=t.docs;
+      if(feeLabel)feeLabel.textContent=t.failed;
+      if(info)info.textContent=t.failed;
       console.warn("ANRSH membership fee",e);
     }
   }
@@ -1622,6 +1629,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var photoInput=el("user_photo_file");if(photoInput)photoInput.required=true;
     adminPanel();addStatus();addPublicCounters();loadPublicStats();addFirstVisitIntro();loadOffices();loadReports();
     loadMembershipFee();
+    document.querySelectorAll(".lang-pill").forEach(function(b){b.addEventListener("click",function(){setTimeout(loadMembershipFee,0);});});
   });
 })();
 /* ===== end D1 integration ===== */
