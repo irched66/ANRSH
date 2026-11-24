@@ -1475,7 +1475,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       if(!f)continue;
       var type=(f.type||"").toLowerCase(), name=(f.name||"").toLowerCase();
       var isPdf=type==="application/pdf"||name.endsWith(".pdf");
-      var isImage=type.indexOf("image/")===0||/\\.(jpe?g|png|webp|heic|heif)$/i.test(name);
+      var isImage=type.indexOf("image/")===0||/\.(jpe?g|png|webp|heic|heif)$/i.test(name);
       if(!isPdf&&!isImage)throw new Error("الملف "+f.name+" غير مدعوم. اختر صورة أو ملف PDF.");
       var out=f;
       if(isImage && !/heic|heif/i.test(type+" "+name) && f.size>180*1024){
@@ -1492,7 +1492,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
             blob=await new Promise(function(resolve){canvas.toBlob(resolve,"image/jpeg",qualities[qi])});
             if(blob && blob.size<=180*1024)break;
           }
-          if(blob && blob.size<f.size)out=new File([blob],(f.name||"document").replace(/\\.[^.]+$/,"")+".jpg",{type:"image/jpeg",lastModified:Date.now()});
+          if(blob && blob.size<f.size)out=new File([blob],(f.name||"document").replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg",lastModified:Date.now()});
         }catch(compressError){
           console.warn("ANRSH image compression skipped:",compressError);
         }
