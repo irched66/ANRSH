@@ -806,29 +806,27 @@ textarea{resize:vertical;font-family:inherit}
                     <div class="form-row two-col"><div class="field-group"><label>رقم الضمان الاجتماعي:</label><input type="text" id="nss_no" dir="ltr"></div><div class="field-group"><label>رقم التسجيل بالصندوق الوطني للتقاعد (CNR):</label><input type="text" id="cnr_no" dir="ltr"></div></div>
                     <div class="docs-box">
                         <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات دفع الاشتراك السنوي:</h4>
-                        <div class="form-row two-col">
-                            <div class="field-group">
-                                <label id="t-lbl-photo">📸 الصورة الشمسية الرسمية (للبطاقة البيومترية):</label>
-                                <input type="file" id="user_photo_file" accept="image/*" onchange="loadPhotoPreview(event)">
-                            </div>
-                            <div class="field-group">
-                                <label id="t-lbl-cni">🪪 نسخة من بطاقة التعريف الوطنية (صورة أو PDF) *:</label>
-                                <input type="file" id="doc_cni" accept="image/*,.pdf" required>
-                            </div>
+                        <div class="field-group">
+                            <label id="t-lbl-photo">1️⃣ 📸 الصورة الشمسية الرسمية (للبطاقة البيومترية):</label>
+                            <input type="file" id="user_photo_file" accept="image/*" onchange="loadPhotoPreview(event)">
                         </div>
-                        <div class="form-row two-col" style="margin-top: 8px;">
-                            <div class="field-group">
-                                <label id="t-lbl-retire">📄 قرار الإحالة على التقاعد بسوناطراك (صورة أو PDF) *:</label>
-                                <input type="file" id="doc_retire" accept="image/*,.pdf" required>
-                            </div>
-                            <div class="field-group">
-                                <label id="t-lbl-proof">🧾 صورة وصل الدفع الإلكتروني (بريدي موب أو تحويل بنكي) *:</label>
-                                <input type="file" id="doc_payment_proof" accept="image/*,.pdf" required>
-                            </div>
+                        <div class="field-group">
+                            <label id="t-lbl-cni">2️⃣ 🪪 بطاقة التعريف الوطنية — الوجه الأمامي (صورة أو PDF) *:</label>
+                            <input type="file" id="doc_cni" accept="image/*,.pdf" required>
+                        </div>
+                        <div class="field-group">
+                            <label>3️⃣ 🪪 بطاقة التعريف الوطنية — الوجه الخلفي (صورة أو PDF) *:</label>
+                            <input type="file" id="doc_cni_back" accept="image/*,.pdf" required>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-retire">4️⃣ 📄 قرار الإحالة على التقاعد بسوناطراك (صورة أو PDF) *:</label>
+                            <input type="file" id="doc_retire" accept="image/*,.pdf" required>
+                        </div>
+                        <div class="field-group">
+                            <label id="t-lbl-proof">5️⃣ 🧾 وصل دفع الاشتراك السنوي (500 دج) — صورة أو PDF *:</label>
+                            <input type="file" id="doc_payment_proof" accept="image/*,.pdf" required>
                         </div>
                     </div>
-
-                    <div class="field-group" style="margin-top:10px"><label>🪪 بطاقة التعريف (الوجه الخلفي) *:</label><input type="file" id="doc_cni_back" accept="image/*,.pdf" required></div>
                     <div class="docs-box"><b style="color:var(--gold-light)">💳 الاشتراك السنوي: <span id="anrshFeeValue">500</span> دج</b><p id="payInfo" style="font-size:.85rem;margin-top:6px"></p><div class="payment-card-gallery" aria-label="الدفع الإلكتروني"><figure><a class="payment-card-link" href="paiement.html" target="_self" aria-label="اضغط لفتح صفحة الدفع الإلكتروني ANRSH"><img src="cibt.jpg?v=4" alt="صورة البطاقة البنكية CIB"></a><figcaption>البطاقة البنكية CIB — اضغط للدخول إلى صفحة الدفع</figcaption></figure></div><p class="payment-safety">صور توضيحية فقط. لا ترسلوا رقم البطاقة أو الرقم السري أو CVV أو رمز OTP لأي شخص.</p></div>
                     <div class="form-section-title">🌐 <span>الاسم واللقب باللغة الأخرى / Name in the other language</span></div>
                     <div class="form-row two-col" id="nameArabicRow" style="display:none">
