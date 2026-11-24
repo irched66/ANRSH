@@ -963,12 +963,20 @@ async function handleAdminFinanceTransfer(request, env) {
           SELECT COALESCE(SUM(regional_share_dzd),0) FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?
         ) - (
           SELECT COALESCE(SUM(amount_dzd),0) FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?
-        )`)
-        .bind(id,bureau,amount,periodStart,periodEnd,transferDate,bankReference,note||null,now,actor.id,amount,bureau,startMs,endMs,bureau,periodStart,periodEnd),
+        )
+        AND NOT EXISTS (SELECT 1 FROM anrsh_regional_transfers WHERE bureau=? AND bank_reference=?)
+        AND NOT EXISTS (SELECT 1 FROM anrsh_regional_transfers WHERE bureau=? AND NOT (period_end < ? OR period_start > ?) AND NOT (period_start=? AND period_end=?))`)
+        .bind(id,bureau,amount,periodStart,periodEnd,transferDate,bankReference,note||null,now,actor.id,amount,bureau,startMs,endMs,bureau,periodStart,periodEnd,bureau,bankReference,bureau,periodStart,periodEnd,periodStart,periodEnd),
       env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
         .bind(now,actor.email,"regional_transfer_recorded",id)
     ]);
-    if (!results?.[0]?.meta || results[0].meta.changes !== 1) return json({ error: "transfer_exceeds_outstanding" }, 409);
+    if (!results?.[0]?.meta || results[0].meta.changes !== 1) {
+      const duplicate = await env.DB.prepare("SELECT id FROM anrsh_regional_transfers WHERE bureau=? AND bank_reference=? LIMIT 1").bind(bureau,bankReference).first();
+      if (duplicate) return json({ error: "transfer_reference_already_used" }, 409);
+      const overlap = await env.DB.prepare("SELECT id FROM anrsh_regional_transfers WHERE bureau=? AND NOT (period_end < ? OR period_start > ?) AND NOT (period_start=? AND period_end=?) LIMIT 1").bind(bureau,periodStart,periodEnd,periodStart,periodEnd).first();
+      if (overlap) return json({ error: "transfer_period_overlap" }, 409);
+      return json({ error: "transfer_exceeds_outstanding" }, 409);
+    }
     if (!results?.[1]?.meta || results[1].meta.changes !== 1) return json({ error: "transfer_audit_failed" }, 503);
     const dueAfter = await env.DB.prepare("SELECT COALESCE(SUM(regional_share_dzd),0) AS amount FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?").bind(bureau,startMs,endMs).first();
     const paidAfter = await env.DB.prepare("SELECT COALESCE(SUM(amount_dzd),0) AS amount FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?").bind(bureau,periodStart,periodEnd).first();
