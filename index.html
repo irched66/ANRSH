@@ -1470,7 +1470,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var prepared={}, total=0;
     for(var k in mapping){
       var f=selectedFile(mapping[k]);
-      if(["photo","cni","retire","proof"].indexOf(k)>=0&&!f)
+      if(["photo","cni","cni_back","retire","proof"].indexOf(k)>=0&&!f)
         throw new Error("يرجى إرفاق: "+({photo:"الصورة الشمسية",cni:"بطاقة التعريف الوطنية",retire:"قرار التقاعد",proof:"وصل دفع الاشتراك"}[k])+".");
       if(!f)continue;
       var type=(f.type||"").toLowerCase(), name=(f.name||"").toLowerCase();
@@ -1499,7 +1499,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       }
       if(out.size>1024*1024)throw new Error("الملف "+f.name+" أكبر من 1 ميغابايت حتى بعد محاولة تصغيره. اختر صورة عادية أو ملفاً أصغر.");
       total+=out.size;
-      if(total>1024*1024)throw new Error("مجموع الوثائق أكبر من 1 ميغابايت. تم تصغير الصور تلقائياً؛ أرسل الوثائق على دفعات أصغر أو اختر ملفات PDF أصغر.");
+      if(total>3*1024*1024)throw new Error("مجموع الوثائق أكبر من 3 ميغابايت. تم تصغير الصور تلقائياً؛ قلّل حجم ملفات PDF أو اختر نسخاً أصغر.");
       prepared[k]=out;
     }
     return prepared;
