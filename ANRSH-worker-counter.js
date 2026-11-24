@@ -213,7 +213,7 @@ async function checkPrintToken(token, env) {
 }
 
 function algerianE164(value) {
-  const digits=String(value||"").replace(/\D/g,"");
+  const digits=String(value||"").replace(/\D/g,"").replace(/^00/,"");
   if(/^213[5-7]\d{8}$/.test(digits)) return "+"+digits;
   if(/^0[5-7]\d{8}$/.test(digits)) return "+213"+digits.slice(1);
   if(/^[5-7]\d{8}$/.test(digits)) return "+213"+digits;
