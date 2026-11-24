@@ -40,7 +40,7 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "application/pdf"
 ]);
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
-const OTP_TTL_MS = 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
 const MAX_OTP_TRIES = 5;
 const MAX_MEMBERSHIP_FEE_DZD = 1000000;
@@ -156,6 +156,16 @@ async function handleMembershipFee(env) {
 function fileName(name) {
   return cleanText(name, 100).replace(/[^\w.\-ء-ي]/g, "_") || "document";
 }
+
+function fileSignatureMatches(bytes, mime) {
+  const ascii = (start, value) => value.split("").every((ch, i) => bytes[start + i] === ch.charCodeAt(0));
+  if (mime === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mime === "image/png") return bytes.length >= 8 && [137,80,78,71,13,10,26,10].every((v,i) => bytes[i] === v);
+  if (mime === "image/webp") return bytes.length >= 12 && ascii(0,"RIFF") && ascii(8,"WEBP");
+  if (mime === "application/pdf") return bytes.length >= 5 && ascii(0,"%PDF-");
+  return false;
+}
+
 async function fileEncryptionKey(env) {
   const hex=String(env.FILE_ENCRYPTION_KEY||"");
   if(!/^[a-f0-9]{64}$/i.test(hex)) throw new Error("file_encryption_not_configured");
@@ -312,6 +322,10 @@ async function handleCreateRequest(request, env) {
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
     return json({ error: "multipart_form_required" }, 415);
   }
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength && contentLength > MAX_TOTAL_BYTES + 96 * 1024) {
+    return json({ error: "request_too_large", max_bytes: MAX_TOTAL_BYTES + 96 * 1024 }, 413);
+  }
 
   if (!/^[a-f0-9]{64}$/i.test(String(env.FILE_ENCRYPTION_KEY||""))) return json({error:"document_encryption_not_configured"},503);
   const form = await request.formData();
@@ -353,6 +367,7 @@ async function handleCreateRequest(request, env) {
     total += item.size;
     if (total > MAX_TOTAL_BYTES) return json({ error: "total_files_too_large", max_bytes: MAX_TOTAL_BYTES }, 413);
     const bytes = new Uint8Array(await item.arrayBuffer());
+    if (!fileSignatureMatches(bytes, item.type)) return json({ error: "file_content_type_mismatch", file: key }, 415);
     files[key] = {
       name: fileName(item.name),
       type: item.type,
@@ -794,7 +809,9 @@ async function authVerify(request, env) {
   if (Number(row.attempts) >= 5) return json({ error: "too_many_attempts" }, 429);
   const candidate = await sha256(row.admin_id + ":login:" + code);
   if (!safeEqual(candidate,row.code_hash)) {
-    await env.DB.prepare("UPDATE admin_otps SET attempts=attempts+1 WHERE id=? AND used_at IS NULL").bind(challengeId).run();
+    const failed = await env.DB.prepare("UPDATE admin_otps SET attempts=attempts+1 WHERE id=? AND used_at IS NULL AND expires_at>? AND attempts<5")
+      .bind(challengeId,Date.now()).run();
+    if (!failed.meta || failed.meta.changes !== 1) return json({ error: "too_many_attempts_or_code_changed" }, 429);
     return json({ error: "invalid_code" }, 401);
   }
   const consumed = await env.DB.prepare("UPDATE admin_otps SET used_at=? WHERE id=? AND used_at IS NULL AND expires_at>? AND attempts<5")
