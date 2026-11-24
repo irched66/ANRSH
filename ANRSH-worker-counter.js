@@ -852,14 +852,30 @@ async function authCreateInvitation(request,env) {
   if(!/^\S+@\S+\.\S+$/.test(email)||!bureau) return json({error:"invalid_invitation"},400);
   const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
   if(!office) return json({error:"invalid_or_inactive_office"},400);
-  const token=randomHex(32), tokenHash=await sha256(token), id=crypto.randomUUID(), expires=Date.now()+72*60*60*1000;
+  const duplicate=await env.DB.prepare("SELECT id FROM admin_users WHERE lower(email)=? UNION ALL SELECT id FROM admin_invitations WHERE lower(email)=? AND used_at IS NULL AND expires_at>? LIMIT 1")
+    .bind(email,email,Date.now()).first();
+  if(duplicate) return json({error:"invitation_already_exists"},409);
+  const token=randomHex(32), tokenHash=await sha256(token), id=crypto.randomUUID(), now=Date.now(), expires=now+72*60*60*1000;
+  try {
+    const created=await env.DB.batch([
+      env.DB.prepare("INSERT INTO admin_invitations (id,email,role,bureau,token_hash,expires_at,used_at,created_by,created_at) VALUES (?,?,'regional',?,?,?,NULL,?,?)")
+        .bind(id,email,bureau,tokenHash,expires,actor.id,now),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+        .bind(now,actor.email,"regional_invitation_created",id)
+    ]);
+    if(!created?.[0]?.meta||created[0].meta.changes!==1||!created?.[1]?.meta||created[1].meta.changes!==1)
+      return json({error:"invitation_save_failed"},503);
+  } catch(e) { return json({error:"invitation_save_failed"},503); }
   const sent=await sendEmail(env,email,"ANRSH — دعوة حساب المكتب الجهوي",
     "لإنشاء حساب رئيس المكتب الجهوي، افتح صفحة المنصة وأدخل رمز الدعوة التالي خلال 72 ساعة:\n"+token);
-  if(!sent.sent) return json({error:"invitation_email_failed"},503);
-  await env.DB.prepare("INSERT INTO admin_invitations (id,email,role,bureau,token_hash,expires_at,used_at,created_by,created_at) VALUES (?,?,'regional',?,?,?,NULL,?,?)")
-    .bind(id,email,bureau,tokenHash,expires,actor.id,Date.now()).run();
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
-    .bind(Date.now(),actor.email,"regional_invitation_created",id).run();
+  if(!sent.sent) {
+    await env.DB.batch([
+      env.DB.prepare("UPDATE admin_invitations SET used_at=? WHERE id=? AND used_at IS NULL").bind(Date.now(),id),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+        .bind(Date.now(),actor.email,"regional_invitation_delivery_failed",id)
+    ]);
+    return json({error:"invitation_email_failed"},503);
+  }
   return json({ok:true,expiresAt:expires});
 }
 async function authAcceptInvitation(request,env) {
@@ -868,7 +884,9 @@ async function authAcceptInvitation(request,env) {
   if(!/^[a-f0-9]{64}$/i.test(token)||password.length<14||password.length>128) return json({error:"invalid_invitation_or_password"},400);
   const tokenHash=await sha256(token);
   const invite=await env.DB.prepare("SELECT id,email,role,bureau,expires_at,used_at FROM admin_invitations WHERE token_hash=?").bind(tokenHash).first();
-  if(!invite||invite.used_at||Number(invite.expires_at)<Date.now()) return json({error:"invitation_expired_or_used"},410);
+  if(!invite||invite.role!=="regional"||!invite.bureau||invite.used_at||Number(invite.expires_at)<Date.now()) return json({error:"invitation_expired_or_used"},410);
+  const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(invite.bureau).first();
+  if(!office) return json({error:"invitation_office_inactive"},409);
   const id=crypto.randomUUID(),salt=randomHex(16),hash=await passwordDigest(password,salt);
   // Consume the invitation and create the inactive account in one D1 batch.
   // This prevents a failed account insert from permanently burning a valid invitation.
