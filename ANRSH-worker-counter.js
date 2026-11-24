@@ -943,22 +943,31 @@ async function handleAdminFinanceTransfer(request, env) {
   const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
   if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
   const startMs = Date.parse(periodStart + "T00:00:00.000Z"), endMs = Date.parse(periodEnd + "T23:59:59.999Z");
+  const id = crypto.randomUUID(), now = Date.now();
   try {
-    const due = await env.DB.prepare("SELECT COALESCE(SUM(regional_share_dzd),0) AS amount FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?").bind(bureau,startMs,endMs).first();
-    const paid = await env.DB.prepare("SELECT COALESCE(SUM(amount_dzd),0) AS amount FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?").bind(bureau,periodStart,periodEnd).first();
-    const outstanding = Number(due?.amount||0)-Number(paid?.amount||0);
-    if (amount > outstanding) return json({ error: "transfer_exceeds_outstanding", outstanding }, 409);
-    const id = crypto.randomUUID(), now = Date.now();
-    await env.DB.prepare("INSERT INTO anrsh_regional_transfers (id,bureau,amount_dzd,period_start,period_end,transfer_date,bank_reference,note,created_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)")
-      .bind(id,bureau,amount,periodStart,periodEnd,transferDate,bankReference,note||null,now,actor.id).run();
-    await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"regional_transfer_recorded",id).run();
-    return json({ ok:true, id, outstandingAfter:outstanding-amount }, 201);
+    const results = await env.DB.batch([
+      env.DB.prepare(`INSERT INTO anrsh_regional_transfers (id,bureau,amount_dzd,period_start,period_end,transfer_date,bank_reference,note,created_at,created_by)
+        SELECT ?,?,?,?,?,?,?,?,?,? WHERE ? <= (
+          SELECT COALESCE(SUM(regional_share_dzd),0) FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?
+        ) - (
+          SELECT COALESCE(SUM(amount_dzd),0) FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?
+        )`)
+        .bind(id,bureau,amount,periodStart,periodEnd,transferDate,bankReference,note||null,now,actor.id,amount,bureau,startMs,endMs,bureau,periodStart,periodEnd),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+        .bind(now,actor.email,"regional_transfer_recorded",id)
+    ]);
+    if (!results?.[0]?.meta || results[0].meta.changes !== 1) return json({ error: "transfer_exceeds_outstanding" }, 409);
+    if (!results?.[1]?.meta || results[1].meta.changes !== 1) return json({ error: "transfer_audit_failed" }, 503);
+    const dueAfter = await env.DB.prepare("SELECT COALESCE(SUM(regional_share_dzd),0) AS amount FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?").bind(bureau,startMs,endMs).first();
+    const paidAfter = await env.DB.prepare("SELECT COALESCE(SUM(amount_dzd),0) AS amount FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?").bind(bureau,periodStart,periodEnd).first();
+    return json({ ok:true, id, outstandingAfter:Number(dueAfter?.amount||0)-Number(paidAfter?.amount||0) }, 201);
   } catch (e) {
+    const detail = String(e && e.message || "");
+    if (detail.includes("UNIQUE") || detail.includes("unique")) return json({ error: "transfer_reference_already_used" }, 409);
     console.error("regional transfer schema or insert unavailable");
     return json({ error: "finance_schema_not_ready" }, 503);
   }
 }
-
 async function handleReports(request,env,method) {
   const actor=await requireAdmin(request,env);
   if(!actor) return json({error:"unauthorized"},401);
