@@ -94,8 +94,18 @@ function randomHex(n = 16) {
   return [...a].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 function randomDigits(n = 6) {
-  const a = crypto.getRandomValues(new Uint32Array(n));
-  return [...a].map(x => String(x % 10)).join("");
+  // Rejection sampling avoids the modulo bias of Uint32/byte values mapped to 0..9.
+  let result = "";
+  const pool = new Uint8Array(Math.max(16, n * 2));
+  while (result.length < n) {
+    crypto.getRandomValues(pool);
+    for (const value of pool) {
+      if (value >= 250) continue;
+      result += String(value % 10);
+      if (result.length === n) break;
+    }
+  }
+  return result;
 }
 async function sha256(value) {
   const bytes = new TextEncoder().encode(String(value));
@@ -417,7 +427,13 @@ async function handleVerify(ref, request, env) {
   if (Number(row.otp_tries || 0) >= MAX_OTP_TRIES) return json({ error: "too_many_attempts" }, 429);
   const candidate = await sha256(ref + ":" + code);
   if (!safeEqual(candidate, row.otp_hash)) {
-    await env.DB.prepare("UPDATE members SET otp_tries=otp_tries+1 WHERE ref=? AND status='code_sent'").bind(ref).run();
+    // Atomic conditional increment: concurrent wrong attempts cannot pass the five-try limit.
+    const failed = await env.DB.prepare(
+      "UPDATE members SET otp_tries=otp_tries+1 WHERE ref=? AND status='code_sent' AND otp_hash=? AND otp_exp>? AND otp_tries<?"
+    ).bind(ref, row.otp_hash, Date.now(), MAX_OTP_TRIES).run();
+    if (!failed.meta || failed.meta.changes !== 1) {
+      return json({ error: "too_many_attempts_or_code_changed" }, 429);
+    }
     return json({ error: "invalid_code" }, 401);
   }
   if (!env.CARD_SIGNING_SECRET || String(env.CARD_SIGNING_SECRET).length < 32) return json({error:"card_signing_not_configured"},503);
