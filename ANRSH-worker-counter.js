@@ -896,6 +896,68 @@ async function authActivateOfficer(request,env,id) {
   await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"regional_account_activated",id).run();
   return json({ok:true,active:true});
 }
+function validIsoDate(value) {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const time = Date.parse(value + "T00:00:00.000Z");
+  return Number.isFinite(time) && new Date(time).toISOString().slice(0,10) === value;
+}
+async function handleAdminFinance(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
+  const url = new URL(request.url);
+  const from = url.searchParams.get("from") || new Date(Date.UTC(new Date().getUTCFullYear(),0,1)).toISOString().slice(0,10);
+  const to = url.searchParams.get("to") || new Date().toISOString().slice(0,10);
+  if (!validIsoDate(from) || !validIsoDate(to) || from > to) return json({ error: "invalid_finance_period" }, 400);
+  const bureau = actor.role === "national" ? cleanText(url.searchParams.get("bureau"),80) : actor.bureau;
+  if (actor.role !== "national" && !actor.bureau) return json({ error: "forbidden" }, 403);
+  const fromMs = Date.parse(from + "T00:00:00.000Z"), toMs = Date.parse(to + "T23:59:59.999Z");
+  const suffix = bureau ? " AND bureau = ?" : "";
+  try {
+    const summaryQuery = "SELECT COUNT(*) AS count,COALESCE(SUM(gross_amount_dzd),0) AS gross,COALESCE(SUM(national_share_dzd),0) AS national,COALESCE(SUM(regional_share_dzd),0) AS regional FROM payment_allocations WHERE allocated_at BETWEEN ? AND ?" + suffix;
+    const summaryStmt = env.DB.prepare(summaryQuery);
+    const summaryRow = bureau ? await summaryStmt.bind(fromMs,toMs,bureau).first() : await summaryStmt.bind(fromMs,toMs).first();
+    const officeQuery = "SELECT o.bureau,COUNT(a.id) AS count,COALESCE(SUM(a.gross_amount_dzd),0) AS gross,COALESCE(SUM(a.national_share_dzd),0) AS national,COALESCE(SUM(a.regional_share_dzd),0) AS regional,COALESCE(t.transferred,0) AS transferred,COALESCE(SUM(a.regional_share_dzd),0)-COALESCE(t.transferred,0) AS outstanding FROM regional_offices o LEFT JOIN payment_allocations a ON a.bureau=o.bureau AND a.allocated_at BETWEEN ? AND ? LEFT JOIN (SELECT bureau,SUM(amount_dzd) AS transferred FROM anrsh_regional_transfers WHERE transfer_date BETWEEN ? AND ? GROUP BY bureau) t ON t.bureau=o.bureau WHERE o.active=1" + (bureau ? " AND o.bureau=?" : "") + " GROUP BY o.bureau,t.transferred ORDER BY o.bureau";
+    const officeStmt = env.DB.prepare(officeQuery);
+    const offices = bureau ? await officeStmt.bind(fromMs,toMs,from,to,bureau).all() : await officeStmt.bind(fromMs,toMs,from,to).all();
+    const entriesQuery = "SELECT m.ref AS request_ref,m.name AS member_name,COALESCE(json_extract(m.profile,'$.wilaya_name'),json_extract(m.profile,'$.wilaya'), '') AS wilaya,a.bureau,COALESCE(json_extract(m.profile,'$.demand_type'),'') AS demand_type,a.gross_amount_dzd AS fee_amount,a.national_share_dzd AS national_amount,a.regional_share_dzd AS regional_amount,datetime(a.allocated_at/1000,'unixepoch') AS payment_confirmed_at FROM payment_allocations a JOIN members m ON m.id=a.member_id WHERE a.allocated_at BETWEEN ? AND ?" + suffix + " ORDER BY a.allocated_at DESC LIMIT 1000";
+    const entriesStmt = env.DB.prepare(entriesQuery);
+    const entries = bureau ? await entriesStmt.bind(fromMs,toMs,bureau).all() : await entriesStmt.bind(fromMs,toMs).all();
+    return json({ ok:true, period:{from,to}, summary:{count:Number(summaryRow?.count||0),gross:Number(summaryRow?.gross||0),national:Number(summaryRow?.national||0),regional:Number(summaryRow?.regional||0)}, offices:offices.results||[], entries:entries.results||[] });
+  } catch (e) {
+    console.error("finance schema or query unavailable");
+    return json({ error: "finance_schema_not_ready" }, 503);
+  }
+}
+async function handleAdminFinanceTransfer(request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const actor = await requireAdmin(request, env);
+  if (!actor) return json({ error: "unauthorized" }, 401);
+  if (actor.role !== "national") return json({ error: "forbidden" }, 403);
+  const body = await request.json().catch(() => ({}));
+  const bureau = cleanText(body.bureau,80), amount = Number(body.amount);
+  const transferDate = cleanText(body.transferDate,10), periodStart = cleanText(body.periodStart,10), periodEnd = cleanText(body.periodEnd,10);
+  const bankReference = cleanText(body.bankReference,100), note = cleanText(body.note,300);
+  if (!bureau || !Number.isSafeInteger(amount) || amount < 1 || amount > 1000000000 || !validIsoDate(transferDate) || !validIsoDate(periodStart) || !validIsoDate(periodEnd) || periodStart > periodEnd || !bankReference || bankReference.length < 3) return json({ error: "invalid_transfer_details" }, 400);
+  const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
+  if (!office) return json({ error: "invalid_or_inactive_office" }, 400);
+  const startMs = Date.parse(periodStart + "T00:00:00.000Z"), endMs = Date.parse(periodEnd + "T23:59:59.999Z");
+  try {
+    const due = await env.DB.prepare("SELECT COALESCE(SUM(regional_share_dzd),0) AS amount FROM payment_allocations WHERE bureau=? AND allocated_at BETWEEN ? AND ?").bind(bureau,startMs,endMs).first();
+    const paid = await env.DB.prepare("SELECT COALESCE(SUM(amount_dzd),0) AS amount FROM anrsh_regional_transfers WHERE bureau=? AND period_start=? AND period_end=?").bind(bureau,periodStart,periodEnd).first();
+    const outstanding = Number(due?.amount||0)-Number(paid?.amount||0);
+    if (amount > outstanding) return json({ error: "transfer_exceeds_outstanding", outstanding }, 409);
+    const id = crypto.randomUUID(), now = Date.now();
+    await env.DB.prepare("INSERT INTO anrsh_regional_transfers (id,bureau,amount_dzd,period_start,period_end,transfer_date,bank_reference,note,created_at,created_by) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .bind(id,bureau,amount,periodStart,periodEnd,transferDate,bankReference,note||null,now,actor.id).run();
+    await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"regional_transfer_recorded",id).run();
+    return json({ ok:true, id, outstandingAfter:outstanding-amount }, 201);
+  } catch (e) {
+    console.error("regional transfer schema or insert unavailable");
+    return json({ error: "finance_schema_not_ready" }, 503);
+  }
+}
+
 async function handleReports(request,env,method) {
   const actor=await requireAdmin(request,env);
   if(!actor) return json({error:"unauthorized"},401);
@@ -1023,6 +1085,8 @@ async function route(request, env) {
   if (request.method === "POST" && path === "/api/admin/office-profile") return handleOfficeProfile(request,env);
   if (request.method === "GET" && path === "/api/admin/reports") return handleReports(request,env,"GET");
   if (request.method === "POST" && path === "/api/admin/reports") return handleReports(request,env,"POST");
+  if (request.method === "GET" && path === "/api/admin/finance") return handleAdminFinance(request,env);
+  if (request.method === "POST" && path === "/api/admin/finance/transfers") return handleAdminFinanceTransfer(request,env);
   const activateMatch=path.match(/^\/api\/admin\/officers\/([^/]+)\/activate$/);
   if(request.method==="POST"&&activateMatch) return authActivateOfficer(request,env,decodeURIComponent(activateMatch[1]));
   if (request.method === "POST" && path === "/api/auth/login") return authLogin(request, env);
