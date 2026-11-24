@@ -143,7 +143,9 @@ function validRef(v) {
 async function currentMembershipFee(env) {
   const row = await env.DB.prepare("SELECT fee_dzd FROM anrsh_platform_settings WHERE id = 1").first();
   const amount = Number(row && row.fee_dzd);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
+  // The current finance-ledger migration enforces a fixed 500 DZD fee.
+  // Do not allow a settings mismatch to break payment confirmation/accounting.
+  if (!Number.isSafeInteger(amount) || amount !== DEFAULT_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
   return amount;
 }
 
@@ -615,6 +617,7 @@ async function handleAdminMembershipFeeUpdate(request, env) {
   const body = await request.json().catch(() => ({}));
   const amount = Number(body.amountDzd);
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee" }, 400);
+  if (amount !== DEFAULT_MEMBERSHIP_FEE_DZD) return json({ error: "membership_fee_fixed_at_500" }, 409);
   try {
     await env.DB.prepare("UPDATE anrsh_platform_settings SET fee_dzd = ?, updated_at = CAST(strftime('%s','now') AS INTEGER), updated_by = 'national_admin' WHERE id = 1").bind(amount).run();
     return json({ ok: true, membershipFeeDzd: amount });
