@@ -1082,7 +1082,7 @@ function sendReportWA(){wa("213657709457",reportText())}
 function dlReport(){dlBlob("ANRSH-rapport-"+v("rp_year")+".html",new Blob(['<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><title>ANRSH</title><body style="font-family:Tahoma,sans-serif;max-width:700px;margin:20px auto;white-space:pre-wrap;line-height:1.8">'+reportText().replace(/</g,"&lt;")+'</body></html>'],{type:"text/html"}))}
 function printReport(){document.body.classList.add("pr");window.addEventListener("afterprint",function(){document.body.classList.remove("pr")},{once:true});window.print()}
 function saveReportDraft(q){try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");L.unshift({d:new Date().toLocaleDateString("fr-DZ"),t:v("rp_type")+" "+v("rp_year"),b:$("rp_bureau").value,txt:reportText()});localStorage.setItem("anrsh_rp",JSON.stringify(L.slice(0,20)));rpHist();if(!q)alert("تم الحفظ على هذا الجهاز.")}catch(x){if(!q)alert("تعذر الحفظ على هذا المتصفح.")}}
-function rpHist(){var h=$("rp_hist");try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");h.innerHTML=L.length?"<b>التقارير المحفوظة:</b><br>"+L.map(function(r){return r.d+" · "+r.t+" · "+r.b}).join("<br>"):""}catch(x){}}
+function rpHist(){var h=$("rp_hist");if(!h)return;h.textContent="";try{var L=JSON.parse(localStorage.getItem("anrsh_rp")||"[]");if(!Array.isArray(L))return;if(L.length){var title=document.createElement("b");title.textContent="التقارير المحفوظة:";h.appendChild(title);L.forEach(function(r){var line=document.createElement("div");line.textContent=[r&&r.d,r&&r.t,r&&r.b].filter(Boolean).join(" · ");h.appendChild(line);});}}catch(x){h.textContent="";}}
 function nextDue(){var d=new Date(),y=d.getFullYear(),c=[[2,31],[5,30],[8,30],[11,31]].map(function(x){return new Date(y,x[0],x[1],23,59)});return c.find(function(x){return x>=d})||new Date(y+1,2,31,23,59)}
 function dueInfo(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5);$("dueInfo").innerHTML="⏰ موعد التقرير الفصلي القادم: <b>"+n.toLocaleDateString("fr-DZ")+"</b> (بعد "+k+" يوماً)"+(k<=15?" ⚠️ اقترب الموعد":"")+"<br>📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى العنوانين أدناه."}
 function remindCal(){var n=nextDue(),p=function(x){return String(x).padStart(2,"0")},f=n.getFullYear()+p(n.getMonth()+1)+p(n.getDate());openURL("https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("ANRSH: تسليم التقرير الأدبي والمالي الفصلي")+"&dates="+f+"/"+f+"&recur="+encodeURIComponent("RRULE:FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=-1"))}
@@ -1425,6 +1425,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       unsupported_file_type:"نوع الملف غير مدعوم. استعمل صورة أو PDF.",
       file_too_large:"حجم الملف كبير جداً. اختر ملفاً أصغر أو صورة من الهاتف.",
       total_files_too_large:"حجم الوثائق المجمّع تجاوز 1 ميغابايت. اختر صوراً عادية وسيتم تصغيرها تلقائياً.",
+      request_too_large:"حجم الطلب كبير جداً. قلّص حجم الوثائق ثم أعد المحاولة.",
       request_save_failed:"تعذر حفظ الطلب في قاعدة البيانات.",
       payment_not_approved:"لم يصادق المكتب بعد على الدفع أو لم يرسل الرمز.",
       code_not_issued:"لم يصدر المكتب رمز التحقق لهذا الطلب بعد.",
