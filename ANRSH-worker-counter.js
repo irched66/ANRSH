@@ -677,17 +677,20 @@ async function handleAdminPaymentReview(id, request, env) {
     SELECT ?,id,member_id,bureau,membership_year,?,?,?,?
     FROM member_payments WHERE id=? AND status='verified' AND changes()=1
   `).bind(crypto.randomUUID(),grossAmount,nationalShare,regionalShare,now,id));
+  statements.push(env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+    .bind(now,actor.email,"payment_"+decision,id));
   let reviewResults;
   try { reviewResults=await env.DB.batch(statements); }
   catch(e) { console.error("payment review transaction failed"); return json({error:"payment_review_failed"},500); }
   if(!reviewResults?.[0]?.meta||reviewResults[0].meta.changes!==1)
     return json({error:"payment_review_conflict"},409);
-  if(decision==="verified" && (!reviewResults?.[1]?.meta||reviewResults[1].meta.changes!==1))
+  const allocationIndex=1, auditIndex=decision==="verified"?2:1;
+  if(decision==="verified" && (!reviewResults[allocationIndex]?.meta||reviewResults[allocationIndex].meta.changes!==1))
     return json({error:"payment_allocation_failed"},500);
+  if(!reviewResults[auditIndex]?.meta||reviewResults[auditIndex].meta.changes!==1)
+    return json({error:"payment_audit_failed"},503);
   const check=await env.DB.prepare("SELECT status,member_id FROM member_payments WHERE id=?").bind(id).first();
   if(!check||check.status!==decision) return json({error:"payment_review_conflict"},409);
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)")
-    .bind(now,actor.email,"payment_"+decision,id).run();
   if(decision==="rejected") {
     const member=await env.DB.prepare("SELECT ref,profile FROM members WHERE id=?").bind(check.member_id).first();
     const profile=parseJson(member?.profile,{});
