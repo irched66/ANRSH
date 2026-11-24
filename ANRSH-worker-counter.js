@@ -23,6 +23,8 @@ const JSON_HEADERS = {
   "x-content-type-options": "nosniff",
   "referrer-policy": "no-referrer",
   "x-frame-options": "DENY",
+  "x-permitted-cross-domain-policies": "none",
+  "strict-transport-security": "max-age=31536000",
   "content-security-policy": "default-src 'none'; frame-ancestors 'none'"
 };
 
@@ -128,7 +130,12 @@ function clientIp(request) {
   return cleanText(request.headers.get("CF-Connecting-IP") || "", 80);
 }
 function normalizePhone(v) {
-  return cleanText(v, 30).replace(/[^\d+]/g, "");
+  let digits = cleanText(v, 30).replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = "213" + digits.slice(1);
+  else if (!digits.startsWith("213") && /^[567]\d{8}$/.test(digits)) digits = "213" + digits;
+  const normalized = "+" + digits;
+  return /^\+213[567]\d{8}$/.test(normalized) ? normalized : "";
 }
 function validRef(v) {
   return /^[A-Za-z0-9_-]{8,80}$/.test(String(v || ""));
@@ -184,7 +191,7 @@ async function sendTextBeeSMS(env, phone, code) {
   if (digits.startsWith("0")) digits = "213" + digits.slice(1);
   else if (!digits.startsWith("213")) digits = "213" + digits;
   const recipient = "+" + digits;
-  if (!/^\+213\d{8,10}$/.test(recipient)) return { sent: false, reason: "invalid_phone" };
+  if (!/^\+213[567]\d{8}$/.test(recipient)) return { sent: false, reason: "invalid_phone" };
   // Mobilis SIM 1 first; Ooredoo SIM 2 only if the primary attempt fails.
   for (const simSlotIndex of [0, 1]) {
     try {
@@ -314,6 +321,8 @@ async function handleCreateRequest(request, env) {
     return json({ error: "multipart_form_required" }, 415);
   }
 
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > 2 * 1024 * 1024) return json({ error: "request_too_large" }, 413);
   const form = await request.formData();
   const profileRaw = form.get("profile");
   if (typeof profileRaw !== "string" || profileRaw.length > 30000) {
@@ -329,7 +338,7 @@ async function handleCreateRequest(request, env) {
   const first = cleanText(p.first_name, 100);
   const last = cleanText(p.last_name, 100);
   const phone = normalizePhone(p.phone);
-  if (!bureau || !first || !last || phone.length < 8) {
+  if (!bureau || !first || !last || !phone) {
     return json({ error: "required_fields_missing" }, 400);
   }
 
