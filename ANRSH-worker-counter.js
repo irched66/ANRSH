@@ -516,13 +516,13 @@ async function handleAdminList(request, env) {
   const r = actor.role === "national"
     ? await env.DB.prepare(`
         SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
-               p.id AS payment_id, p.status AS payment_status
+               p.id AS payment_id, p.status AS payment_status, p.amount_dzd AS payment_amount
         FROM members m LEFT JOIN member_payments p ON p.member_id=m.id AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
         ORDER BY m.created_at DESC LIMIT 500
       `).all()
     : await env.DB.prepare(`
         SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
-               p.id AS payment_id, p.status AS payment_status
+               p.id AS payment_id, p.status AS payment_status, p.amount_dzd AS payment_amount
         FROM members m LEFT JOIN member_payments p ON p.member_id=m.id
         WHERE m.bureau = ? ORDER BY m.created_at DESC LIMIT 500
       `).bind(actor.bureau).all();
@@ -530,7 +530,7 @@ async function handleAdminList(request, env) {
     id: row.id, memberId: row.id, requestNumber: row.ref,
     name: row.name, phone: row.phone, bureau: row.bureau,
     status: row.status, createdAt: row.created_at,
-    paymentId: row.payment_id || null, paymentStatus: row.payment_status || "pending_review",
+    paymentId: row.payment_id || null, paymentStatus: row.payment_status || "pending_review", paymentAmount: row.payment_amount || null,
     profile: parseJson(row.profile, {}),
     files: Object.keys(parseJson(row.files, {}))
   }));
