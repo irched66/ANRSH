@@ -1366,9 +1366,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   async function loadMembershipFee(){
     var info=el("payInfo"), currentLang=document.documentElement.lang||"ar";
     var copy={
-      ar:{docs:"📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني",fee:"💳 الاشتراك السنوي: ",unit:"دج",approved:"الاشتراك السنوي المعتمد: ",link:"فتح صفحة الدفع ANRSH",after:"بعد الدفع أرفق وصل الدفع مع الملف. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.",failed:"تعذر تحميل قيمة الاشتراك المعتمدة. يرجى إعادة المحاولة لاحقاً أو التواصل مع المكتب الوطني."},
-      fr:{docs:"📎 Documents obligatoires et preuve de paiement",fee:"💳 Cotisation annuelle : ",unit:"DA",approved:"Cotisation annuelle approuvée : ",link:"Ouvrir la page de paiement ANRSH",after:"Après paiement, joignez le reçu au dossier. La carte est délivrée après vérification du reçu, validation du bureau et confirmation par code.",failed:"Impossible de charger le montant officiel. Réessayez plus tard ou contactez le bureau national."},
-      en:{docs:"📎 Required documents and payment proof",fee:"💳 Annual membership fee: ",unit:"DZD",approved:"Approved annual membership fee: ",link:"Open ANRSH payment page",after:"After payment, attach the receipt to your application. The card is issued after receipt review, office approval and code confirmation.",failed:"Unable to load the approved membership fee. Please retry later or contact the National Office."}
+      ar:{docs:"📎 الوثائق الإلزامية وإثبات الدفع الإلكتروني",fee:"💳 الاشتراك السنوي: ",unit:"دج",approved:"الاشتراك السنوي المعتمد: ",link:"فتح صفحة الدفع ANRSH",after:"احصل على بيانات الحساب الرسمي من مكتبك الجهوي، ثم أرفق وصل التحويل في الاستمارة. لا يتم إصدار البطاقة إلا بعد مراجعة الوصل ومصادقة المكتب وإدخال رمز التحقق.",failed:"تعذر تحميل قيمة الاشتراك المعتمدة. يرجى إعادة المحاولة لاحقاً أو التواصل مع المكتب الوطني."},
+      fr:{docs:"📎 Documents obligatoires et preuve de paiement",fee:"💳 Cotisation annuelle : ",unit:"DA",approved:"Cotisation annuelle approuvée : ",link:"Ouvrir la page de paiement ANRSH",after:"Obtenez les coordonnées officielles auprès de votre bureau régional, puis joignez le reçu dans le formulaire. La carte est délivrée après vérification du reçu, validation du bureau et confirmation par code.",failed:"Impossible de charger le montant officiel. Réessayez plus tard ou contactez le bureau national."},
+      en:{docs:"📎 Required documents and payment proof",fee:"💳 Annual membership fee: ",unit:"DZD",approved:"Approved annual membership fee: ",link:"Open ANRSH payment page",after:"Get the official account details from your regional office, then attach the transfer receipt in the form. The card is issued after receipt review, office approval and code confirmation.",failed:"Unable to load the approved membership fee. Please retry later or contact the National Office."}
     };
     var t=copy[currentLang]||copy.ar;
     var heading=el("t-doc-title"), feeLabel=document.querySelector(".docs-box b");
@@ -1379,7 +1379,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var formatted=fee.toLocaleString("fr-DZ");
       if(heading)heading.textContent=t.docs+" ("+formatted+" "+t.unit+"):";
       if(feeLabel)feeLabel.textContent=t.fee+formatted+" "+t.unit;
-      if(info)info.innerHTML=t.approved+"<b>"+formatted+" "+t.unit+"</b>. <a href=\"https://irched66.github.io/ANRSH/paiement.html?v=8\" target=\"_blank\" rel=\"noopener noreferrer\" style=\"color:var(--gold-light);text-decoration:underline;font-weight:bold\">"+t.link+"</a>. "+t.after;
+      if(info)info.innerHTML=t.approved+"<b>"+formatted+" "+t.unit+"</b>. "+t.after;
     }catch(e){
       if(heading)heading.textContent=t.docs;
       if(feeLabel)feeLabel.textContent=t.failed;
