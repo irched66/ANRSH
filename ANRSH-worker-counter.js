@@ -533,13 +533,13 @@ async function handleAdminList(request, env) {
     ? await env.DB.prepare(`
         SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
                p.id AS payment_id, p.status AS payment_status, p.amount_dzd AS payment_amount
-        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id AND p.membership_year=CAST(strftime('%Y','now') AS INTEGER)
+        FROM members m LEFT JOIN member_payments p ON p.id=(SELECT p2.id FROM member_payments p2 WHERE p2.member_id=m.id AND p2.membership_year=CAST(strftime('%Y','now') AS INTEGER) ORDER BY p2.created_at DESC LIMIT 1)
         ORDER BY m.created_at DESC LIMIT 500
       `).all()
     : await env.DB.prepare(`
         SELECT m.id, m.ref, m.bureau, m.name, m.phone, m.profile, m.files, m.status, m.created_at,
                p.id AS payment_id, p.status AS payment_status, p.amount_dzd AS payment_amount
-        FROM members m LEFT JOIN member_payments p ON p.member_id=m.id
+        FROM members m LEFT JOIN member_payments p ON p.id=(SELECT p2.id FROM member_payments p2 WHERE p2.member_id=m.id AND p2.membership_year=CAST(strftime('%Y','now') AS INTEGER) ORDER BY p2.created_at DESC LIMIT 1)
         WHERE m.bureau = ? ORDER BY m.created_at DESC LIMIT 500
       `).bind(actor.bureau).all();
   const requests = r.results.map(row => ({
