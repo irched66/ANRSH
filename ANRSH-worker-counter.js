@@ -41,7 +41,7 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"
 ]);
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
-const OTP_TTL_MS = 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 5 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
 const DEFAULT_MEMBERSHIP_FEE_DZD = 500;
 const MAX_MEMBERSHIP_FEE_DZD = 1000000;
@@ -399,7 +399,7 @@ async function handleVerify(ref, request, env) {
     "SELECT ref, otp_hash, otp_exp, otp_tries, status FROM members WHERE ref = ?"
   ).bind(ref).first();
   if (!row || !row.otp_hash || !row.otp_exp) return json({ error: "code_not_issued" }, 400);
-  if (row.status !== "code_sent" && row.status !== "unlocked") return json({ error: "payment_not_approved" }, 403);
+  if (row.status !== "code_sent") return json({ error: row.status === "unlocked" ? "code_already_used" : "payment_not_approved" }, 403);
   if (Number(row.otp_exp) < Date.now()) return json({ error: "code_expired" }, 410);
   if (Number(row.otp_tries || 0) >= MAX_OTP_TRIES) return json({ error: "too_many_attempts" }, 429);
 
@@ -504,7 +504,7 @@ async function handleAdminApprove(id, request, env) {
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
-    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 24 heures.`
+    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 5 minutes.`
   );
 
   // The current frontend does not yet display this code or send WhatsApp automatically.
