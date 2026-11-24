@@ -727,8 +727,9 @@ async function authLogin(request, env) {
   const candidate = await passwordDigest(password, row.password_salt);
   if (!safeEqual(candidate, row.password_hash)) {
     const attempts = Number(row.failed_attempts || 0) + 1;
+    const lockUntil = attempts >= 8 ? Date.now() + 15 * 60 * 1000 : null;
     await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=?,locked_until=? WHERE admin_id=?")
-      .bind(attempts >= 8 ? 0 : attempts, attempts >= 8 ? Date.now() + 15*60*1000 : null, row.id).run();
+      .bind(attempts, lockUntil, row.id).run();
     return json({ error: "invalid_credentials" }, 401);
   }
   await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=0,locked_until=NULL WHERE admin_id=?").bind(row.id).run();
