@@ -780,7 +780,7 @@ async function authLogin(request, env) {
     SELECT u.id,u.email,u.role,u.bureau,u.active,c.password_hash,c.password_salt,c.failed_attempts,c.locked_until
     FROM admin_users u JOIN admin_credentials c ON c.admin_id=u.id WHERE u.email=? LIMIT 1
   `).bind(email).first();
-  if (!row || !row.active) return json({ error: "invalid_credentials" }, 401);
+  if (!row || !row.active || !["national","regional"].includes(row.role) || (row.role === "regional" && !row.bureau)) return json({ error: "invalid_credentials" }, 401);
   if (row.locked_until && Number(row.locked_until) > Date.now()) return json({ error: "account_temporarily_locked" }, 423);
   const candidate = await passwordDigest(password, row.password_salt);
   if (!safeEqual(candidate, row.password_hash)) {
