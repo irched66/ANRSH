@@ -1050,16 +1050,24 @@ async function handleOfficeProfile(request,env) {
   if(!office) return json({error:"office_not_found"},404);
   const bank=cleanText(body.bank_name,120),rib=cleanText(body.rib,40),ccp=cleanText(body.ccp,30),key=cleanText(body.ccp_key,20);
   const now=Date.now();
-  await env.DB.prepare(`
-    INSERT INTO offices (bureau,bank_name,rib,ccp,ccp_key,updated_by,updated_at)
-    VALUES (?,?,?,?,?,?,?)
-    ON CONFLICT(bureau) DO UPDATE SET bank_name=excluded.bank_name,rib=excluded.rib,
-      ccp=excluded.ccp,ccp_key=excluded.ccp_key,updated_by=excluded.updated_by,updated_at=excluded.updated_at
-  `).bind(bureau,bank||null,rib||null,ccp||null,key||null,actor.id,now).run();
   const president=cleanText(body.president_name,120),phone=normalizePhone(body.president_phone),email=cleanText(body.email,160),address=cleanText(body.address,300);
-  await env.DB.prepare("UPDATE regional_offices SET president_name=COALESCE(?,president_name),president_phone=COALESCE(?,president_phone),email=COALESCE(?,email),address=COALESCE(?,address),updated_at=? WHERE bureau=?")
-    .bind(president||null,phone||null,email||null,address||null,now,bureau).run();
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(now,actor.email,"office_profile_updated",bureau).run();
+  let results;
+  try {
+    results=await env.DB.batch([
+      env.DB.prepare(`
+        INSERT INTO offices (bureau,bank_name,rib,ccp,ccp_key,updated_by,updated_at)
+        VALUES (?,?,?,?,?,?,?)
+        ON CONFLICT(bureau) DO UPDATE SET bank_name=excluded.bank_name,rib=excluded.rib,
+          ccp=excluded.ccp,ccp_key=excluded.ccp_key,updated_by=excluded.updated_by,updated_at=excluded.updated_at
+      `).bind(bureau,bank||null,rib||null,ccp||null,key||null,actor.id,now),
+      env.DB.prepare("UPDATE regional_offices SET president_name=COALESCE(?,president_name),president_phone=COALESCE(?,president_phone),email=COALESCE(?,email),address=COALESCE(?,address),updated_at=? WHERE bureau=?")
+        .bind(president||null,phone||null,email||null,address||null,now,bureau),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+        .bind(now,actor.email,"office_profile_updated",bureau)
+    ]);
+  } catch(e) { return json({error:"office_profile_save_failed"},503); }
+  if(!results?.[1]?.meta||results[1].meta.changes!==1||!results?.[2]?.meta||results[2].meta.changes!==1)
+    return json({error:"office_profile_save_failed"},503);
   return json({ok:true,bureau});
 }
 async function handlePendingOfficers(request,env) {
