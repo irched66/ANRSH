@@ -334,7 +334,7 @@ async function handleCreateRequest(request, env) {
     };
   }
   // The current HTML requires the core identity/payment documents.
-  for (const required of ["photo", "cni", "retire", "proof"]) {
+  for (const required of FILE_KEYS) {
     if (!files[required]) return json({ error: "required_document_missing", file: required }, 400);
   }
 
