@@ -967,15 +967,8 @@ function dlBlob(name,blob){
  if(window.claude&&window.claude.use){return window.claude.use("downloads").then(function(d){if(d)return d.save({filename:name,data:blob});fb()}).catch(function(e){if(!e||e.code!=="declined")fb()})}
  fb();return Promise.resolve();
 }
-function requestSecurityOTP(){
- var f=$("adhesionForm");if(!f.reportValidity())return;
- curRef=mkRef();syncBadgeLive();
- var t="طلب انخراط ANRSH 2026 ("+v("demand_type")+")\nرقم الطلب: "+curRef+"\nالاسم: "+v("first_name")+" "+v("last_name")+"\nMatricule: "+v("matricule_sh")+"\nCNR: "+v("cnr_no")+" | الضمان: "+v("nss_no")+"\nالصفة: "+v("user_type")+"\nالولاية: "+v("user_wilaya")+" / "+v("user_daira")+" / "+v("user_commune")+"\nالمكتب: "+$("user_bureau").value+"\nالهاتف: "+v("user_phone")+"\nالاشتراك: 500 دج (أرفق وصل الدفع والوثائق)";
- wa("213657709457",t);
- $("otpBox").style.display="block";
- otpDesc();
- $("otpBox").scrollIntoView({behavior:"smooth"});
-}
+function requestSecurityOTP(){alert("مسار التسجيل القديم معطل. حدّث الصفحة واستخدم استمارة التسجيل الآمنة المرتبطة بقاعدة D1.");}
+
 function validateSecurityOTP(){
  alert("تم تعطيل التحقق القديم. أدخل رمز OTP الذي يصدره الخادم بعد مراجعة الدفع.");
 }
