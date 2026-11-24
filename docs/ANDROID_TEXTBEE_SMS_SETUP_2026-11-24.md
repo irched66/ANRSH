@@ -37,3 +37,24 @@
 - لا يوجد وصول مباشر من ChatGPT إلى حساب Cloudflare أو هاتف Android؛ لا يمكنني قراءة أسرار الحساب أو لمس شاشة الهاتف أو تنفيذ طلبات D1 الحية من هذه الجلسة.
 - لا تنفذ أي Migration على قاعدة البيانات الحية أثناء التحقق الأولي.
 - رموز دخول الإدارة تبقى عبر البريد الإلكتروني في هذه المرحلة؛ تكامل SMS الحالي يخص رمز تأكيد ملف المنخرط بعد اعتماد الدفع.
+
+
+## التغييرات البرمجية المضافة
+- أضيف إلى Worker تكامل Textbee عبر `TEXTBEE_API_KEY` فقط كـSecret في Cloudflare.
+- عند اعتماد وصل المنخرط: يحاول Worker إرسال OTP عبر شريحة Android أولاً، ثم يستخدم البريد كبديل عند فشل SMS.
+- أرقام الجزائر المحلية مثل `055...` أو الدولية `+213...` أو `00213...` تتحول إلى صيغة E.164.
+- لا يتغير نظام تحقق OTP: ستة أرقام، صلاحية 10 دقائق، وتخزين hash فقط في D1.
+- يسجل النظام قناة الإرسال الفعلية `sms` أو `email` في `notification_log`.
+- OTP دخول الإدارة يبقى عبر Resend email حتى يتم اعتماد رقم هاتف إداري وربطه بسجل الحساب بصورة موثقة.
+
+Commits: [62c3ade — Textbee SMS OTP integration](https://github.com/irched66/ANRSH/commit/62c3adeac6b23402d1f5746144a8671db7400fff) · [6bb3e0d — Algerian 00213 phone normalization](https://github.com/irched66/ANRSH/commit/6bb3e0d4a4b17027dadb9946b97576563a79813) · [0d4e1fb — UI delivery errors](https://github.com/irched66/ANRSH/commit/0d4e1fbaea0442e98816da0c1355a81a302ef4c6) · [0718d13 — read-only diagnostic page](https://github.com/irched66/ANRSH/commit/0718d133551ac55ef2d6307fd1027c5449c69d94)
+
+## اختبار اتصال D1 من هاتف Android
+أضيفت صفحة `d1-diagnostic.html`، وهي تنفذ GET فقط إلى health/fee/wilayas/offices وتعرض أعداداً ونتائج دون أسماء أو أرقام هواتف. بعد نشر نسخة الاختبار المصرح بها على Netlify يمكن فتح:
+`https://luxury-malabi-c2f0fb.netlify.app/d1-diagnostic.html`
+ولا يُعد هذا الاختبار ناجحاً إلا بعد ظهور PASS من الهاتف نفسه. ملف SQL `D1_LIVE_READ_ONLY_CHECKS_2026-11-24.sql` يحتوي استعلامات SELECT وPRAGMA فقط لفحص مخطط D1 وعدد السجلات دون قراءة بيانات شخصية أو تغييرها.
+
+## ما لم يُختبر بعد
+- لا يمكن من جلسة ChatGPT الحالية الدخول إلى حساب Cloudflare أو قراءة D1 مباشرة أو التحكم بهاتف Android. لذلك لا أدّعي أن الاتصال الحي أو OTP الحقيقي نجح.
+- يلزم إضافة Secret `TEXTBEE_API_KEY` في إعدادات Worker، تثبيت Textbee وربط الهاتف، ثم نشر Worker للاختبار بعد موافقة منفصلة.
+- خطة Textbee المجانية بحسب وثائقها: جهاز واحد، 50 رسالة/اليوم و300 رسالة/الشهر. وقد تفرض شريحة الهاتف رسوماً وفق باقتها.
