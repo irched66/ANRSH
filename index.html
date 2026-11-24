@@ -1335,6 +1335,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       member_not_awaiting_confirmation:"هذا الطلب ليس في حالة انتظار رمز التحقق.",
       payment_review_conflict:"سبق أن عولجت مراجعة الدفع أو تغيرت حالتها. حدّث قائمة الطلبات.",
       payment_allocation_failed:"تعذر تسجيل توزيع المبلغ. لا تعتبر عملية الاعتماد مكتملة قبل مراجعة السجل المالي.",
+      finance_schema_not_ready:"سجل التحويلات المالية غير مهيأ بعد. يلزم اعتماد ترحيل قاعدة البيانات قبل استعمال هذا القسم.",
+      invalid_finance_period:"الفترة المالية المحددة غير صحيحة.",
+      invalid_transfer_details:"يرجى التحقق من المكتب والمبلغ والتواريخ ومرجع التحويل.",
+      transfer_exceeds_outstanding:"مبلغ التحويل يتجاوز الرصيد المستحق للمكتب الجهوي.",
+      transfer_reference_already_used:"مرجع هذا التحويل مسجل مسبقاً لهذا المكتب.",
+      transfer_audit_failed:"تعذر إكمال تسجيل التحويل في سجل التدقيق. لم تُعتمد العملية.",
       not_found:"الخدمة المطلوبة غير موجودة في Worker الحالي."
     };
     var key=j&&j.error||"";
