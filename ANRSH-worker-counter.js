@@ -739,7 +739,8 @@ async function requireAdmin(request, env) {
     WHERE s.token_hash = ? AND s.revoked_at IS NULL AND s.expires_at > ?
       AND u.active = 1 LIMIT 1
   `).bind(tokenHash, Date.now()).first();
-  if (!row) return null;
+  if (!row || !["national","regional"].includes(row.role)) return null;
+  if (row.role === "regional" && !row.bureau) return null;
   await env.DB.prepare("UPDATE admin_sessions SET last_seen_at = ? WHERE id = ?").bind(Date.now(), row.session_id).run();
   return row;
 }
