@@ -1429,6 +1429,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       payment_not_approved:"لم يصادق المكتب بعد على الدفع أو لم يرسل الرمز.",
       code_not_issued:"لم يصدر المكتب رمز التحقق لهذا الطلب بعد.",
       code_expired:"انتهت صلاحية رمز التحقق.",
+       code_already_used:"تم استعمال هذا الرمز من قبل. اطلب رمزاً جديداً.",
       invalid_code:"رمز التحقق غير صحيح.",
       too_many_attempts:"تم تجاوز عدد المحاولات المسموح بها.",
       unauthorized:"مفتاح الإدارة غير صحيح أو غير مصرح به.",
@@ -1640,7 +1641,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adApprove=async function(id){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});
-      var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 24 ساعة):";out.appendChild(title);
+      var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 5 دقائق):";out.appendChild(title);
       var code=document.createElement("div");code.dir="ltr";code.style.cssText="font-size:2rem;letter-spacing:7px;color:var(--gold-light);font-weight:bold";code.textContent=r.code;out.appendChild(code);
       var note=document.createElement("p");note.textContent=r.emailSent?"تم إرسال الرمز إلى البريد المسجل أيضاً.":"لم يثبت إرسال بريد إلكتروني؛ أرسل الرمز للمنخرط يدوياً.";out.appendChild(note);
       if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
