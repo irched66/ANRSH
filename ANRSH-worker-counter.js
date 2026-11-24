@@ -780,13 +780,15 @@ async function authLogin(request, env) {
   if (row.locked_until && Number(row.locked_until) > Date.now()) return json({ error: "account_temporarily_locked" }, 423);
   const candidate = await passwordDigest(password, row.password_salt);
   if (!safeEqual(candidate, row.password_hash)) {
-    const attempts = Number(row.failed_attempts || 0) + 1;
-    const lockUntil = attempts >= 8 ? Date.now() + 15 * 60 * 1000 : null;
-    await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=?,locked_until=? WHERE admin_id=?")
-      .bind(attempts, lockUntil, row.id).run();
+    const lockUntil = Date.now() + 15 * 60 * 1000;
+    const failed = await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=failed_attempts+1,locked_until=CASE WHEN failed_attempts+1>=8 THEN ? ELSE locked_until END WHERE admin_id=? AND (locked_until IS NULL OR locked_until<=?)")
+      .bind(lockUntil,row.id,Date.now()).run();
+    if (!failed.meta || failed.meta.changes !== 1) return json({ error: "account_temporarily_locked" }, 423);
     return json({ error: "invalid_credentials" }, 401);
   }
-  await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=0,locked_until=NULL WHERE admin_id=?").bind(row.id).run();
+  const reset = await env.DB.prepare("UPDATE admin_credentials SET failed_attempts=0,locked_until=NULL WHERE admin_id=? AND (locked_until IS NULL OR locked_until<=?)")
+    .bind(row.id,Date.now()).run();
+  if (!reset.meta || reset.meta.changes !== 1) return json({ error: "account_temporarily_locked" }, 423);
   if (!env.RESEND_API_KEY || !env.RESEND_FROM) return json({ error: "admin_otp_delivery_not_configured" }, 503);
   await env.DB.prepare("UPDATE admin_otps SET used_at=? WHERE admin_id=? AND purpose='login' AND used_at IS NULL").bind(Date.now(),row.id).run();
   const code = randomDigits(6), id = crypto.randomUUID(), expires = Date.now() + ADMIN_OTP_TTL_MS;
@@ -891,9 +893,16 @@ async function authActivateOfficer(request,env,id) {
   const actor=await requireAdmin(request,env);
   if(!actor) return json({error:"unauthorized"},401);
   if(actor.role!=="national") return json({error:"forbidden"},403);
-  const result=await env.DB.prepare("UPDATE admin_users SET active=1 WHERE id=? AND role='regional' AND active=0").bind(id).run();
-  if(!result.meta||result.meta.changes!==1) return json({error:"regional_account_not_pending"},404);
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"regional_account_activated",id).run();
+  const now=Date.now();
+  let results;
+  try {
+    results=await env.DB.batch([
+      env.DB.prepare("UPDATE admin_users SET active=1 WHERE id=? AND role='regional' AND active=0").bind(id),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1").bind(now,actor.email,"regional_account_activated",id)
+    ]);
+  } catch(e) { return json({error:"regional_account_activation_failed"},500); }
+  if(!results?.[0]?.meta||results[0].meta.changes!==1) return json({error:"regional_account_not_pending"},404);
+  if(!results?.[1]?.meta||results[1].meta.changes!==1) return json({error:"regional_account_audit_failed"},503);
   return json({ok:true,active:true});
 }
 function validIsoDate(value) {
@@ -1015,15 +1024,20 @@ async function handleOfficeWilayas(request,env,method) {
   if(!bureau||!w) return json({error:"invalid_bureau_or_wilaya"},400);
   const office=await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau=? AND active=1").bind(bureau).first();
   if(!office) return json({error:"invalid_or_inactive_office"},400);
+  const now=Date.now();
   try {
-    const inserted=await env.DB.prepare(`
-      INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name)
-      SELECT ?,?,?
-      WHERE NOT EXISTS (SELECT 1 FROM office_wilayas WHERE wilaya_code=?)
-    `).bind(bureau,code,w.name_ar,code).run();
-    if(!inserted.meta||inserted.meta.changes!==1) return json({error:"wilaya_already_assigned"},409);
+    const results=await env.DB.batch([
+      env.DB.prepare(`
+        INSERT INTO office_wilayas (bureau,wilaya_code,wilaya_name)
+        SELECT ?,?,?
+        WHERE NOT EXISTS (SELECT 1 FROM office_wilayas WHERE wilaya_code=?)
+      `).bind(bureau,code,w.name_ar,code),
+      env.DB.prepare("INSERT INTO audit (at,actor,action,target) SELECT ?,?,?,? WHERE changes()=1")
+        .bind(now,actor.email,"wilaya_assigned",bureau+":"+code)
+    ]);
+    if(!results?.[0]?.meta||results[0].meta.changes!==1) return json({error:"wilaya_already_assigned"},409);
+    if(!results?.[1]?.meta||results[1].meta.changes!==1) return json({error:"wilaya_assignment_audit_failed"},503);
   } catch(e) { return json({error:"wilaya_already_assigned_or_save_failed"},409); }
-  await env.DB.prepare("INSERT INTO audit (at,actor,action,target) VALUES (?,?,?,?)").bind(Date.now(),actor.email,"wilaya_assigned",bureau+":"+code).run();
   return json({ok:true,bureau,wilaya_code:code,wilaya_name:w.name_ar});
 }
 async function handleOfficeProfile(request,env) {
