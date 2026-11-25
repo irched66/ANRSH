@@ -506,6 +506,11 @@ async function handleAdminApprove(id, request, env) {
     "SELECT id, ref, name, phone, profile, status FROM members WHERE id = ?"
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
+  // Never re-issue an OTP or move a fully unlocked membership back to a locked state.
+  if (row.status === "unlocked") return json({ error: "member_already_unlocked" }, 409);
+  if (row.status !== "pending_payment" && row.status !== "code_sent") {
+    return json({ error: "request_not_eligible_for_approval" }, 409);
+  }
 
   const profile = parseJson(row.profile, {});
   const confirmedAt = new Date().toISOString();
