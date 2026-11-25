@@ -1634,7 +1634,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var td=document.createElement("td");
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
-      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
+      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="📦 أرشفة الطلب";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
   };
@@ -1651,7 +1651,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
   };
-  window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
+  window.adDelete=async function(id){if(!confirm("سيتم إخفاء الطلب من القائمة النشطة مع الاحتفاظ ببياناته وسجلاته المالية. هل تريد المتابعة؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تمت أرشفة الطلب مع الاحتفاظ بسجلاته.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adFinanceLoad=async function(){
     var from=val("fin_from"),to=val("fin_to"),bureau=val("fin_bureau");
     if(!from){
