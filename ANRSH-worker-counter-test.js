@@ -3,11 +3,13 @@
  * API compatible with the current ANRSH HTML frontend routes.
  * TEST COPY: isolated validation version; do not deploy until frontend/API checks pass.
  *
- * Required bindings/secrets:
- *   D1 binding: DB  -> database "anrsh"
- *   Secret: ADMIN_API_KEY  -> long random value (minimum 32 characters)
- *   Existing secret: RESEND_API_KEY (optional; email sending also needs RESEND_FROM)
- *   Variable: RESEND_FROM (optional verified sender, e.g. "ANRSH <noreply@your-domain.dz>")
+ * Required bindings/secrets for TEST ONLY:
+ *   D1 binding: DB -> database "anrsh-test-db" (ID e85951d8-1fcb-4c12-90e4-efb359e172cf)
+ *   Secret: ADMIN_API_KEY -> a separate random test key (minimum 32 characters)
+ *   Secret: TEXTBEE_API_KEY (optional; only enable after test consent and SMS verification)
+ *   Secret: RESEND_API_KEY (optional; email sending also needs RESEND_FROM)
+ *   Variable: RESEND_FROM (optional verified sender)
+ *   Never bind this Worker to the production database or reuse production secrets.
  *
  * IMPORTANT:
  * - R2 is currently unavailable to this Worker. Private attachments are therefore
