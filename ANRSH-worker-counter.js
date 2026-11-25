@@ -43,7 +43,7 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"
 ]);
 const FILE_KEYS = ["photo", "cni", "cni_back", "retire", "proof"];
-const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 const PRINT_TTL_SECONDS = 15 * 60;
 const DEFAULT_MEMBERSHIP_FEE_DZD = 500;
 const MAX_MEMBERSHIP_FEE_DZD = 1000000;
@@ -543,11 +543,11 @@ async function handleAdminApprove(id, request, env) {
   const emailResult = await sendEmail(
     env, cleanText(profile.email, 160),
     "ANRSH — Code de confirmation",
-    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 5 minutes.`
+    `Votre paiement a été validé par le bureau ANRSH.\nNuméro de demande : ${row.ref}\nCode de confirmation : ${code}\nCe code expire dans 10 minutes.`
   );
 
-  // The current frontend does not yet display this code or send WhatsApp automatically.
-  // It is returned only to the authenticated office interface.
+  // WhatsApp Cloud API is not configured yet; until credentials and an approved template are added, WhatsApp remains manual.
+  // The OTP is returned only to the authenticated national-office interface.
   const digits = String(row.phone || "").replace(/\D/g, "").replace(/^0/, "213");
   const waText = encodeURIComponent(
     `ANRSH : paiement confirmé. Votre code de confirmation pour la demande ${row.ref} est ${code}.`
