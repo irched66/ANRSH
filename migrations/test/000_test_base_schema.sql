@@ -91,6 +91,14 @@ CREATE TABLE IF NOT EXISTS anrsh_site_daily_visitors (
   PRIMARY KEY (visit_day, visitor_hash)
 );
 
+-- One clearly labelled dummy office enables safe end-to-end testing; it is not a real ANRSH office.
+INSERT OR IGNORE INTO regional_offices
+  (bureau, office_name, president_name, president_phone, email, address, active, created_at, updated_at)
+VALUES
+  ('TEST-01', 'مكتب تجريبي - الجزائر العاصمة', 'مسؤول تجريبي', NULL, NULL, 'بيانات اختبار فقط', 1, unixepoch(), unixepoch());
+INSERT OR IGNORE INTO office_wilayas (bureau, wilaya_code, wilaya_name)
+VALUES ('TEST-01', '16', 'الجزائر');
+
 -- Official Arabic names and Latin source labels for the 69 wilayas in the supplied 2026 dataset.
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('01','أدرار','Adrar','Adrar','',1);
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('02','الشلف','Chlef','Chlef','',1);
