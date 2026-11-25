@@ -464,7 +464,7 @@ async function handleAdminList(request, env) {
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const r = await env.DB.prepare(`
     SELECT id, ref, bureau, name, phone, profile, files, status, created_at
-    FROM members ORDER BY created_at DESC LIMIT 500
+    FROM members WHERE status != 'archived' ORDER BY created_at DESC LIMIT 500
   `).all();
   const requests = r.results.map(row => ({
     id: row.id, memberId: row.id, requestNumber: row.ref,
@@ -665,10 +665,19 @@ async function handleAdminFinanceTransfer(request, env) {
 async function handleAdminDelete(id, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
-  const row = await env.DB.prepare("SELECT id FROM members WHERE id = ?").bind(id).first();
+  const row = await env.DB.prepare("SELECT id, status FROM members WHERE id = ?").bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
-  await env.DB.prepare("DELETE FROM members WHERE id = ?").bind(id).run();
-  return json({ ok: true, deleted: true });
+  if (row.status === "archived") return json({ ok: true, archived: true, alreadyArchived: true });
+  // Preserve the member and any linked financial ledger records; never hard-delete membership data here.
+  await env.DB.prepare(`
+    UPDATE members SET status = 'archived', otp_hash = NULL, otp_exp = NULL, otp_tries = 0
+    WHERE id = ?
+  `).bind(id).run();
+  await env.DB.prepare(`
+    INSERT INTO audit (at, actor, action, target)
+    VALUES (CAST(strftime('%s','now') AS INTEGER), 'national_admin', 'member_archived', ?)
+  `).bind(id).run();
+  return json({ ok: true, archived: true });
 }
 
 
