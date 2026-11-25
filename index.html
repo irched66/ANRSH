@@ -1409,7 +1409,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
 (function(){
   "use strict";
-  var API_BASE = "https://anrsh-worker-test.irched2521.workers.dev";
+  var API_BASE = "https://anrsh-ap-dev.irched2521.workers.dev";
   var ADMIN_KEY = "";
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
@@ -1591,7 +1591,6 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   window.adLogin=async function(){
     var key=val("anrsh_admin_key"), out=el("ad_out");
-    if(el("anrsh_admin_key"))el("anrsh_admin_key").value="";
     if(key.length<32){out.textContent="مفتاح الإدارة يجب أن يكون صحيحاً (32 حرفاً على الأقل).";return;}
     ADMIN_KEY=key;
     try{await api("/api/admin/requests");el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";ADMIN_ME={ok:true};await adLoad();await adFeeLoad();await adFinanceLoad();}
@@ -1634,7 +1633,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var td=document.createElement("td");
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
-      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="📦 أرشفة الطلب";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
+      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
   };
@@ -1644,14 +1643,14 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adApprove=async function(id){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/approve",{method:"POST"});
-      var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 10 دقائق):";out.appendChild(title);
+      var out=el("ad_out");out.innerHTML="";var title=document.createElement("p");title.textContent="تمت المصادقة على الدفع. رمز التحقق (صالح 5 دقائق):";out.appendChild(title);
       var code=document.createElement("div");code.dir="ltr";code.style.cssText="font-size:2rem;letter-spacing:7px;color:var(--gold-light);font-weight:bold";code.textContent=r.code;out.appendChild(code);
       var note=document.createElement("p");note.textContent=r.smsSent?"قبل مزود الرسائل طلب إرسال الرمز عبر SMS ("+(r.smsSimSlotIndex===0?"Mobilis":"Ooredoo")+"). هذا لا يؤكد وصول الرسالة إلى الهاتف بعد.":(r.emailSent?"تعذر SMS؛ قبل مزود البريد طلب الإرسال إلى العنوان المسجل.":"تعذر الإرسال الآلي؛ استعمل واتساب لإرسال الرمز يدوياً.");out.appendChild(note);
       if(r.whatsappUrl){var a=document.createElement("a");a.href=r.whatsappUrl;a.target="_blank";a.rel="noopener";a.textContent="💬 إرسال الرمز عبر واتساب";a.style.cssText="display:inline-block;margin:10px;color:var(--gold-light)";out.appendChild(a);}
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
   };
-  window.adDelete=async function(id){if(!confirm("سيتم إخفاء الطلب من القائمة النشطة مع الاحتفاظ ببياناته وسجلاته المالية. هل تريد المتابعة؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تمت أرشفة الطلب مع الاحتفاظ بسجلاته.";}catch(e){el("ad_out").textContent=e.message;}};
+  window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adFinanceLoad=async function(){
     var from=val("fin_from"),to=val("fin_to"),bureau=val("fin_bureau");
     if(!from){
