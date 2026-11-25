@@ -1591,6 +1591,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   window.adLogin=async function(){
     var key=val("anrsh_admin_key"), out=el("ad_out");
+    if(el("anrsh_admin_key"))el("anrsh_admin_key").value="";
     if(key.length<32){out.textContent="مفتاح الإدارة يجب أن يكون صحيحاً (32 حرفاً على الأقل).";return;}
     ADMIN_KEY=key;
     try{await api("/api/admin/requests");el("anrshAdminLogin").style.display="none";el("anrshAdminPanel").style.display="block";ADMIN_ME={ok:true};await adLoad();await adFeeLoad();await adFinanceLoad();}
