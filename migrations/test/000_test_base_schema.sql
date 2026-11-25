@@ -1,6 +1,6 @@
 -- ANRSH DIGITAL TEST ONLY — fresh D1 base schema
 -- Target: anrsh-test-db ONLY. Never run against production database "anrsh".
--- The regional_offices table is intentionally empty; add only approved test offices.
+-- Only a clearly labelled dummy office is preloaded; replace/add real test offices only with approved test data.
 -- Latin official names are used as temporary FR/EN labels; Tamazight labels are blank pending verified translations.
 
 PRAGMA foreign_keys = ON;
@@ -96,8 +96,6 @@ INSERT OR IGNORE INTO regional_offices
   (bureau, office_name, president_name, president_phone, email, address, active, created_at, updated_at)
 VALUES
   ('TEST-01', 'مكتب تجريبي - الجزائر العاصمة', 'مسؤول تجريبي', NULL, NULL, 'بيانات اختبار فقط', 1, unixepoch(), unixepoch());
-INSERT OR IGNORE INTO office_wilayas (bureau, wilaya_code, wilaya_name)
-VALUES ('TEST-01', '16', 'الجزائر');
 
 -- Official Arabic names and Latin source labels for the 69 wilayas in the supplied 2026 dataset.
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('01','أدرار','Adrar','Adrar','',1);
@@ -169,6 +167,10 @@ INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALU
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('67','قصر البخاري','Ksar El Boukhari','Ksar El Boukhari','',1);
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('68','بوسعادة','Bou Saada','Bou Saada','',1);
 INSERT OR IGNORE INTO wilayas (code,name_ar,name_fr,name_en,name_tz,active) VALUES ('69','الأبيض سيدي الشيخ','El Abiodh Sidi Cheikh','El Abiodh Sidi Cheikh','',1);
+-- Assign the test office only after the referenced wilaya has been seeded.
+INSERT OR IGNORE INTO office_wilayas (bureau, wilaya_code, wilaya_name)
+VALUES ('TEST-01', '16', 'الجزائر');
+
 CREATE INDEX IF NOT EXISTS idx_members_status_created ON members(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_members_bureau_created ON members(bureau, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_at ON audit(at);
