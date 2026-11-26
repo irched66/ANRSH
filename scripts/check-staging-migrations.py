@@ -60,7 +60,16 @@ else:
 for name in ("008_regional_office_auth.sql", "009_member_adhesion_archive.sql"):
     db.executescript((migrations / name).read_text(encoding="utf-8"))
 
+# Solidarity portal schema is additive and independent of member document tables.
+db.executescript((migrations / "010_solidarity_cases.sql").read_text(encoding="utf-8"))
+assert db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='anrsh_solidarity_cases'").fetchone()[0] == 1
+assert db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='anrsh_solidarity_keys'").fetchone()[0] == 1
+assert db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='anrsh_solidarity_audit'").fetchone()[0] == 1
+db.execute("""INSERT INTO anrsh_solidarity_cases (id,title,summary,assistance_type,wilaya)
+VALUES ('case-test','Test case','This is a sufficiently long test summary.','social','Skikda')""")
+assert db.execute("SELECT status FROM anrsh_solidarity_cases WHERE id='case-test'").fetchone()[0] == "pending"
+
 assert db.execute("SELECT COUNT(*) FROM anrsh_membership_finance_legacy_006").fetchone()[0] == 0
 assert db.execute("SELECT COUNT(*) FROM anrsh_membership_finance").fetchone()[0] == 2
 assert db.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='member_adhesion_archive'").fetchone()[0] == 1
-print("PASS: staging migrations preserve legacy ledger, support 500/700 DZD, reject inconsistent allocations, and create regional/archive schema.")
+print("PASS: staging migrations preserve legacy ledger, support 500/700 DZD, reject inconsistent allocations, create regional/archive schema, and add pending solidarity cases.")
