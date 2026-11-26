@@ -925,6 +925,14 @@ async function handleAdminSolidarityKeys(request, env) {
     .bind(crypto.randomUUID()).run();
   return json({ ok: true, id, label, contributorKey: raw, expiresAt: expires, warning: "show_once_store_securely" }, 201);
 }
+async function handleAdminSolidarityKeysList(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const rows = await env.DB.prepare(`SELECT id, label, scope, created_at, expires_at, revoked_at, last_used_at
+    FROM anrsh_solidarity_keys ORDER BY created_at DESC LIMIT 300`).all();
+  return json({ ok: true, keys: rows.results || [] });
+}
 async function handleAdminSolidarityKeyRevoke(id, request, env) {
   if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
@@ -993,6 +1001,7 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/solidarity/cases") return handlePublicSolidarityCases(env);
   if (request.method === "POST" && path === "/api/solidarity/contribute") return handleSolidarityContributor(request, env);
   if (request.method === "POST" && path === "/api/admin/solidarity/keys") return handleAdminSolidarityKeys(request, env);
+  if (request.method === "GET" && path === "/api/admin/solidarity/keys") return handleAdminSolidarityKeysList(request, env);
   const solidarityKeyParts = path.split("/");
   if (request.method === "POST" && solidarityKeyParts.length === 7 && solidarityKeyParts[1] === "api" && solidarityKeyParts[2] === "admin" && solidarityKeyParts[3] === "solidarity" && solidarityKeyParts[4] === "keys" && solidarityKeyParts[6] === "revoke") return handleAdminSolidarityKeyRevoke(decodeURIComponent(solidarityKeyParts[5]), request, env);
   if (request.method === "GET" && path === "/api/admin/solidarity/cases") return handleAdminSolidarityCases(request, env);
