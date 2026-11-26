@@ -882,11 +882,6 @@ async function route(request, env) {
     return handleAdminApprove(decodeURIComponent(approveMatch[1]), request, env);
   }
 
-  const deleteMatch = path.match(/^\/api\/admin\/members\/([^/]+)$/);
-  if (request.method === "DELETE" && deleteMatch) {
-    return handleAdminDelete(decodeURIComponent(deleteMatch[1]), request, env);
-  }
-
   return json({ error: "not_found" }, 404);
 }
 
