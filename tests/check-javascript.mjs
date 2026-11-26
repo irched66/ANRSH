@@ -47,6 +47,17 @@ assert.ok(html.includes("window.validateSecurityOTP=async function()"), "Member 
 assert.ok(html.includes("member_notification_failed"), "Frontend must explain failed member OTP delivery");
 assert.ok(html.includes("تم إرسال رمز التحقق إلى البريد الإلكتروني المسجل للمنخرط"), "Admin UI must confirm the actual member OTP delivery target");
 assert.ok(html.includes('id="doc_cni_back" accept="image/*,.pdf" required'), "Registration form must require the back of the identity card");
+assert.ok(html.includes('id="doc_cni" accept="image/*,.pdf" required'), "Registration form must retain the front of the identity card");
+for (const removedId of ["nin_no", "matricule_sh", "last_structure", "nss_no", "cnr_no", "bdMat", "bdSpec"]) {
+  assert.ok(!html.includes('id="' + removedId + '"'), "Registration UI must not expose removed identifier/occupation field: " + removedId);
+}
+assert.ok(!html.includes('nin:v("nin_no")') && !html.includes('matricule:v("matricule_sh")') && !html.includes('nss:v("nss_no")') && !html.includes('cnr:v("cnr_no")'), "Legacy identifier fields must not be sent in the registration payload");
+assert.ok(html.includes('id="user_photo_file" accept="image/*"'), "Gallery/file photo picker must remain available");
+assert.ok(html.includes('id="user_photo_camera" accept="image/*" capture="user"'), "Front camera photo capture must be available");
+assert.ok(html.includes('function selectedFile(id){var x=el(id),f=x&&x.files&&x.files[0];if(f)return f;'), "Photo upload must fall back to the camera input");
+for (const removedKey of ["nin: cleanText(p.nin", "matricule: cleanText(p.matricule", "specialty: cleanText(p.specialty", "nss: cleanText(p.nss", "cnr: cleanText(p.cnr"]) {
+  assert.ok(!worker.includes(removedKey), "New member profiles must not persist removed sensitive field: " + removedKey);
+}
 assert.ok(html.includes('video.src="intro.mp4"'), "Opening video must remain wired to the landing page");
 assert.ok(html.includes('assets/anrsh-background.png'), "Approved ANRSH background must be used");
 assert.ok(html.includes('id="anrsh-clock"'), "Algeria local clock must be displayed");
