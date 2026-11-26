@@ -1661,6 +1661,14 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     save.onclick=async function(){try{var z=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/adhesion-archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(snap)});save.textContent="✓ حُفظت نسخة الأرشيف "+z.archiveId;save.disabled=true}catch(e){save.textContent="تعذر الحفظ: "+e.message}};
     var print=document.createElement("button");print.type="button";print.className="btn-card btn-flip";print.textContent="🖨️ طباعة / حفظ PDF";print.style.margin="12px 0";print.onclick=function(){var win=window.open("","_blank");if(!win){alert("اسمح بالنوافذ المنبثقة للطباعة");return}win.document.write('<html lang="ar" dir="rtl"><meta charset="utf-8"><title>Fiche '+esc(snap.reference)+'</title><body style="font-family:Arial;padding:24px;color:#111">'+box.innerHTML+'</body></html>');win.document.close();win.focus();win.print()};
     out.appendChild(box);out.appendChild(save);out.appendChild(print);
+    try{
+      var history=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/adhesion-archive",{method:"GET"});
+      var histBox=document.createElement("section");histBox.style.cssText="margin-top:14px;padding:12px;border:1px solid rgba(245,158,11,.45);border-radius:10px";
+      var histTitle=document.createElement("b");histTitle.textContent="سجل نسخ الأرشيف المحفوظة ("+(history.archives||[]).length+")";histBox.appendChild(histTitle);
+      (history.archives||[]).forEach(function(a){var line=document.createElement("p");line.style.cssText="margin:6px 0;font-size:.82rem";line.textContent=(a.member_ref||snap.reference)+" — "+(a.created_at||"");histBox.appendChild(line);});
+      if(!(history.archives||[]).length){var empty=document.createElement("p");empty.textContent="لا توجد نسخ محفوظة لهذا الملف بعد.";histBox.appendChild(empty);}
+      out.appendChild(histBox);
+    }catch(e){var err=document.createElement("p");err.style.cssText="margin-top:10px;color:#b45309";err.textContent="تعذر قراءة سجل الأرشيف: "+e.message;out.appendChild(err);}
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
