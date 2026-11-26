@@ -395,14 +395,12 @@ async function handleCreateRequest(request, env) {
     commune: cleanText(p.commune, 100),
     postal_code: cleanText(p.postal_code, 10),
     address: cleanText(p.address, 300),
-    nin: cleanText(p.nin, 30),
-    matricule: cleanText(p.matricule, 40),
+    activity: cleanText(p.activity, 120),
     activity: cleanText(p.activity, 120),
     work_region: cleanText(p.work_region, 100),
     specialty: cleanText(p.specialty, 120),
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
-    nss: cleanText(p.nss, 40), cnr: cleanText(p.cnr, 40),
     consent: true, membership_fee_dzd: membershipFeeDzd, submitted_at: new Date().toISOString()
   };
 
