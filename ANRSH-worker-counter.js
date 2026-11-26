@@ -62,7 +62,7 @@ function corsHeaders(request) {
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
     "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "access-control-allow-headers": "Content-Type, x-admin-key, Authorization",
+    "access-control-allow-headers": "Content-Type, x-admin-key, x-case-key, Authorization",
     "access-control-max-age": "86400",
     "vary": "Origin"
   };
