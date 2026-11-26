@@ -1,0 +1,55 @@
+name: Deploy ANRSH staging Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the staging branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/feature/member-adhesion-fiche-preview" ]]; then
+            echo "::error::This workflow may deploy only the staging feature branch."
+            exit 1
+          fi
+
+      - name: Check required deployment secrets
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANRSH_ADMIN_API_KEY: ${{ secrets.ANRSH_ADMIN_API_KEY }}
+          TEXTBEE_API_KEY: ${{ secrets.TEXTBEE_API_KEY }}
+        run: |
+          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ANRSH_ADMIN_API_KEY TEXTBEE_API_KEY; do
+            if [[ -z "${!key}" ]]; then
+              echo "::error::Missing repository secret: $key"
+              exit 1
+            fi
+          done
+          if [[ "${#ANRSH_ADMIN_API_KEY}" -lt 32 ]]; then
+            echo "::error::ANRSH_ADMIN_API_KEY must contain at least 32 characters."
+            exit 1
+          fi
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Deploy the staging Worker and set its secrets
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANRSH_ADMIN_API_KEY: ${{ secrets.ANRSH_ADMIN_API_KEY }}
+          TEXTBEE_API_KEY: ${{ secrets.TEXTBEE_API_KEY }}
+        run: |
+          npx --yes wrangler@4 deploy --config wrangler.staging.toml
+          printf '%s' "$ANRSH_ADMIN_API_KEY" | npx --yes wrangler@4 secret put ADMIN_API_KEY --config wrangler.staging.toml
+          printf '%s' "$TEXTBEE_API_KEY" | npx --yes wrangler@4 secret put TEXTBEE_API_KEY --config wrangler.staging.toml

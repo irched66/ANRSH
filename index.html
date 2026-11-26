@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>ANRSH – المنصة الرقمية الرسمية 2026/2027/2027 | إصدار 16 نوفمبر 2026</title>
 <link rel="manifest" href="manifest.webmanifest">
+<script src="assets/anrsh-config.js"></script>
 <meta name="theme-color" content="#d97706">
 
     <meta name="theme-color" content="#d97706">
@@ -757,10 +758,6 @@ textarea{resize:vertical;font-family:inherit}
                             </select>
                         </div>
                         <div class="field-group">
-                            <label id="t-lbl-struct">المهنة / التخصص (Spécialité):</label>
-                            <input type="text" id="last_structure" placeholder="مهندس دولة في الميكانيك العامة">
-                        </div>
-                        <div class="field-group">
                             <label id="t-lbl-retireyear">سنة التقاعد:</label>
                             <input type="number" id="retire_year" placeholder="2016">
                         </div>
@@ -882,7 +879,6 @@ textarea{resize:vertical;font-family:inherit}
                                     <div class="badge-info">
                                         <div class="badge-info-line"><span>الاسم</span><b id="bdName">—</b></div>
                                         <div class="badge-info-line"><span>الصفة</span><b id="bdType">—</b></div>
-                                        <div class="badge-info-line"><span>الاختصاص</span><b id="bdSpec">—</b></div>
                                         <div class="badge-info-line"><span>الولاية</span><b id="bdWil">—</b></div>
                                         <div class="badge-info-line"><span>الناحية</span><b id="bdAct">—</b></div>
                                     </div>
@@ -1015,7 +1011,6 @@ function syncBadgeLive(){
  $("bdSig").textContent=HEADS[$("user_bureau").value]||"—";
  var latinName=(lang==="ar"?v("first_name_latin")+" "+v("last_name_latin"):v("first_name")+" "+v("last_name")).trim(); $("bdName").textContent=latinName||"—"; var arabicName=(lang==="ar"?v("first_name")+" "+v("last_name"):v("first_name_ar")+" "+v("last_name_ar")).trim(); if($("bdNameAr"))$("bdNameAr").textContent=arabicName||"—";
  $("bdType").textContent=v("user_type")||"—";
- $("bdSpec").textContent=v("last_structure")||"—";
  $("bdWil").textContent=v("user_wilaya")||"—";
  $("bdAct").textContent=v("user_work_region")||"—";
  $("bdBureau").textContent=$("user_bureau").value;
@@ -1126,9 +1121,7 @@ var ROWS=`المساعد الصوتي لذوي الإعاقة البصرية|Ass
 -- اختر البلدية --|-- Choisir la commune --|-- Select commune --
 غير مدرجة (اكتبها في العنوان)|Non listée (à saisir dans l’adresse)|Not listed (write it in the address)
 عنوان الإقامة بالتفصيل|Adresse détaillée|Detailed address
-رقم بطاقة التعريف الوطنية (CNI)|N° de carte d’identité nationale (CNI)|National ID number (CNI)
 المسار والنشاط بسوناطراك الأم ونواحيها|Parcours professionnel à Sonatrach|Career at Sonatrach
-رقم التسجيل بسوناطراك (Matricule SH)|Matricule Sonatrach (SH)|Sonatrach ID (SH)
 النشاط أو القسم بمجمع سوناطراك|Activité ou division à Sonatrach|Activity or division at Sonatrach
 DP - قسم الإنتاج (Division Production)|DP - Division Production|DP - Production Division
 FOR - قسم الحفر وأشغال الآبار (Division Forage)|FOR - Division Forage|FOR - Drilling & Wells Division
@@ -1139,7 +1132,6 @@ EXPLO / DEV - الاستكشاف والتطوير|EXPLO / DEV - Exploration et d
 COM - تسويق المحروقات|COM - Commercialisation des hydrocarbures|COM - Hydrocarbon marketing
 DG / Siège - المديرية العامة والمصالح الوظيفية|DG / Siège - Direction générale et services|HQ - General management & support
 ناحية العمل بسوناطراك (Région)|Région de travail (Sonatrach)|Work region (Sonatrach)
-المهنة / التخصص (Spécialité)|Spécialité / métier|Specialty / occupation
 سنة التقاعد|Année de départ en retraite|Retirement year
 الاتصال والمكتب الجهوي للانتساب|Contact et bureau régional|Contact and regional office
 رقم الهاتف النقال (للتواصل والواتساب)|Téléphone mobile (WhatsApp)|Mobile phone (WhatsApp)
@@ -1148,8 +1140,6 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 المكتب الجهوي سكيكدة (الناحية الشرقية)|Bureau régional Skikda (zone Est)|Skikda regional office (East zone)
 المكتب الجهوي وهران (الناحية الغربية)|Bureau régional Oran (zone Ouest)|Oran regional office (West zone)
 المكتب التنفيذي الوطني (المقر المركزي)|Bureau exécutif national (siège)|National executive office (HQ)
-رقم الضمان الاجتماعي|N° de sécurité sociale|Social security number
-رقم التسجيل بالصندوق الوطني للتقاعد (CNR)|N° d’immatriculation CNR|CNR registration number
 الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج)|Documents obligatoires et preuve de paiement (500 DA)|Required documents and payment proof (500 DZD)
 الصورة الشمسية الرسمية (للبطاقة البيومترية)|Photo d’identité officielle|Official passport photo
 نسخة من بطاقة التعريف الوطنية (صورة أو PDF)|Copie de la carte d’identité (image ou PDF)|Copy of national ID (image or PDF)
@@ -1167,7 +1157,6 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 بطاقة انخراط · CARTE D’ADHÉRENT|CARTE D’ADHÉRENT|MEMBERSHIP CARD
 الاسم|Nom|Name
 الصفة|Statut|Status
-الاختصاص|Spécialité|Specialty
 الناحية|Région|Region
 معًا من أجل كرامة المتقاعد وحقوقه|Ensemble pour la dignité et les droits du retraité|Together for retirees’ dignity and rights
 المكتب الوطني ANRSH|Bureau National ANRSH|National Office ANRSH
@@ -1265,8 +1254,6 @@ Object.assign(D,{
 "اكتب اللقب":["Saisissez le nom","Enter last name"],
 "اكتب الاسم":["Saisissez le prénom","Enter first name"],
 "حي عدل CSCEC، عمارة 05":["Cité AADL CSCEC, bâtiment 05","AADL CSCEC residence, building 05"],
-"رقم بطاقة التعريف البيومترية":["Numéro de la carte d’identité biométrique","Biometric national ID number"],
-"رقم التسجيل بسوناطراك":["Matricule Sonatrach","Sonatrach registration number"]
 });
 for(var k in D){if(D[k].length<3)D[k][2]=k}
 
@@ -1294,7 +1281,7 @@ var _ow=onWilayaChange,_od=onDairaChange;onWilayaChange=function(){_ow();applyLa
 var _sm=switchMainTab;switchMainTab=function(n){_sm(n);if(sr)setTimeout(readPage,150)};
 var DUE={ar:["⏰ موعد التقرير الفصلي القادم:","(بعد "," يوماً)"," ⚠️ اقترب الموعد","📅 التقرير الأدبي والمالي السنوي: قبل 31 جانفي من كل سنة، ويُرسل بالبريد إلى irched2521@gmail.com و anrsh1994@gmail.com."],fr:["⏰ Prochain rapport trimestriel :","(dans "," jours)"," ⚠️ Échéance proche","📅 Rapport moral et financier annuel : avant le 31 janvier, envoyé par e-mail à irched2521@gmail.com et anrsh1994@gmail.com."],en:["⏰ Next quarterly report due:","(in "," days)"," ⚠️ Deadline close","📅 Annual narrative and financial report: before 31 January, e-mailed to irched2521@gmail.com and anrsh1994@gmail.com."]};
 dueInfo=function(){var n=nextDue(),k=Math.ceil((n-new Date())/864e5),d=DUE[lang];$("dueInfo").innerHTML=d[0]+" <b>"+n.toLocaleDateString("fr-DZ")+"</b> "+d[1]+k+d[2]+(k<=15?d[3]:"")+"<br>"+d[4]};
-var OT={ar:["رقم طلبك:","أرسل وصل دفع 500 دج والوثائق عبر واتساب. بعد التحقق من الدفع يرسل لك مسؤول المكتب رمزاً من 6 أرقام عبر واتساب؛ أدخله هنا لفك الطباعة."],fr:["Votre n° de demande :","Envoyez le reçu de 500 DA et les documents par WhatsApp. Après vérification, le responsable du bureau vous envoie un code à 6 chiffres par WhatsApp ; saisissez-le ici pour débloquer l’impression."],en:["Your request no.:","Send the 500 DZD receipt and documents via WhatsApp. After verification the office manager sends you a 6-digit code via WhatsApp; enter it here to unlock printing."]};
+var OT={ar:["رقم طلبك:","تم استلام الاستمارة والوثائق. انتظر مراجعة المكتب الوطني واعتماد الدفع؛ بعدها يصلك رمز من 6 أرقام عبر SMS أو البريد الإلكتروني، وعند تعذر الإرسال الآلي يرسله المكتب عبر واتساب. الرمز صالح 5 دقائق."],fr:["Votre n° de demande :","Votre formulaire et vos documents ont été reçus. Attendez la vérification du bureau national et la confirmation du paiement ; un code à 6 chiffres sera ensuite envoyé par SMS ou e-mail, ou par WhatsApp si l’envoi automatique échoue. Le code expire après 5 minutes."],en:["Your request no.:","Your form and documents were received. Wait for National Office review and payment approval. A 6-digit code will then be sent by SMS or email, or by WhatsApp if automatic delivery fails. The code expires after 5 minutes."]};
 function otpDesc(){var o=OT[lang];$("t-otp-desc").innerHTML=o[0]+" <b dir='ltr'>"+curRef+(curNo?" · "+curNo:"")+"</b><br>"+o[1]}
 var sr=false,LC={ar:"ar-SA",fr:"fr-FR",en:"en-US"},VP={ar:["ar"],fr:["fr"],en:["en"]},warned=false;
 function voiceFor(){if(!window.speechSynthesis)return null;var vs=window.speechSynthesis.getVoices(),p=VP[lang];var best=null;for(var i=0;i<vs.length;i++){var c=vs[i].lang.toLowerCase().replace("_","-");if(p.some(function(x){return c.indexOf(x)===0})){if(!best||vs[i].localService&&!best.localService||c==="ar-dz"||c==="fr-dz")best=vs[i]}}return best}
@@ -1344,7 +1331,7 @@ function unlockCard(){unlocked=true;["btnDl","btnPr"].forEach(function(i){$(i).c
 var SB=false,JWT=null,ROWSM=[]; // Supabase backend disabled; Cloudflare D1 is authoritative.
 function sbFetch(path,o){o=o||{};o.headers=Object.assign({apikey:CFG.supabaseKey},(JWT||!/^sb_/.test(CFG.supabaseKey))?{Authorization:"Bearer "+(JWT||CFG.supabaseKey)}:{},o.headers||{});return fetch(CFG.supabaseUrl+path,o).then(function(r){return r.text().then(function(t){var j;try{j=t?JSON.parse(t):null}catch(x){j=t}if(!r.ok)throw new Error(typeof j==="string"?j:(j&&(j.message||j.msg||j.error_description))||r.status);return j})})}
 function rpc(n,a){return sbFetch("/rest/v1/rpc/"+n,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)})}
-function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),activity:v("user_activity"),work_region:v("user_work_region"),specialty:v("last_structure"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),files:F}}
+function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),activity:v("user_activity"),work_region:v("user_work_region"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),files:F}}
 function submitBackend(){
  var id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.floor(Math.random()*1e6),F={},map={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
  var ups=Object.keys(map).map(function(k){var f=$(map[k]).files[0];if(!f)return null;var path=id+"/"+k+"-"+f.name.replace(/[^\w.\-]/g,"_");F[k]=path;return sbFetch("/storage/v1/object/docs/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream"},body:f})}).filter(Boolean);
@@ -1363,12 +1350,20 @@ function adLoad(){sbFetch("/rest/v1/members?select=ref,member_no,bureau,status,c
 function cell(tr,t){var td=document.createElement("td");td.style.cssText="padding:6px;border-bottom:1px solid rgba(255,255,255,.12)";if(typeof t==="string")td.textContent=t;else td.appendChild(t);tr.appendChild(td)}
 function btn(t,f){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.padding="6px";b.textContent=t;b.onclick=f;return b}
 function adRender(){var q=($("ad_q")?v("ad_q"):"").toLowerCase(),T=$("adTbl");T.innerHTML="";
- ROWSM.forEach(function(r,i){var d=r.data||{},nm=(d.first_name||"")+" "+(d.last_name||"");if(q&&(r.member_no+nm+r.bureau+(d.matricule||"")+r.ref).toLowerCase().indexOf(q)<0)return;
+ ROWSM.forEach(function(r,i){var d=r.data||{},nm=(d.first_name||"")+" "+(d.last_name||"");if(q&&(r.member_no+nm+r.bureau+r.ref).toLowerCase().indexOf(q)<0)return;
   var tr=document.createElement("tr");cell(tr,r.member_no||"");cell(tr,nm);cell(tr,r.bureau||"");cell(tr,d.phone||"");cell(tr,r.status==="paid"?"✅ مدفوع":"⏳ بانتظار الدفع");
-  var box=document.createElement("div");box.appendChild(btn("📎",function(){adDocs(i)}));if(r.status!=="paid")box.appendChild(btn("✅ رمز",function(){adApprove(i)}));cell(tr,box);T.appendChild(tr)})}
+  var box=document.createElement("div");box.appendChild(btn("👁️",function(){adFicha(i)}));box.appendChild(btn("📎",function(){adDocs(i)}));if(r.status!=="paid")box.appendChild(btn("✅ رمز",function(){adApprove(i)}));cell(tr,box);T.appendChild(tr)})}
+function fichaEsc(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function adFicha(i){
+ var r=ROWSM[i],d=r.data||{},w=window.open("","_blank");if(!w){alert("يرجى السماح بفتح النوافذ المنبثقة لمعاينة الاستمارة.");return}
+ var fields=[["الاسم واللقب (بالعربية)",(d.first_name||"")+" "+(d.last_name||"")],["Nom et Prénom (FR)",(d.first_name_fr||d.first_name||"")+" "+(d.last_name_fr||d.last_name||"")],["تاريخ ومكان الميلاد",d.birth_date+" — "+d.birth_place],["Date et lieu de naissance",d.birth_date+" — "+d.birth_place],["تاريخ التقاعد",d.retire_year],["الناحية التي كان ينتمي إليها",d.work_region],["الناحية الحالية",d.bureau||r.bureau],["رقم الهاتف",d.phone],["العنوان الشخصي",d.address],["الصفة",d.user_type]];
+ var rows=fields.map(function(x){return "<tr><th>"+fichaEsc(x[0])+"</th><td>"+fichaEsc(x[1])+"</td></tr>"}).join("");
+ w.document.open();w.document.write("<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>استمارة انخراط ANRSH</title><style>body{font-family:Arial,Tahoma,sans-serif;color:#111;margin:24px}header{text-align:center;border:1px solid #555;padding:12px;margin-bottom:18px}h1{text-align:center;font-size:25px}table{width:100%;border-collapse:collapse;margin-top:18px}th,td{border:1px solid #777;padding:10px;text-align:right}th{width:38%;background:#f1f1f1}.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.photo{width:110px;height:130px;object-fit:cover;border:1px solid #555}.ref{font-weight:bold;direction:ltr;text-align:left}.actions{text-align:center;margin:18px}.actions button{padding:10px 18px;font-size:16px}@media print{.actions{display:none}body{margin:12mm}}</style></head><body><header><b>Association Nationale des Retraités SONATRACH</b><br><b>الجمعية الوطنية لمتقاعدي سوناطراك</b><br>ANR/SH/2026</header><div class='top'><div class='ref'>الرقم الاستدلالي: "+fichaEsc(r.member_no||r.ref)+"</div><img id='fichePhoto' class='photo' alt='الصورة الشخصية'></div><h1>استمارة انخراط — FICHE D’ADHÉSION</h1><table>"+rows+"</table><p>حررت بتاريخ: "+new Date().toLocaleDateString("fr-DZ")+"</p><div class='actions'><button onclick='window.print()'>طباعة / حفظ PDF</button></div></body></html>");w.document.close();
+ if(r.files&&r.files.photo){sbFetch("/storage/v1/object/sign/docs/"+r.files.photo,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expiresIn:600})}).then(function(x){var im=w.document.getElementById("fichePhoto");if(im)im.src=CFG.supabaseUrl+"/storage/v1"+x.signedURL}).catch(function(){})}
+}
 function adDocs(i){var r=ROWSM[i],o=$("ad_out");o.textContent="";Object.keys(r.files||{}).forEach(function(k){sbFetch("/storage/v1/object/sign/docs/"+r.files[k],{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expiresIn:600})}).then(function(x){var a=document.createElement("a");a.href=CFG.supabaseUrl+"/storage/v1"+x.signedURL;a.target="_blank";a.rel="noopener";a.textContent=k+" ";a.style.color="var(--gold-light)";o.appendChild(a)}).catch(function(e){o.textContent="خطأ: "+e.message})})}
 function adApprove(i){var r=ROWSM[i],o=$("ad_out");rpc("approve_request",{p_ref:r.ref}).then(function(c){var tel=String((r.data||{}).phone||"").replace(/\D/g,"").replace(/^0/,"213");o.innerHTML="";var d=document.createElement("div");d.dir="ltr";d.style.cssText="font-size:2rem;letter-spacing:6px;color:var(--gold-light);text-align:center";d.textContent=c;o.appendChild(d);o.appendChild(btn("💬 إرسال الرمز للعضو عبر واتساب",function(){wa(tel,"ANRSH: تم تأكيد دفع اشتراكك. رمز التأكيد لطلبك "+r.ref+" هو: "+c)}));adLoad()}).catch(function(e){o.textContent="خطأ: "+e.message})}
-function adCsv(){var L=[["member_no","ref","bureau","status","first_name","last_name","matricule","phone","email","wilaya","commune","created_at"]];ROWSM.forEach(function(r){var d=r.data||{};L.push([r.member_no,r.ref,r.bureau,r.status,d.first_name,d.last_name,d.matricule,d.phone,d.email,d.wilaya,d.commune,r.created_at])});
+function adCsv(){var L=[["member_no","ref","bureau","status","first_name","last_name","phone","email","wilaya","commune","created_at"]];ROWSM.forEach(function(r){var d=r.data||{};L.push([r.member_no,r.ref,r.bureau,r.status,d.first_name,d.last_name,d.phone,d.email,d.wilaya,d.commune,r.created_at])});
  dlBlob("anrsh-membres.csv",new Blob(["\ufeff"+L.map(function(x){return x.map(function(c){return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\n")],{type:"text/csv"}))}
 var ME={role:"",bureau:""},RPS=[];
 function submitReport(){if(!JWT){alert("سجّل الدخول من فضاء الإدارة أولاً.");return}if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}
@@ -1398,11 +1393,28 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
 (function(){
   "use strict";
-  var API_BASE = "https://anrsh-ap-dev.irched2521.workers.dev";
+  var API_BASE = window.ANRSH_API_BASE_OVERRIDE || "";
   var ADMIN_KEY = "";
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
   var unlockToken = "";
+  var stagingVerified = false;
+  var originalDownloadCard = window.downloadCard;
+  var originalPrintCard = window.printCard;
+  async function requireValidPrintToken(){
+    if(!unlockToken || !curRef) throw new Error("يجب إدخال رمز التأكيد الذي أرسله المكتب بعد المصادقة على الدفع.");
+    var check = await api("/api/print-check?t="+encodeURIComponent(unlockToken)+"&ref="+encodeURIComponent(curRef), {method:"GET"});
+    if(!check || check.ok !== true) throw new Error("انتهت صلاحية إذن الطباعة. اطلب إعادة التحقق من المكتب.");
+    return true;
+  }
+  window.downloadCard = async function(){
+    try { await requireValidPrintToken(); if(typeof originalDownloadCard==="function") return originalDownloadCard(); }
+    catch(e){ alert(e.message || "تعذر التحقق من صلاحية البطاقة."); }
+  };
+  window.printCard = async function(){
+    try { await requireValidPrintToken(); if(typeof originalPrintCard==="function") return originalPrintCard(); }
+    catch(e){ alert(e.message || "تعذر التحقق من صلاحية البطاقة."); }
+  };
   window.ANRSH_API_BASE = API_BASE;
 
   function apiError(j, status){
@@ -1434,6 +1446,14 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     return map[key] || (j&&j.message) || ("خطأ في الاتصال بالخادم ("+status+").");
   }
   async function api(path, options){
+    if(!API_BASE) throw new Error("لم يُضبط رابط Worker التجريبي بعد. انشر إعداد wrangler.staging.toml أولاً ثم أضف رابط Worker الناتج إلى ANRSH_API_BASE_OVERRIDE.");
+    if(!stagingVerified){
+      var probe=await fetch(API_BASE+"/api/health",{cache:"no-store"});
+      var health=await probe.json().catch(function(){return {}});
+      if(!probe.ok||health.environment!=="staging"||health.database!=="connected")
+        throw new Error("رفض الاتصال: رابط الخادم لا يؤكد أنه بيئة ANRSH staging مستقلة ومتّصلة بقاعدة البيانات.");
+      stagingVerified=true;
+    }
     options=options||{};
     options.headers=Object.assign({},options.headers||{});
     if(ADMIN_KEY) options.headers["x-admin-key"]=ADMIN_KEY;
@@ -1452,7 +1472,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"), wilaya_name:el("user_wilaya")&&el("user_wilaya").selectedOptions[0]?el("user_wilaya").selectedOptions[0].textContent:"",
       daira:val("user_daira"), commune:val("user_commune"), postal_code:val("user_postal_code"), address:val("user_address"),
        activity:val("user_activity"),
-      work_region:val("user_work_region"), specialty:val("last_structure"), retire_year:val("retire_year"),
+      work_region:val("user_work_region"), retire_year:val("retire_year"),
       phone:val("user_phone"), email:val("user_email"), 
       consent:!!(el("accept_rules")&&el("accept_rules").checked&&el("accept_privacy")&&el("accept_privacy").checked)
     };
@@ -1556,18 +1576,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button></div>'+
       '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div>'+
       '<section id="anrshFinancePanel" style="margin-top:22px;padding:14px;border:1px solid rgba(245,158,11,.5);border-radius:14px;background:rgba(0,0,0,.22)">'+
-      '<h3 style="color:var(--gold-light)">📊 الحسابات المالية للمكاتب الجهوية — 20% و80%</h3>'+
-      '<p style="font-size:.82rem;margin:6px 0 12px">يُحتسب نصيب المكتب الوطني بنسبة 20% والمكتب الجهوي بنسبة 80% من قيمة كل اشتراك مؤكد، وفق المبلغ المعتمد وقت الطلب.</p>'+
+      '<h3 style="color:var(--gold-light)">📊 الحسابات المالية المركزية — المكتب الوطني</h3>'+
+      '<p style="font-size:.82rem;margin:6px 0 12px">تُحصّل جميع اشتراكات المنخرطين في الحساب المركزي للمكتب الوطني. المكاتب الجهوية لا تملك حسابات تحصيل ولا تُسجّل لها حصص مالية تلقائية.</p>'+
       '<div class="form-row two-col"><div class="field-group"><label>من تاريخ</label><input id="fin_from" type="date"></div><div class="field-group"><label>إلى تاريخ</label><input id="fin_to" type="date"></div></div>'+
       '<div class="form-row two-col"><div class="field-group"><label>المكتب الجهوي</label><select id="fin_bureau"><option value="">كل المكاتب</option></select></div><div class="field-group" style="justify-content:end"><button type="button" class="btn-card btn-dl" onclick="adFinanceLoad()">🔄 إنشاء / تحديث التقرير</button></div></div>'+
       '<div id="fin_summary" style="margin:10px 0;padding:10px;background:rgba(255,255,255,.06);border-radius:10px">لم يتم تحميل التقرير بعد.</div>'+
       '<div style="overflow-x:auto"><table id="fin_offices" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div>'+
-      '<h4 style="margin:16px 0 8px;color:var(--gold-light)">تسجيل تحويل مستحقات مكتب جهوي</h4>'+
-      '<div class="form-row two-col"><div class="field-group"><label>المبلغ المحوّل (دج)</label><input id="fin_transfer_amount" type="number" min="1" step="1"></div><div class="field-group"><label>تاريخ التحويل</label><input id="fin_transfer_date" type="date"></div></div>'+
-      '<div class="form-row two-col"><div class="field-group"><label>بداية الفترة</label><input id="fin_period_start" type="date"></div><div class="field-group"><label>نهاية الفترة</label><input id="fin_period_end" type="date"></div></div>'+
-      '<div class="field-group"><label>مرجع التحويل البنكي / رقم العملية</label><input id="fin_bank_reference" maxlength="100"></div>'+
-      '<button type="button" class="btn-card btn-dl" style="margin-top:10px" onclick="adFinanceRecordTransfer()">💳 تسجيل التحويل البنكي</button>'+
-      '<div id="fin_transfer_msg" style="margin-top:8px;font-size:.85rem"></div>'+
       '<h4 style="margin:16px 0 8px;color:var(--gold-light)">تفاصيل الاشتراكات المؤكدة</h4>'+
       '<div style="overflow-x:auto"><table id="fin_entries" style="width:100%;font-size:.78rem;border-collapse:collapse"></table></div>'+
       '<button type="button" class="btn-card btn-flip" style="margin-top:10px" onclick="adFinanceCsv()">⬇️ تصدير كشف الحساب CSV</button>'+
@@ -1617,14 +1631,37 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     var table=el("adTbl");if(!table)return;table.innerHTML="";
     var head=document.createElement("tr");["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الإجراءات"].forEach(function(t){addCell(head,t)});table.appendChild(head);
     var q=(val("ad_q")||"").toLowerCase();
-    ADMIN_ROWS.forEach(function(r){var p=r.profile||{}, hay=[r.requestNumber,r.name,r.bureau,r.phone,p.matricule,p.wilaya].join(" ").toLowerCase();if(q&&!hay.includes(q))return;
+    ADMIN_ROWS.forEach(function(r){var p=r.profile||{}, hay=[r.requestNumber,r.name,r.bureau,r.phone,p.wilaya].join(" ").toLowerCase();if(q&&!hay.includes(q))return;
       var tr=document.createElement("tr");addCell(tr,r.requestNumber);addCell(tr,r.name);addCell(tr,r.bureau);addCell(tr,r.phone);addCell(tr,r.status);
       var td=document.createElement("td");
+      var eye=document.createElement("button");eye.type="button";eye.className="btn-card btn-flip";eye.style.cssText="padding:5px;margin:2px";eye.textContent="👁️ استمارة الانخراط";eye.onclick=function(){adAdhesionFiche(r)};td.appendChild(eye);
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
-      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
+  };
+  window.adAdhesionFiche=async function(r){
+    var p=r.profile||{}, get=function(){for(var i=0;i<arguments.length;i++){var v=p[arguments[i]];if(v!=null&&String(v).trim())return String(v)}return ""};
+    var photo="";
+    try{if((r.files||[]).includes("photo")){var pr=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/files/photo");var pb=await pr.blob();photo=await new Promise(function(ok){var fr=new FileReader();fr.onload=function(){ok(fr.result)};fr.onerror=function(){ok("")};fr.readAsDataURL(pb)})}}catch(e){}
+    var fields=[["الاسم واللقب بالعربية",get("first_name_ar")+" "+get("last_name_ar")],["Nom et Prénom (FR)",get("first_name_fr")+" "+get("last_name_fr")],["تاريخ ومكان الميلاد",get("birth_date")+" "+get("birth_place")+" "+get("birth_wilaya")],["Date et lieu de naissance (FR)",get("birth_date")+" "+get("birth_place")],["تاريخ التقاعد",get("retire_year")],["الناحية السابقة",get("work_region")],["الناحية الحالية",get("wilaya_name","wilaya")],["مديرية الشؤون الاجتماعية سوناطراك",get("activity")],["رقم الهاتف",r.phone||get("phone","mobile")],["العنوان الشخصي",get("address","address_ar","personal_address")]];
+    var esc=function(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+    var snap={memberId:r.id,reference:r.requestNumber||"",fields:fields,profile:p};
+    var out=el("ad_out");out.innerHTML="";
+    var box=document.createElement("div");box.style.cssText="background:#fff;color:#111;padding:18px;margin-top:12px;border-radius:8px";
+    box.innerHTML='<div style="text-align:center;font-weight:bold">Association Nationale des Retraités SONATRACH</div><div style="text-align:center;font-size:22px;font-weight:bold;margin:12px">استمارة انخراط / FICHE D\'ADHÉSION</div><div style="font-weight:bold">الرقم الاستدلالي: '+esc(snap.reference)+'</div>'+(photo?'<img alt="Photo" src="'+photo+'" style="width:105px;height:125px;object-fit:cover;border:1px solid #777;margin-top:8px">':'')+fields.map(function(f){return '<div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #aaa;padding:10px 0"><b>'+esc(f[0])+'</b><span>'+esc(f[1])+'</span></div>'}).join("");
+    var save=document.createElement("button");save.type="button";save.className="btn-card btn-dl";save.textContent="💾 حفظ نسخة في أرشيف المنخرط";save.style.margin="12px 6px 0 0";
+    save.onclick=async function(){try{var z=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/adhesion-archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(snap)});save.textContent="✓ حُفظت نسخة الأرشيف "+z.archiveId;save.disabled=true}catch(e){save.textContent="تعذر الحفظ: "+e.message}};
+    var print=document.createElement("button");print.type="button";print.className="btn-card btn-flip";print.textContent="🖨️ طباعة / حفظ PDF";print.style.margin="12px 0";print.onclick=function(){var win=window.open("","_blank");if(!win){alert("اسمح بالنوافذ المنبثقة للطباعة");return}win.document.write('<html lang="ar" dir="rtl"><meta charset="utf-8"><title>Fiche '+esc(snap.reference)+'</title><body style="font-family:Arial;padding:24px;color:#111">'+box.innerHTML+'</body></html>');win.document.close();win.focus();win.print()};
+    out.appendChild(box);out.appendChild(save);out.appendChild(print);
+    try{
+      var history=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/adhesion-archive",{method:"GET"});
+      var histBox=document.createElement("section");histBox.style.cssText="margin-top:14px;padding:12px;border:1px solid rgba(245,158,11,.45);border-radius:10px";
+      var histTitle=document.createElement("b");histTitle.textContent="سجل نسخ الأرشيف المحفوظة ("+(history.archives||[]).length+")";histBox.appendChild(histTitle);
+      (history.archives||[]).forEach(function(a){var line=document.createElement("p");line.style.cssText="margin:6px 0;font-size:.82rem";line.textContent=(a.member_ref||snap.reference)+" — "+(a.created_at||"");histBox.appendChild(line);});
+      if(!(history.archives||[]).length){var empty=document.createElement("p");empty.textContent="لا توجد نسخ محفوظة لهذا الملف بعد.";histBox.appendChild(empty);}
+      out.appendChild(histBox);
+    }catch(e){var err=document.createElement("p");err.style.cssText="margin-top:10px;color:#b45309";err.textContent="تعذر قراءة سجل الأرشيف: "+e.message;out.appendChild(err);}
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
@@ -1639,7 +1676,6 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
   };
-  window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adFinanceLoad=async function(){
     var from=val("fin_from"),to=val("fin_to"),bureau=val("fin_bureau");
     if(!from){
@@ -1654,13 +1690,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       (data.offices||[]).forEach(function(o){if(!known.includes(o.bureau)){var op=document.createElement("option");op.value=o.bureau;op.textContent=o.bureau;sel.appendChild(op);}});
       if(old)sel.value=old;
       var x=data.summary||{};
-      el("fin_summary").textContent="الفترة: "+from+" إلى "+to+" | عدد الاشتراكات المؤكدة: "+Number(x.count||0)+" | المداخيل: "+Number(x.gross||0).toLocaleString("fr-FR")+" دج | حصة الوطني: "+Number(x.national||0).toLocaleString("fr-FR")+" دج | حصة المكاتب الجهوية: "+Number(x.regional||0).toLocaleString("fr-FR")+" دج";
+      el("fin_summary").textContent="الفترة: "+from+" إلى "+to+" | عدد الاشتراكات المؤكدة: "+Number(x.count||0)+" | إجمالي المقبوضات: "+Number(x.gross||0).toLocaleString("fr-FR")+" دج | المبلغ المحصّل في الحساب المركزي للمكتب الوطني: "+Number(x.national||0).toLocaleString("fr-FR")+" دج";
       var t=el("fin_offices");t.innerHTML="";var h=document.createElement("tr");
-      ["المكتب الجهوي","عدد الاشتراكات","المداخيل","حصة الوطني","حصة الجهوي","المحوّل","المتبقي"].forEach(function(v){addCell(h,v)});t.appendChild(h);
-      (data.offices||[]).forEach(function(o){var r=document.createElement("tr");[o.bureau,o.count,o.gross+" دج",o.national+" دج",o.regional+" دج",o.transferred+" دج",o.outstanding+" دج"].forEach(function(v){addCell(r,v)});t.appendChild(r);});
+      ["المكتب الجهوي المُسجّل","عدد الاشتراكات","إجمالي الاشتراكات","المحصّل مركزياً"].forEach(function(v){addCell(h,v)});t.appendChild(h);
+      (data.offices||[]).forEach(function(o){var r=document.createElement("tr");[o.bureau,o.count,o.gross+" دج",o.national+" دج"].forEach(function(v){addCell(r,v)});t.appendChild(r);});
       var et=el("fin_entries");et.innerHTML="";var eh=document.createElement("tr");
-      ["رقم الطلب","الاسم","الولاية","المكتب","نوع العملية","الإجمالي","حصة الوطني","حصة الجهوي","تاريخ تأكيد الدفع"].forEach(function(v){addCell(eh,v)});et.appendChild(eh);
-      (data.entries||[]).forEach(function(o){var r=document.createElement("tr");[o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.national_amount,o.regional_amount,o.payment_confirmed_at].forEach(function(v){addCell(r,v)});et.appendChild(r);});
+      ["رقم الطلب","الاسم","الولاية","المكتب","نوع العملية","المبلغ المحصّل مركزياً","تاريخ تأكيد الدفع"].forEach(function(v){addCell(eh,v)});et.appendChild(eh);
+      (data.entries||[]).forEach(function(o){var r=document.createElement("tr");[o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.payment_confirmed_at].forEach(function(v){addCell(r,v)});et.appendChild(r);});
     }catch(e){el("fin_summary").textContent="تعذر تحميل التقرير المالي: "+e.message+" — قد يلزم تطبيق ترحيل قاعدة البيانات ونشر Worker الجديد.";}
   };
   window.adFinanceRecordTransfer=async function(){
@@ -1676,14 +1712,14 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adFinanceCsv=function(){
     var d=window.ANRSH_FINANCE_DATA;if(!d){alert("حمّل التقرير المالي أولاً.");return;}
-    var rows=[["رقم الطلب","الاسم","الولاية","المكتب الجهوي","نوع العملية","المبلغ","حصة المكتب الوطني","حصة المكتب الجهوي","تاريخ تأكيد الدفع"]];
-    (d.entries||[]).forEach(function(o){rows.push([o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.national_amount,o.regional_amount,o.payment_confirmed_at]);});
+    var rows=[["رقم الطلب","الاسم","الولاية","المكتب الجهوي","نوع العملية","المبلغ المحصّل مركزياً","تاريخ تأكيد الدفع"]];
+    (d.entries||[]).forEach(function(o){rows.push([o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.payment_confirmed_at]);});
     var csv="\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
     dlBlob("ANRSH-rapport-financier-"+d.period.from+"-"+d.period.to+".csv",new Blob([csv],{type:"text/csv;charset=utf-8"}));
   };
   window.adCsv=function(){
-    var rows=[["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الولاية","البلدية","رقم التسجيل سوناطراك","البريد","تاريخ الطلب"]];
-    ADMIN_ROWS.forEach(function(r){var p=r.profile||{};rows.push([r.requestNumber,r.name,r.bureau,r.phone,r.status,p.wilaya,p.commune,p.matricule,p.email,r.createdAt]);});
+    var rows=[["رقم الطلب","الاسم","المكتب","الهاتف","الحالة","الولاية","البلدية","البريد","تاريخ الطلب"]];
+    ADMIN_ROWS.forEach(function(r){var p=r.profile||{};rows.push([r.requestNumber,r.name,r.bureau,r.phone,r.status,p.wilaya,p.commune,p.email,r.createdAt]);});
     var csv="\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
     dlBlob("ANRSH-demandes-2026-11-16.csv",new Blob([csv],{type:"text/csv;charset=utf-8"}));
   };

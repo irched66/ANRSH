@@ -2,19 +2,20 @@
  * ANRSH DIGITAL — Cloudflare Worker (D1 edition)
  * API compatible with the current ANRSH HTML frontend routes.
  *
- * Required bindings/secrets:
- *   D1 binding: DB  -> database "anrsh"
- *   Secret: ADMIN_API_KEY  -> long random value (minimum 32 characters)
- *   Existing secret: RESEND_API_KEY (optional; email sending also needs RESEND_FROM)
- *   Variable: RESEND_FROM (optional verified sender, e.g. "ANRSH <noreply@your-domain.dz>")
+ * Staging deployment bindings/secrets (see wrangler.staging.toml):
+ *   D1 binding: DB -> database "anrsh-staging"
+ *   Variable: ANRSH_ENV = "staging" (write routes fail closed otherwise)
+ *   Secret: ADMIN_API_KEY -> random value of at least 32 characters
+ *   Secret: TEXTBEE_API_KEY -> TextBee gateway API key
+ *   Optional email: RESEND_API_KEY and RESEND_FROM
  *
  * IMPORTANT:
- * - R2 is currently unavailable to this Worker. Private attachments are therefore
- *   stored in the existing D1 members.files JSON column, with strict size limits.
- * - No document is exposed publicly. Document routes require ADMIN_API_KEY.
- * - WhatsApp messages cannot be sent automatically without a WhatsApp Business API.
- *   Approval returns the one-time code for the authorized office operator to send.
- * - This Worker does not alter or create database tables.
+ * - This staging edition stores private attachments in D1 members.files JSON
+ *   because an R2 bucket is not configured. Request attachments are limited to 1 MiB total.
+ * - Document routes require a National Office key or a bureau-scoped regional session.
+ * - WhatsApp is a manual fallback; the Worker does not send WhatsApp automatically.
+ * - Apply the D1 migrations separately and only to the isolated staging database.
+ * - Do not deploy this staging edition to production without a separate review.
  */
 
 const JSON_HEADERS = {
@@ -155,6 +156,9 @@ function adminKeyOk(request, env) {
   return typeof configured === "string" && configured.length >= 32 &&
     safeEqual(supplied, configured);
 }
+function stagingOnly(env) {
+  return env.ANRSH_ENV === "staging";
+}
 function fileName(name) {
   return cleanText(name, 100).replace(/[^\w.\-ء-ي]/g, "_") || "document";
 }
@@ -172,15 +176,15 @@ async function makePrintToken(ref, env) {
   const sig = b64url(await hmac(body, secret));
   return body + "." + sig;
 }
-async function checkPrintToken(token, env) {
+async function checkPrintToken(token, env, expectedRef) {
   try {
-    if (!env.ADMIN_API_KEY || typeof token !== "string") return false;
+    if (!env.ADMIN_API_KEY || typeof token !== "string" || !validRef(expectedRef)) return false;
     const parts = token.split(".");
     if (parts.length !== 2) return false;
     const expected = b64url(await hmac(parts[0], env.ADMIN_API_KEY));
     if (!safeEqual(parts[1], expected)) return false;
     const payload = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
-    return !!payload.ref && Number(payload.exp) >= Math.floor(Date.now() / 1000);
+    return payload.ref === expectedRef && Number(payload.exp) >= Math.floor(Date.now() / 1000);
   } catch { return false; }
 }
 
@@ -289,6 +293,7 @@ async function handleHealth(env) {
     `).first();
     return json({
       ok: true, database: "connected",
+      environment: env.ANRSH_ENV || "unset",
       active_wilayas: Number(row?.wilayas || 0),
       active_regional_offices: Number(row?.offices || 0)
     });
@@ -317,6 +322,8 @@ async function handleOffices(env) {
 }
 
 async function handleCreateRequest(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
@@ -397,7 +404,6 @@ async function handleCreateRequest(request, env) {
     address: cleanText(p.address, 300),
     activity: cleanText(p.activity, 120),
     work_region: cleanText(p.work_region, 100),
-    specialty: cleanText(p.specialty, 120),
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
     consent: true, membership_fee_dzd: membershipFeeDzd, submitted_at: new Date().toISOString()
@@ -424,6 +430,8 @@ async function handleCreateRequest(request, env) {
 }
 
 async function handleVerify(ref, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!validRef(ref)) return json({ error: "invalid_request_number" }, 400);
   const body = await request.json().catch(() => ({}));
@@ -451,7 +459,8 @@ async function handleVerify(ref, request, env) {
 
 async function handlePrintCheck(url, env) {
   const token = url.searchParams.get("t") || "";
-  if (!(await checkPrintToken(token, env))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
+  const ref = url.searchParams.get("ref") || "";
+  if (!(await checkPrintToken(token, env, ref))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
   return json({ ok: true });
 }
 
@@ -470,6 +479,42 @@ async function handleAdminList(request, env) {
     files: Object.keys(parseJson(row.files, {}))
   }));
   return json(requests);
+}
+
+async function archiveAccess(id, request, env) {
+  // National administrators use the server-side secret; regional presidents use their scoped bearer session.
+  if (adminKeyOk(request, env)) return { role: "national", bureau: "NATIONAL" };
+  const session = await officeSession(request, env);
+  if (!session) return null;
+  const member = await env.DB.prepare("SELECT bureau FROM members WHERE id = ?").bind(id).first();
+  if (!member || member.bureau !== session.bureau) return null;
+  return { role: "regional", bureau: session.bureau };
+}
+async function handleAdhesionArchive(id, request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const access = await archiveAccess(id, request, env);
+  if (!access) return json({ error: "unauthorized_or_out_of_scope" }, 403);
+  const member = await env.DB.prepare("SELECT id, ref, bureau, name, phone, profile, files, status, created_at FROM members WHERE id = ?").bind(id).first();
+  if (!member) return json({ error: "member_not_found" }, 404);
+  if (request.method === "GET") {
+    const archives = await env.DB.prepare("SELECT id, member_ref, bureau, snapshot, created_at FROM member_adhesion_archive WHERE member_id = ? ORDER BY created_at DESC LIMIT 100").bind(id).all();
+    const profile = parseJson(member.profile, {});
+    const files = parseJson(member.files, {});
+    const photo = files.photo && files.photo.data ? { name: files.photo.name || "photo", type: files.photo.type || "image/jpeg", data: files.photo.data } : null;
+    return json({ ok: true, member: { id:member.id, reference:member.ref, bureau:member.bureau, name:member.name, phone:member.phone, profile, photo, status:member.status, createdAt:member.created_at }, archives: archives.results || [] }, 200, { "cache-control": "private, no-store" });
+  }
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  const profile = parseJson(member.profile, {});
+  const files = parseJson(member.files, {});
+  const photo = files.photo && files.photo.data ? { name: files.photo.name || "photo", type: files.photo.type || "image/jpeg", data: files.photo.data } : null;
+  const now = new Date().toISOString();
+  const snapshot = JSON.stringify({ memberId:member.id, reference:member.ref, bureau:member.bureau, name:member.name, phone:member.phone, profile, photo, status:member.status, memberCreatedAt:member.created_at, archivedAt:now, archivedBy:access.role });
+  if (snapshot.length > 1400000) return json({ error:"archive_snapshot_too_large" }, 413);
+  const archiveId = crypto.randomUUID();
+  await env.DB.prepare("INSERT INTO member_adhesion_archive (id, member_id, member_ref, bureau, snapshot, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(archiveId,member.id,member.ref,member.bureau,snapshot,now).run();
+  return json({ok:true,archiveId,memberRef:member.ref,createdAt:now},201,{ "cache-control":"no-store" });
 }
 
 async function handleAdminFile(id, type, request, env) {
@@ -496,6 +541,8 @@ async function handleAdminFile(id, type, request, env) {
 }
 
 async function handleAdminApprove(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const row = await env.DB.prepare(
@@ -508,8 +555,9 @@ async function handleAdminApprove(id, request, env) {
   const financeId = crypto.randomUUID();
   const feeAmount = Number(profile.membership_fee_dzd);
   if (!Number.isSafeInteger(feeAmount) || feeAmount < 1 || feeAmount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee_snapshot" }, 409);
-  const nationalAmount = Math.round(feeAmount * 0.20);
-  const regionalAmount = feeAmount - nationalAmount;
+  // Current association policy: all membership receipts are collected centrally by the National Office.
+  const nationalAmount = feeAmount;
+  const regionalAmount = 0;
   // Payment is treated as confirmed only at this authenticated national-office approval step.
   // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
   try {
@@ -518,7 +566,7 @@ async function handleAdminApprove(id, request, env) {
           (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
            fee_amount, national_rate, national_amount, regional_rate, regional_amount,
            payment_status, payment_confirmed_at, confirmed_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 20, ?, 80, ?, 'confirmed', ?, 'national_admin')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, ?, 0, ?, 'confirmed', ?, 'national_admin')
       `).bind(
         financeId, row.id, row.ref, cleanText(profile.bureau, 80),
         cleanText(profile.wilaya_name || profile.wilaya, 120),
@@ -596,7 +644,7 @@ async function handleAdminFinance(url, request, env) {
     outstanding: Math.max(0, Number(o.regional || 0) - (paidByOffice[o.bureau] || 0))
   }));
   return json({
-    ok: true, period: { from, to }, policy: { fee: currentFee, nationalRate: 20, nationalAmount: Math.round(currentFee * 0.20), regionalRate: 80, regionalAmount: currentFee - Math.round(currentFee * 0.20) },
+    ok: true, period: { from, to }, policy: { fee: currentFee, nationalRate: 100, nationalAmount: currentFee, regionalRate: 0, regionalAmount: 0 },
     summary: summary || { count: 0, gross: 0, national: 0, regional: 0 },
     offices: officeRows, entries: entries.results || [], transfers: transfers.results || []
   });
@@ -609,6 +657,8 @@ async function handlePublicSettings(env) {
 }
 
 async function handleAdminMembershipFeeUpdate(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const body = await request.json().catch(() => ({}));
@@ -673,6 +723,8 @@ async function deriveOfficePassword(password, saltHex, iterations) {
   return [...new Uint8Array(bits)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 async function handleOfficeActivationIssue(bureau, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   bureau = cleanText(bureau, 80);
   const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau = ? AND active = 1").bind(bureau).first();
@@ -688,6 +740,8 @@ async function handleOfficeActivationIssue(bureau, request, env) {
   return json({ ok: true, bureau, activationCode: code, expiresIn: 86400, message: "activation_code_show_once" }, 201);
 }
 async function handleOfficeActivate(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   const body = await request.json().catch(() => ({}));
   const bureau = cleanText(body.bureau, 80);
   const activationCode = String(body.activationCode || "");
@@ -714,6 +768,8 @@ async function handleOfficeActivate(request, env) {
   return json({ ok: true, activated: true, bureau, message: "office_account_activated_login_now" }, 201);
 }
 async function handleOfficeLogin(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   const body = await request.json().catch(() => ({}));
   const bureau = cleanText(body.bureau, 80);
   const password = String(body.password || "");
@@ -755,6 +811,7 @@ async function handleOfficeMe(request, env) {
   return json({ ok: true, role: "regional_office", bureau: session.bureau, officeName: session.officeName });
 }
 async function handleOfficeLogout(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ ok: true });
   await env.DB.prepare("DELETE FROM anrsh_office_sessions WHERE token_hash = ?").bind(session.tokenHash).run();
@@ -801,6 +858,7 @@ async function route(request, env) {
       platform: "ANRSH DIGITAL",
       status: "Worker active",
       edition: "2026/2027",
+      environment: env.ANRSH_ENV || "unset",
       message: "Association Nationale des Retraités de Sonatrach"
     });
   }
@@ -833,6 +891,9 @@ async function route(request, env) {
   if (path === "/api/admin/finance" && request.method === "GET") return handleAdminFinance(url, request, env);
   if (path === "/api/admin/finance/transfers" && request.method === "POST") return handleAdminFinanceTransfer(request, env);
 
+  const archiveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/adhesion-archive$/);
+  if ((request.method === "GET" || request.method === "POST") && archiveMatch) return handleAdhesionArchive(decodeURIComponent(archiveMatch[1]), request, env);
+
   const fileMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && fileMatch) {
     return handleAdminFile(decodeURIComponent(fileMatch[1]), decodeURIComponent(fileMatch[2]), request, env);
@@ -841,11 +902,6 @@ async function route(request, env) {
   const approveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/approve$/);
   if (request.method === "POST" && approveMatch) {
     return handleAdminApprove(decodeURIComponent(approveMatch[1]), request, env);
-  }
-
-  const deleteMatch = path.match(/^\/api\/admin\/members\/([^/]+)$/);
-  if (request.method === "DELETE" && deleteMatch) {
-    return handleAdminDelete(decodeURIComponent(deleteMatch[1]), request, env);
   }
 
   return json({ error: "not_found" }, 404);

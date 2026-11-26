@@ -1,0 +1,12 @@
+name = "anrsh-staging"
+main = "ANRSH-worker-counter.js"
+compatibility_date = "2026-11-26"
+workers_dev = true
+
+[vars]
+ANRSH_ENV = "staging"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "anrsh-staging"
+database_id = "00dc7c78-80f8-48db-8b4d-7a56d34dea43"
