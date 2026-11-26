@@ -172,15 +172,15 @@ async function makePrintToken(ref, env) {
   const sig = b64url(await hmac(body, secret));
   return body + "." + sig;
 }
-async function checkPrintToken(token, env) {
+async function checkPrintToken(token, env, expectedRef) {
   try {
-    if (!env.ADMIN_API_KEY || typeof token !== "string") return false;
+    if (!env.ADMIN_API_KEY || typeof token !== "string" || !validRef(expectedRef)) return false;
     const parts = token.split(".");
     if (parts.length !== 2) return false;
     const expected = b64url(await hmac(parts[0], env.ADMIN_API_KEY));
     if (!safeEqual(parts[1], expected)) return false;
     const payload = JSON.parse(new TextDecoder().decode(fromB64url(parts[0])));
-    return !!payload.ref && Number(payload.exp) >= Math.floor(Date.now() / 1000);
+    return payload.ref === expectedRef && Number(payload.exp) >= Math.floor(Date.now() / 1000);
   } catch { return false; }
 }
 
@@ -397,7 +397,6 @@ async function handleCreateRequest(request, env) {
     address: cleanText(p.address, 300),
     activity: cleanText(p.activity, 120),
     work_region: cleanText(p.work_region, 100),
-    specialty: cleanText(p.specialty, 120),
     retire_year: cleanText(p.retire_year, 10),
     phone, email: cleanText(p.email, 160),
     consent: true, membership_fee_dzd: membershipFeeDzd, submitted_at: new Date().toISOString()
@@ -451,7 +450,8 @@ async function handleVerify(ref, request, env) {
 
 async function handlePrintCheck(url, env) {
   const token = url.searchParams.get("t") || "";
-  if (!(await checkPrintToken(token, env))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
+  const ref = url.searchParams.get("ref") || "";
+  if (!(await checkPrintToken(token, env, ref))) return json({ ok: false, error: "invalid_or_expired_token" }, 401);
   return json({ ok: true });
 }
 
@@ -543,8 +543,9 @@ async function handleAdminApprove(id, request, env) {
   const financeId = crypto.randomUUID();
   const feeAmount = Number(profile.membership_fee_dzd);
   if (!Number.isSafeInteger(feeAmount) || feeAmount < 1 || feeAmount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee_snapshot" }, 409);
-  const nationalAmount = Math.round(feeAmount * 0.20);
-  const regionalAmount = feeAmount - nationalAmount;
+  // Current association policy: all membership receipts are collected centrally by the National Office.
+  const nationalAmount = feeAmount;
+  const regionalAmount = 0;
   // Payment is treated as confirmed only at this authenticated national-office approval step.
   // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
   try {
@@ -553,7 +554,7 @@ async function handleAdminApprove(id, request, env) {
           (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
            fee_amount, national_rate, national_amount, regional_rate, regional_amount,
            payment_status, payment_confirmed_at, confirmed_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 20, ?, 80, ?, 'confirmed', ?, 'national_admin')
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 100, ?, 0, ?, 'confirmed', ?, 'national_admin')
       `).bind(
         financeId, row.id, row.ref, cleanText(profile.bureau, 80),
         cleanText(profile.wilaya_name || profile.wilaya, 120),
@@ -631,7 +632,7 @@ async function handleAdminFinance(url, request, env) {
     outstanding: Math.max(0, Number(o.regional || 0) - (paidByOffice[o.bureau] || 0))
   }));
   return json({
-    ok: true, period: { from, to }, policy: { fee: currentFee, nationalRate: 20, nationalAmount: Math.round(currentFee * 0.20), regionalRate: 80, regionalAmount: currentFee - Math.round(currentFee * 0.20) },
+    ok: true, period: { from, to }, policy: { fee: currentFee, nationalRate: 100, nationalAmount: currentFee, regionalRate: 0, regionalAmount: 0 },
     summary: summary || { count: 0, gross: 0, national: 0, regional: 0 },
     offices: officeRows, entries: entries.results || [], transfers: transfers.results || []
   });
