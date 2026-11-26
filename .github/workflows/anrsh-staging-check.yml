@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - feature/member-adhesion-fiche-preview
+      - main
 
 jobs:
   syntax:
