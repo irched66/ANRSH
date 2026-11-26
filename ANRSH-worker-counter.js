@@ -62,7 +62,7 @@ function corsHeaders(request) {
   const allowed = ALLOWED_ORIGINS.has(origin);
   const headers = {
     "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
-    "access-control-allow-headers": "Content-Type, x-admin-key, Authorization",
+    "access-control-allow-headers": "Content-Type, x-admin-key, x-case-key, Authorization",
     "access-control-max-age": "86400",
     "vary": "Origin"
   };
@@ -860,6 +860,115 @@ async function handleOfficeFile(id, type, request, env) {
   }});
 }
 
+
+/* ===== Solidarity cases: National Office controlled, revocable contributor keys ===== */
+async function solidarityKeyHash(raw, env) {
+  return sha256("ANRSH-solidarity-key-v1:" + env.ADMIN_API_KEY + ":" + raw);
+}
+async function handlePublicSolidarityCases(env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  const now = new Date().toISOString();
+  const rows = await env.DB.prepare(`SELECT id, title, summary, assistance_type, wilaya, public_contact, created_at
+    FROM anrsh_solidarity_cases
+    WHERE status = 'published' AND (expires_at IS NULL OR expires_at = '' OR expires_at > ?)
+    ORDER BY published_at DESC, created_at DESC LIMIT 100`).bind(now).all();
+  return json({ ok: true, cases: (rows.results || []).map(r => ({
+    id: r.id, title: r.title, summary: r.summary, assistanceType: r.assistance_type,
+    wilaya: r.wilaya, publicContact: r.public_contact || "", createdAt: r.created_at
+  })) });
+}
+async function handleSolidarityContributor(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB || !env.ADMIN_API_KEY) return json({ error: "service_unavailable" }, 503);
+  const raw = request.headers.get("x-case-key") || "";
+  if (!/^[a-f0-9]{64}$/i.test(raw)) return json({ error: "invalid_contributor_key" }, 401);
+  const hash = await solidarityKeyHash(raw, env);
+  const now = new Date().toISOString();
+  const key = await env.DB.prepare(`SELECT id, scope FROM anrsh_solidarity_keys
+    WHERE key_hash = ? AND revoked_at IS NULL AND expires_at > ?`).bind(hash, now).first();
+  if (!key || key.scope !== "case:submit") return json({ error: "invalid_or_expired_contributor_key" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const title = cleanText(body.title, 140);
+  const summary = cleanText(body.summary, 1200);
+  const assistanceType = cleanText(body.assistanceType, 50);
+  const wilaya = cleanText(body.wilaya, 80);
+  const publicContact = cleanText(body.publicContact, 120);
+  if (title.length < 5 || summary.length < 20 || !assistanceType || !wilaya) {
+    return json({ error: "required_fields_missing_or_too_short" }, 400);
+  }
+  const id = crypto.randomUUID();
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO anrsh_solidarity_cases
+      (id, title, summary, assistance_type, wilaya, public_contact, status, contributor_key_id)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`).bind(id, title, summary, assistanceType, wilaya, publicContact, key.id),
+    env.DB.prepare("UPDATE anrsh_solidarity_keys SET last_used_at = ? WHERE id = ?").bind(now, key.id),
+    env.DB.prepare("INSERT INTO anrsh_solidarity_audit (id, actor, action, case_id) VALUES (?, ?, 'submit_case', ?)")
+      .bind(crypto.randomUUID(), "contributor:" + key.id, id)
+  ]);
+  return json({ ok: true, id, status: "pending_review" }, 201);
+}
+async function handleAdminSolidarityKeys(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const label = cleanText(body.label, 100);
+  if (label.length < 2) return json({ error: "key_label_required" }, 400);
+  const raw = randomHex(32);
+  const id = crypto.randomUUID();
+  const now = new Date();
+  const expires = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  await env.DB.prepare(`INSERT INTO anrsh_solidarity_keys (id, key_hash, label, scope, created_at, expires_at)
+    VALUES (?, ?, ?, 'case:submit', ?, ?)`)
+    .bind(id, await solidarityKeyHash(raw, env), label, now.toISOString(), expires).run();
+  await env.DB.prepare("INSERT INTO anrsh_solidarity_audit (id, actor, action) VALUES (?, 'national_admin', 'issue_contributor_key')")
+    .bind(crypto.randomUUID()).run();
+  return json({ ok: true, id, label, contributorKey: raw, expiresAt: expires, warning: "show_once_store_securely" }, 201);
+}
+async function handleAdminSolidarityKeysList(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const rows = await env.DB.prepare(`SELECT id, label, scope, created_at, expires_at, revoked_at, last_used_at
+    FROM anrsh_solidarity_keys ORDER BY created_at DESC LIMIT 300`).all();
+  return json({ ok: true, keys: rows.results || [] });
+}
+async function handleAdminSolidarityKeyRevoke(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const result = await env.DB.prepare("UPDATE anrsh_solidarity_keys SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL")
+    .bind(new Date().toISOString(), id).run();
+  if (!result.meta?.changes) return json({ error: "key_not_found_or_already_revoked" }, 404);
+  await env.DB.prepare("INSERT INTO anrsh_solidarity_audit (id, actor, action) VALUES (?, 'national_admin', 'revoke_contributor_key')")
+    .bind(crypto.randomUUID()).run();
+  return json({ ok: true, revoked: true, id });
+}
+async function handleAdminSolidarityCases(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const rows = await env.DB.prepare(`SELECT id, title, summary, assistance_type, wilaya, public_contact, status, expires_at, created_at
+    FROM anrsh_solidarity_cases ORDER BY created_at DESC LIMIT 300`).all();
+  return json({ ok: true, cases: rows.results || [] });
+}
+async function handleAdminSolidarityCaseStatus(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const body = await request.json().catch(() => ({}));
+  const status = cleanText(body.status, 20);
+  if (!["published", "closed", "rejected"].includes(status)) return json({ error: "invalid_case_status" }, 400);
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(`UPDATE anrsh_solidarity_cases SET status = ?, updated_at = ?,
+    published_at = CASE WHEN ? = 'published' THEN ? ELSE published_at END WHERE id = ?`)
+    .bind(status, now, status, now, id).run();
+  if (!result.meta?.changes) return json({ error: "case_not_found" }, 404);
+  await env.DB.prepare("INSERT INTO anrsh_solidarity_audit (id, actor, action, case_id) VALUES (?, 'national_admin', ?, ?)")
+    .bind(crypto.randomUUID(), "set_status:" + status, id).run();
+  return json({ ok: true, id, status });
+}
+
 async function route(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -887,6 +996,17 @@ async function route(request, env) {
   if (request.method === "GET" && officeFileMatch) return handleOfficeFile(decodeURIComponent(officeFileMatch[1]), decodeURIComponent(officeFileMatch[2]), request, env);
   const activationMatch = path.match(/^\/api\/admin\/offices\/([^/]+)\/activation$/);
   if (request.method === "POST" && activationMatch) return handleOfficeActivationIssue(decodeURIComponent(activationMatch[1]), request, env);
+
+
+  if (request.method === "GET" && path === "/api/solidarity/cases") return handlePublicSolidarityCases(env);
+  if (request.method === "POST" && path === "/api/solidarity/contribute") return handleSolidarityContributor(request, env);
+  if (request.method === "POST" && path === "/api/admin/solidarity/keys") return handleAdminSolidarityKeys(request, env);
+  if (request.method === "GET" && path === "/api/admin/solidarity/keys") return handleAdminSolidarityKeysList(request, env);
+  const solidarityKeyParts = path.split("/");
+  if (request.method === "POST" && solidarityKeyParts.length === 7 && solidarityKeyParts[1] === "api" && solidarityKeyParts[2] === "admin" && solidarityKeyParts[3] === "solidarity" && solidarityKeyParts[4] === "keys" && solidarityKeyParts[6] === "revoke") return handleAdminSolidarityKeyRevoke(decodeURIComponent(solidarityKeyParts[5]), request, env);
+  if (request.method === "GET" && path === "/api/admin/solidarity/cases") return handleAdminSolidarityCases(request, env);
+  const solidarityStatusParts = path.split("/");
+  if (request.method === "POST" && solidarityStatusParts.length === 7 && solidarityStatusParts[1] === "api" && solidarityStatusParts[2] === "admin" && solidarityStatusParts[3] === "solidarity" && solidarityStatusParts[4] === "cases" && solidarityStatusParts[6] === "status") return handleAdminSolidarityCaseStatus(decodeURIComponent(solidarityStatusParts[5]), request, env);
 
   if (request.method === "GET" && path === "/api/health") return handleHealth(env);
   if (request.method === "GET" && path === "/api/public-stats") return handlePublicStats(env);

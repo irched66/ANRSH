@@ -1,5 +1,5 @@
-var CACHE = "anrsh-v17";
-var FILES = ["./", "index.html", "cibt.jpg", "config.js", "manifest.webmanifest", "intro.mp4", "assets/anrsh-background.svg", "assets/anrsh-background.png", "assets/regional-offices/EL_MENIAA.jpg", "assets/regional-offices/ALGIERS.jpg", "assets/regional-offices/BEJAIA.jpg", "assets/regional-offices/BISKRA.webp", "assets/regional-offices/LAGHOUAT.jpg", "assets/regional-offices/OUED_SOUF.jpg", "assets/regional-offices/SKIKDA.jpg", "assets/regional-offices/TIMIMOUN.jpg", "icon-192.png", "icon-512.png"];
+var CACHE = "anrsh-v18";
+var FILES = ["./", "index.html", "magazine.html", "solidarity.html", "solidarity-admin.html", "cibt.jpg", "config.js", "manifest.webmanifest", "intro.mp4", "assets/anrsh-background.svg", "assets/anrsh-background.png", "assets/regional-offices/EL_MENIAA.jpg", "assets/regional-offices/ALGIERS.jpg", "assets/regional-offices/BEJAIA.jpg", "assets/regional-offices/BISKRA.webp", "assets/regional-offices/LAGHOUAT.jpg", "assets/regional-offices/OUED_SOUF.jpg", "assets/regional-offices/SKIKDA.jpg", "assets/regional-offices/TIMIMOUN.jpg", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
