@@ -1679,7 +1679,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       (data.offices||[]).forEach(function(o){if(!known.includes(o.bureau)){var op=document.createElement("option");op.value=o.bureau;op.textContent=o.bureau;sel.appendChild(op);}});
       if(old)sel.value=old;
       var x=data.summary||{};
-      el("fin_summary").textContent="الفترة: "+from+" إلى "+to+" | عدد الاشتراكات المؤكدة: "+Number(x.count||0)+" | المداخيل: "+Number(x.gross||0).toLocaleString("fr-FR")+" دج | حصة الوطني: "+Number(x.national||0).toLocaleString("fr-FR")+" دج | حصة المكاتب الجهوية: "+Number(x.regional||0).toLocaleString("fr-FR")+" دج";
+      el("fin_summary").textContent="الفترة: "+from+" إلى "+to+" | عدد الاشتراكات المؤكدة: "+Number(x.count||0)+" | إجمالي المقبوضات: "+Number(x.gross||0).toLocaleString("fr-FR")+" دج | المبلغ المحصّل في الحساب المركزي للمكتب الوطني: "+Number(x.national||0).toLocaleString("fr-FR")+" دج";
       var t=el("fin_offices");t.innerHTML="";var h=document.createElement("tr");
       ["المكتب الجهوي المُسجّل","عدد الاشتراكات","إجمالي الاشتراكات","المحصّل مركزياً"].forEach(function(v){addCell(h,v)});t.appendChild(h);
       (data.offices||[]).forEach(function(o){var r=document.createElement("tr");[o.bureau,o.count,o.gross+" دج",o.national+" دج"].forEach(function(v){addCell(r,v)});t.appendChild(r);});
