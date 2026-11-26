@@ -2,19 +2,20 @@
  * ANRSH DIGITAL — Cloudflare Worker (D1 edition)
  * API compatible with the current ANRSH HTML frontend routes.
  *
- * Required bindings/secrets:
- *   D1 binding: DB  -> database "anrsh"
- *   Secret: ADMIN_API_KEY  -> long random value (minimum 32 characters)
- *   Existing secret: RESEND_API_KEY (optional; email sending also needs RESEND_FROM)
- *   Variable: RESEND_FROM (optional verified sender, e.g. "ANRSH <noreply@your-domain.dz>")
+ * Staging deployment bindings/secrets (see wrangler.staging.toml):
+ *   D1 binding: DB -> database "anrsh-staging"
+ *   Variable: ANRSH_ENV = "staging" (write routes fail closed otherwise)
+ *   Secret: ADMIN_API_KEY -> random value of at least 32 characters
+ *   Secret: TEXTBEE_API_KEY -> TextBee gateway API key
+ *   Optional email: RESEND_API_KEY and RESEND_FROM
  *
  * IMPORTANT:
- * - R2 is currently unavailable to this Worker. Private attachments are therefore
- *   stored in the existing D1 members.files JSON column, with strict size limits.
- * - No document is exposed publicly. Document routes require ADMIN_API_KEY.
- * - WhatsApp messages cannot be sent automatically without a WhatsApp Business API.
- *   Approval returns the one-time code for the authorized office operator to send.
- * - This Worker does not alter or create database tables.
+ * - This staging edition stores private attachments in D1 members.files JSON
+ *   because an R2 bucket is not configured. Request attachments are limited to 1 MiB total.
+ * - Document routes require a National Office key or a bureau-scoped regional session.
+ * - WhatsApp is a manual fallback; the Worker does not send WhatsApp automatically.
+ * - Apply the D1 migrations separately and only to the isolated staging database.
+ * - Do not deploy this staging edition to production without a separate review.
  */
 
 const JSON_HEADERS = {
