@@ -771,6 +771,73 @@ async function handleOfficeRequests(request, env) {
     profile: parseJson(row.profile, {}), files: Object.keys(parseJson(row.files, {}))
   })));
 }
+async function handleOfficeWilayas(request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
+
+  const [assigned, available] = await Promise.all([
+    env.DB.prepare(`SELECT ow.wilaya_code AS code, COALESCE(w.name_ar, ow.wilaya_name) AS name_ar,
+      w.name_fr, w.name_en
+      FROM office_wilayas ow LEFT JOIN wilayas w ON w.code = ow.wilaya_code
+      WHERE ow.bureau = ? ORDER BY CAST(ow.wilaya_code AS INTEGER)`).bind(session.bureau).all(),
+    env.DB.prepare(`SELECT w.code, w.name_ar, w.name_fr, w.name_en
+      FROM wilayas w
+      WHERE w.active = 1
+        AND NOT EXISTS (SELECT 1 FROM office_wilayas ow WHERE ow.wilaya_code = w.code)
+      ORDER BY CAST(w.code AS INTEGER)`).all()
+  ]);
+
+  return json({
+    ok: true,
+    bureau: session.bureau,
+    assigned: assigned.results || [],
+    available: available.results || []
+  });
+}
+
+async function handleOfficeWilayaAssign(request, env) {
+  const session = await officeSession(request, env);
+  if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
+
+  const body = await request.json().catch(() => ({}));
+  const code = cleanText(body.wilaya_code, 4);
+  if (!/^\\d{1,2}$/.test(code)) return json({ error: "invalid_wilaya_code" }, 400);
+
+  try {
+    const result = await env.DB.prepare(`
+      INSERT INTO office_wilayas (bureau, wilaya_code, wilaya_name)
+      SELECT ?, w.code, w.name_ar
+      FROM wilayas w
+      WHERE w.code = ? AND w.active = 1
+        AND NOT EXISTS (
+          SELECT 1 FROM office_wilayas existing
+          WHERE existing.wilaya_code = w.code
+        )
+    `).bind(session.bureau, code).run();
+
+    if (Number(result.meta?.changes || 0) === 1) {
+      return json({ ok: true, assigned: true, wilaya_code: code }, 201);
+    }
+
+    const existing = await env.DB.prepare(
+      "SELECT bureau FROM office_wilayas WHERE wilaya_code = ?"
+    ).bind(code).first();
+    if (existing) {
+      return json({
+        error: existing.bureau === session.bureau ? "wilaya_already_assigned_to_this_office" : "wilaya_already_assigned",
+        assigned_bureau: existing.bureau
+      }, 409);
+    }
+    return json({ error: "wilaya_not_found_or_inactive" }, 404);
+  } catch (e) {
+    if (String(e?.message || "").toLowerCase().includes("unique")) {
+      return json({ error: "wilaya_already_assigned" }, 409);
+    }
+    console.error("office wilaya assignment", e);
+    return json({ error: "wilaya_assignment_failed" }, 500);
+  }
+}
+
 async function handleOfficeFile(id, type, request, env) {
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
@@ -810,6 +877,8 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/office/me") return handleOfficeMe(request, env);
   if (request.method === "POST" && path === "/api/office/logout") return handleOfficeLogout(request, env);
   if (request.method === "GET" && path === "/api/office/requests") return handleOfficeRequests(request, env);
+  if (request.method === "GET" && path === "/api/office/wilayas") return handleOfficeWilayas(request, env);
+  if (request.method === "POST" && path === "/api/office/wilayas") return handleOfficeWilayaAssign(request, env);
   const officeFileMatch = path.match(/^\/api\/office\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && officeFileMatch) return handleOfficeFile(decodeURIComponent(officeFileMatch[1]), decodeURIComponent(officeFileMatch[2]), request, env);
   const activationMatch = path.match(/^\/api\/admin\/offices\/([^/]+)\/activation$/);
