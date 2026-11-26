@@ -41,7 +41,7 @@ CREATE INDEX idx_anrsh_finance_date ON anrsh_membership_finance(payment_confirme
 """)
 
 db.executescript((migrations / "007_central_membership_collection.sql").read_text(encoding="utf-8"))
-db.execute("INSERT INTO members(id) VALUES ('m500'), ('m700')")
+db.execute("INSERT INTO members(id) VALUES ('m500'), ('m700'), ('mbad')")
 db.execute("""INSERT INTO anrsh_membership_finance
 (id,member_id,request_ref,bureau,member_name,fee_amount,national_rate,national_amount,regional_rate,regional_amount,payment_status,payment_confirmed_at)
 VALUES ('f500','m500','r500','NATIONAL','Test 500',500,100,500,0,0,'confirmed','2026-11-26')""")
@@ -52,8 +52,8 @@ try:
     db.execute("""INSERT INTO anrsh_membership_finance
     (id,member_id,request_ref,bureau,member_name,fee_amount,national_rate,national_amount,regional_rate,regional_amount,payment_status,payment_confirmed_at)
     VALUES ('fbad','mbad','rbad','NATIONAL','Bad',700,100,500,0,0,'confirmed','2026-11-26')""")
-except sqlite3.IntegrityError:
-    pass
+except sqlite3.IntegrityError as error:
+    assert "national_amount = fee_amount" in str(error), f"Unexpected constraint failure: {error}"
 else:
     raise AssertionError("Finance ledger accepted an inconsistent national amount")
 
