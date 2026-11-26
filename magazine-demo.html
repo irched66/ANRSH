@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#081827">
+<title>مجلة ANRSH | نموذج تجريبي</title>
+<style>
+:root{--ink:#102438;--navy:#081827;--blue:#173d59;--gold:#c9a45e;--paper:#f4f0e7;--muted:#657487;--line:#e3dfd5;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Tahoma,Arial,sans-serif;line-height:1.8}
+a{color:inherit;text-decoration:none}.topline{background:#061321;color:#e7d3a7;text-align:center;padding:7px 12px;font-size:12px;letter-spacing:.04em}
+header{background:linear-gradient(120deg,#071827,#173d59);color:white;padding:20px max(5vw,18px);border-bottom:3px solid var(--gold)}
+.brand{max-width:1180px;margin:auto;display:flex;align-items:center;gap:14px}.seal{width:58px;height:58px;border:1px solid var(--gold);border-radius:50%;display:grid;place-items:center;color:#e6c987;font-weight:bold;font-size:20px;box-shadow:0 0 0 5px #ffffff0a}.brand h1{font-size:17px;margin:0}.brand p{margin:2px 0 0;color:#c5d0d9;font-size:12px}
+nav{max-width:1180px;margin:15px auto 0;display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:#e4eaf0}nav a:hover{color:#f0d28d}
+main{max-width:1180px;margin:28px auto;padding:0 18px 50px}.kicker{font-size:12px;font-weight:bold;color:#9b7735;letter-spacing:.08em}
+.hero{background:linear-gradient(115deg,#091c2d 0%,#173e5a 58%,#8b7047 150%);border-radius:22px;overflow:hidden;color:white;display:grid;grid-template-columns:1.05fr .95fr;min-height:390px;box-shadow:0 18px 45px #132b401c}
+.hero-copy{padding:clamp(25px,5vw,58px);display:flex;flex-direction:column;justify-content:center}.hero h2{font-size:clamp(34px,5vw,58px);line-height:1.25;margin:12px 0}.hero p{color:#d4dfe7;max-width:570px}.hero-art{display:grid;place-items:center;min-height:300px;background:radial-gradient(circle at 48% 48%,#d7b66b55,transparent 36%),linear-gradient(135deg,#ffffff08,#00000022);position:relative}.hero-art:before,.hero-art:after{content:"";position:absolute;border:1px solid #d7bd805c;border-radius:50%;width:260px;height:260px}.hero-art:after{width:320px;height:320px}.monogram{z-index:1;text-align:center;color:#f0d99f;font-family:Georgia,serif;font-size:58px;letter-spacing:5px}.monogram small{display:block;font: bold 12px Tahoma;letter-spacing:3px}
+.btn{display:inline-block;background:var(--gold);color:#111f2b;border-radius:30px;padding:10px 18px;font-weight:bold;font-size:13px;margin-top:12px;width:max-content}.btn.outline{background:transparent;border:1px solid #d9bd7e;color:#f1d89e;margin-right:8px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:34px 0 14px}.section-head h3{margin:0;font-size:23px}.section-head span{font-size:12px;color:var(--muted)}
+.feature{display:grid;grid-template-columns:1.1fr .9fr;background:white;border-radius:18px;overflow:hidden;border:1px solid var(--line)}.feature-art{min-height:250px;background:linear-gradient(145deg,#254b66,#0c2336 55%,#b18c4e);display:grid;place-items:center;color:#f1d89e;text-align:center;padding:20px;font-size:22px;font-weight:bold}.feature-copy{padding:25px}.feature-copy h4{font-size:23px;line-height:1.4;margin:8px 0}.meta{font-size:11px;color:#8b7957}.feature-copy p{color:#5d6c79;font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.card{background:white;border:1px solid var(--line);border-radius:16px;overflow:hidden}.card-art{height:135px;background:linear-gradient(135deg,#244b63,#102538);display:grid;place-items:center;color:#e8d19d;font-size:20px;font-weight:bold}.card:nth-child(2) .card-art{background:linear-gradient(135deg,#9c8355,#243b4d)}.card:nth-child(3) .card-art{background:linear-gradient(135deg,#315c55,#122e3c)}.card-body{padding:17px}.card h4{margin:5px 0;font-size:17px}.card p{font-size:13px;color:#687583;margin:5px 0}
+.solidarity{background:#fff;border:1px solid #e5d7b9;border-right:5px solid var(--gold);padding:22px;border-radius:15px;display:flex;justify-content:space-between;gap:20px;align-items:center}.solidarity p{margin:5px 0;color:#657487;font-size:13px}
+.ai{background:#e9eef0;border:1px solid #d6e0e3;border-radius:16px;padding:20px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{background:white;border:1px solid #d4dde0;border-radius:30px;padding:5px 11px;font-size:12px;color:#385166}
+.comments{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px}.locked{display:flex;gap:12px;align-items:flex-start;background:#f7f3e9;border-radius:12px;padding:15px;color:#5b513f}.lock{font-size:23px}.comments p{font-size:13px;color:#6b7884}.comments button{border:0;background:#d8d2c5;color:#6d675d;border-radius:9px;padding:10px 16px;font-weight:bold}
+footer{background:#081827;color:#c6d0d9;padding:25px max(5vw,18px);font-size:12px}footer strong{color:#e4c984}
+.demo{display:inline-block;background:#fff0cf;color:#72521a;border:1px solid #e4c77f;border-radius:30px;padding:4px 10px;font-size:11px;font-weight:bold}
+@media(max-width:760px){.hero{grid-template-columns:1fr}.hero-art{min-height:210px}.hero-art:before{width:180px;height:180px}.hero-art:after{width:225px;height:225px}.monogram{font-size:44px}.cards{grid-template-columns:1fr}.feature{grid-template-columns:1fr}.feature-art{min-height:180px}.solidarity{display:block}.brand h1{font-size:14px}nav{gap:12px}}
+</style>
+</head>
+<body>
+<div class="topline">العدد التجريبي الأول · 2026 / 2027 · نموذج عرض غير منشور</div>
+<header>
+ <div class="brand"><div class="seal">ANR</div><div><h1>الجمعية الوطنية لمتقاعدي سوناطراك – المكتب الوطني</h1><p>Association Nationale des Retraités SONATRACH · Bureau National</p></div></div>
+ <nav><a href="#home">الرئيسية</a><a href="#news">أخبار الجمعية</a><a href="#offices">المكاتب الجهوية</a><a href="#memory">ذاكرة سوناطراك</a><a href="#solidarity">التضامن</a><a href="#comments">فضاء الأعضاء</a></nav>
+</header>
+<main id="home">
+ <section class="hero">
+  <div class="hero-copy"><span class="kicker" style="color:#e6c77f">ANRSH · MAGAZINE</span><span class="demo">تصور بصري تجريبي</span><h2>صوت المتقاعدين<br>وذاكرة العطاء</h2><p>مجلة الجمعية الوطنية لمتقاعدي سوناطراك؛ مساحة تجمع أخبار الجمعية، ذاكرة المسيرة المهنية، المبادرات التضامنية، والثقافة في إخراج تحريري حديث.</p><div><a class="btn" href="#news">اكتشف أبواب المجلة</a><a class="btn outline" href="https://www.facebook.com/ANRSH2026" target="_blank" rel="noopener">صفحة فيسبوك الرسمية</a></div></div>
+  <div class="hero-art"><div class="monogram">ANRSH<small>صوت الوفاء والانتماء</small></div></div>
+ </section>
+ <div class="section-head" id="news"><h3>من أخبار الجمعية</h3><span>مواد نموذجية بانتظار المحتوى الموثق</span></div>
+ <section class="feature"><div class="feature-art">نافذة على نشاطات<br>الجمعية ومبادراتها</div><div class="feature-copy"><span class="meta">ملف العدد · نموذج تحريري</span><h4>الجمعية… فضاء يجمع الخبرة وروح التضامن</h4><p>تسلط هذه المساحة الضوء على جهود المكتب الوطني والمكاتب الجهوية في خدمة المتقاعدين، وتوثيق اللقاءات والمبادرات والأنشطة. يُستبدل هذا النص بتقرير موثق بعد استلام المادة الأصلية ومراجعتها.</p><span class="demo">مثال توضيحي وليس خبراً واقعياً</span></div></section>
+ <div class="section-head" id="offices"><h3>أبواب المجلة</h3><span>تغطية وطنية بلمسة إنسانية</span></div>
+ <section class="cards">
+  <article class="card"><div class="card-art">المكتب الوطني</div><div class="card-body"><span class="meta">قرارات · لقاءات · بيانات</span><h4>أخبار المكتب الوطني</h4><p>مساحة للبيانات والاجتماعات والحصيلة الرسمية بعد التحقق منها.</p></div></article>
+  <article class="card" id="memory"><div class="card-art">ذاكرة سوناطراك</div><div class="card-body"><span class="meta">شهادات · صور أرشيفية</span><h4>مسيرة عطاء لا تُنسى</h4><p>توثيق تجارب المتقاعدين وذكرياتهم المهنية بموافقتهم.</p></div></article>
+  <article class="card"><div class="card-art">الحياة والتضامن</div><div class="card-body"><span class="meta">مناسبات · رحلات · تكريم</span><h4>لحظات تجمعنا</h4><p>تغطية النشاطات الاجتماعية والثقافية والمناسبات عبر المكاتب.</p></div></article>
+ </section>
+ <div class="section-head" id="solidarity"><h3>حالات خير عاجلة</h3><span>فضاء تضامني تحت إشراف المكتب الوطني</span></div>
+ <section class="solidarity"><div><strong>التضامن مسؤولية وثقة</strong><p>تُعرض الحالات بعد التحقق وموافقة أصحابها، مع حماية بياناتهم الشخصية وعدم نشر التفاصيل الحساسة.</p></div><span class="demo">النشر بموافقة الإدارة</span></section>
+ <div class="section-head"><h3>الذكاء الاصطناعي في خدمة التحرير</h3><span>مساعد تحريري مع مراجعة بشرية</span></div>
+ <section class="ai"><strong>محتوى أوضح… ووصول أوسع</strong><p style="font-size:13px;color:#586a76">يساعد الذكاء الاصطناعي في اقتراح العناوين، تلخيص المواد، الترجمة بين العربية والفرنسية والإنجليزية، إعداد الإنفوغراف وتحسين الصور دون تغيير حقيقة الحدث. تبقى المراجعة والموافقة النهائية للمكتب الوطني.</p><div class="chips"><span class="chip">تلخيص المقالات</span><span class="chip">ترجمة ثلاثية</span><span class="chip">تحسين الصور</span><span class="chip">إنفوغراف</span><span class="chip">نسخة صوتية</span></div></section>
+ <div class="section-head" id="comments"><h3>فضاء الحوار للأعضاء</h3><span>تعليقات منضبطة ومحترمة</span></div>
+ <section class="comments"><div class="locked"><div class="lock">🔒</div><div><strong>التعليق متاح للأعضاء المعتمدين فقط</strong><p>يجب تسجيل الدخول بحساب عضو فعّال وموافق عليه من المكتب الوطني. متابعة صفحة فيسبوك وحدها لا تمنح صلاحية التعليق.</p></div></div><p>تُفحص التعليقات قبل النشر للحد من السبّ والشتم والتهديد والتشهير والتحريض. الحالات الملتبسة تُحال إلى مشرف بشري، مع إمكانية مراجعة القرار.</p><button type="button" disabled>التعليقات غير مفعّلة في هذا النموذج</button></section>
+ <p style="text-align:center;margin:28px 0 0"><span class="demo">نسخة عرض — لا تتصل بعد بقاعدة البيانات أو فيسبوك تلقائياً</span></p>
+</main>
+<footer><strong>الجمعية الوطنية لمتقاعدي سوناطراك – المكتب الوطني</strong><br>Association Nationale des Retraités SONATRACH · Bureau National<br>© ANRSH · نموذج تصميم أولي للمجلة</footer>
+</body></html>
