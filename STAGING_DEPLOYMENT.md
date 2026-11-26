@@ -36,13 +36,17 @@ The Worker expects the D1 schema already to be present. First inspect the stagin
 
 Migration `007_central_membership_collection.sql` renames the former 20/80 finance ledger to `anrsh_membership_finance_legacy_006` and creates a new 100/0 ledger. It preserves the old ledger for audit. Apply it only after confirming that migration 006 exists in this staging database and after taking a staging backup.
 
-Example command when the migration history is confirmed:
+Migrations `008_regional_office_auth.sql` and `009_member_adhesion_archive.sql` add the regional-office activation/session tables and immutable adhesion archive. They require the `regional_offices` and `members` parent tables to exist first. The archive table may already have been created manually; the migration uses `IF NOT EXISTS`.
+
+After confirming the prerequisite schema and backup, apply only the missing migrations individually:
 
 ```sh
 npx wrangler d1 execute anrsh-staging --remote --config wrangler.staging.toml --file=migrations/007_central_membership_collection.sql
+npx wrangler d1 execute anrsh-staging --remote --config wrangler.staging.toml --file=migrations/008_regional_office_auth.sql
+npx wrangler d1 execute anrsh-staging --remote --config wrangler.staging.toml --file=migrations/009_member_adhesion_archive.sql
 ```
 
-Do not run this against a production database.
+Do not re-run migration 007 after it succeeds. Do not run these commands against a production database.
 
 ## 5. Connect the frontend to the deployed staging Worker
 
