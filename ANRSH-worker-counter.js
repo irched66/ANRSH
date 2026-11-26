@@ -155,6 +155,9 @@ function adminKeyOk(request, env) {
   return typeof configured === "string" && configured.length >= 32 &&
     safeEqual(supplied, configured);
 }
+function stagingOnly(env) {
+  return env.ANRSH_ENV === "staging";
+}
 function fileName(name) {
   return cleanText(name, 100).replace(/[^\w.\-ء-ي]/g, "_") || "document";
 }
@@ -317,6 +320,8 @@ async function handleOffices(env) {
 }
 
 async function handleCreateRequest(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("multipart/form-data")) {
@@ -423,6 +428,8 @@ async function handleCreateRequest(request, env) {
 }
 
 async function handleVerify(ref, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!validRef(ref)) return json({ error: "invalid_request_number" }, 400);
   const body = await request.json().catch(() => ({}));
@@ -531,6 +538,8 @@ async function handleAdminFile(id, type, request, env) {
 }
 
 async function handleAdminApprove(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const row = await env.DB.prepare(
@@ -645,6 +654,8 @@ async function handlePublicSettings(env) {
 }
 
 async function handleAdminMembershipFeeUpdate(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const body = await request.json().catch(() => ({}));
@@ -709,6 +720,8 @@ async function deriveOfficePassword(password, saltHex, iterations) {
   return [...new Uint8Array(bits)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
 async function handleOfficeActivationIssue(bureau, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   bureau = cleanText(bureau, 80);
   const office = await env.DB.prepare("SELECT bureau FROM regional_offices WHERE bureau = ? AND active = 1").bind(bureau).first();
@@ -724,6 +737,8 @@ async function handleOfficeActivationIssue(bureau, request, env) {
   return json({ ok: true, bureau, activationCode: code, expiresIn: 86400, message: "activation_code_show_once" }, 201);
 }
 async function handleOfficeActivate(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   const body = await request.json().catch(() => ({}));
   const bureau = cleanText(body.bureau, 80);
   const activationCode = String(body.activationCode || "");
@@ -750,6 +765,8 @@ async function handleOfficeActivate(request, env) {
   return json({ ok: true, activated: true, bureau, message: "office_account_activated_login_now" }, 201);
 }
 async function handleOfficeLogin(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
+
   const body = await request.json().catch(() => ({}));
   const bureau = cleanText(body.bureau, 80);
   const password = String(body.password || "");
@@ -837,6 +854,7 @@ async function route(request, env) {
       platform: "ANRSH DIGITAL",
       status: "Worker active",
       edition: "2026/2027",
+      environment: env.ANRSH_ENV || "unset",
       message: "Association Nationale des Retraités de Sonatrach"
     });
   }
