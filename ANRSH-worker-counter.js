@@ -472,6 +472,21 @@ async function handleAdminList(request, env) {
   return json(requests);
 }
 
+async function handleAdhesionArchive(id, request, env) {
+  if (!env.DB) return json({ error: "database_unavailable" }, 503);
+  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
+  const member = await env.DB.prepare("SELECT id, ref, bureau, name FROM members WHERE id = ?").bind(id).first();
+  if (!member) return json({ error: "member_not_found" }, 404);
+  let body; try { body = await request.json(); } catch { return json({ error: "invalid_json" }, 400); }
+  if (!body || body.memberId !== id) return json({ error: "archive_member_mismatch" }, 400);
+  const archiveId = crypto.randomUUID(), now = new Date().toISOString();
+  const snapshot = JSON.stringify({ memberId:id, reference:member.ref, bureau:member.bureau, name:member.name, fields:Array.isArray(body.fields)?body.fields:[], profile:body.profile&&typeof body.profile==="object"?body.profile:{}, createdAt:now });
+  if (snapshot.length > 100000) return json({ error:"archive_snapshot_too_large" }, 413);
+  await env.DB.prepare("INSERT INTO member_adhesion_archive (id, member_id, member_ref, bureau, snapshot, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(archiveId,id,member.ref,member.bureau,snapshot,now).run();
+  return json({ok:true,archiveId,createdAt:now});
+}
+
 async function handleAdminFile(id, type, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
@@ -832,6 +847,9 @@ async function route(request, env) {
   if (path === "/api/admin/requests" && request.method === "GET") return handleAdminList(request, env);
   if (path === "/api/admin/finance" && request.method === "GET") return handleAdminFinance(url, request, env);
   if (path === "/api/admin/finance/transfers" && request.method === "POST") return handleAdminFinanceTransfer(request, env);
+
+  const archiveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/adhesion-archive$/);
+  if (request.method === "POST" && archiveMatch) return handleAdhesionArchive(decodeURIComponent(archiveMatch[1]), request, env);
 
   const fileMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && fileMatch) {
