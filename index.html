@@ -717,20 +717,14 @@ textarea{resize:vertical;font-family:inherit}
                             <label id="t-lbl-address">عنوان الإقامة بالتفصيل:</label>
                             <input type="text" id="user_address" placeholder="حي عدل CSCEC، عمارة 05">
                         </div>
-                        <div class="field-group">
-                            <label id="t-lbl-nin">رقم بطاقة التعريف الوطنية (CNI):</label>
-                            <input type="text" id="nin_no" placeholder="رقم بطاقة التعريف البيومترية" dir="ltr" required>
-                        </div>
+                        
                     </div>
 
                     <!-- المسار بسوناطراك -->
                     <div class="form-section-title">🏭 <span id="t-sec-pro">المسار والنشاط بسوناطراك الأم ونواحيها</span></div>
 
                     <div class="form-row two-col">
-                        <div class="field-group">
-                            <label id="t-lbl-mat">رقم التسجيل بسوناطراك (Matricule SH):</label>
-                            <input type="text" id="matricule_sh" required placeholder="رقم التسجيل بسوناطراك" dir="ltr">
-                        </div>
+                        
                         <div class="field-group">
                             <label id="t-lbl-direction">النشاط أو القسم بمجمع سوناطراك:</label>
                             <select id="user_activity" onchange="syncBadgeLive()">
@@ -803,7 +797,7 @@ textarea{resize:vertical;font-family:inherit}
                     </div>
 
                     <!-- الوثائق وإثبات الدفع -->
-                    <div class="form-row two-col"><div class="field-group"><label>رقم الضمان الاجتماعي:</label><input type="text" id="nss_no" dir="ltr"></div><div class="field-group"><label>رقم التسجيل بالصندوق الوطني للتقاعد (CNR):</label><input type="text" id="cnr_no" dir="ltr"></div></div>
+                    <div class="form-row two-col"></div>
                     <div class="docs-box">
                         <h4 id="t-doc-title" style="color: var(--gold-light); margin-bottom: 8px;">📎 الوثائق الإلزامية وإثبات دفع الاشتراك السنوي:</h4>
                         <div class="field-group">
@@ -890,7 +884,7 @@ textarea{resize:vertical;font-family:inherit}
                                     <img class="badge-avatar" id="bdPhoto" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">
                                     <div class="badge-info">
                                         <div class="badge-info-line"><span>الاسم</span><b id="bdName">—</b></div>
-                                        <div class="badge-info-line"><span>Matricule</span><b id="bdMat" dir="ltr">—</b></div>
+                                        
                                         <div class="badge-info-line"><span>الصفة</span><b id="bdType">—</b></div>
                                         <div class="badge-info-line"><span>الاختصاص</span><b id="bdSpec">—</b></div>
                                         <div class="badge-info-line"><span>الولاية</span><b id="bdWil">—</b></div>
@@ -1024,7 +1018,6 @@ function updateNameLanguageFields(){
 function syncBadgeLive(){
  $("bdSig").textContent=HEADS[$("user_bureau").value]||"—";
  var latinName=(lang==="ar"?v("first_name_latin")+" "+v("last_name_latin"):v("first_name")+" "+v("last_name")).trim(); $("bdName").textContent=latinName||"—"; var arabicName=(lang==="ar"?v("first_name")+" "+v("last_name"):v("first_name_ar")+" "+v("last_name_ar")).trim(); if($("bdNameAr"))$("bdNameAr").textContent=arabicName||"—";
- $("bdMat").textContent=v("matricule_sh").toUpperCase()||"—";
  $("bdType").textContent=v("user_type")||"—";
  $("bdSpec").textContent=v("last_structure")||"—";
  $("bdWil").textContent=v("user_wilaya")||"—";
@@ -1033,13 +1026,13 @@ function syncBadgeLive(){
  $("bdBlood").textContent=v("blood_group");
  $("bdDob").textContent=v("birth_date")||"—";
  $("bdCom").textContent=v("user_commune")||"—";
- $("bdRef").textContent=(curNo&&curRef?curNo+" | "+curRef:curRef)||("ANRSH-2026-"+(v("matricule_sh").toUpperCase()||"0000"));
+ $("bdRef").textContent=(curNo&&curRef?curNo+" | "+curRef:curRef)||("ANRSH-2026-"+String(h53(v("user_phone"))%100000000).padStart(8,"0"));
 }
 function loadPhotoPreview(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){photo=r.result;$("bdPhoto").src=photo};r.readAsDataURL(f)}
 var OFFICE_KEY=CFG.officeKey||"ANRSH-2026-CHANGE";
 var PAY=CFG.pay||{};
 function h53(s){var a=3735928559,b=1103547991,c;for(var i=0;i<s.length;i++){c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return 4294967296*(2097151&b)+(a>>>0)}
-function mkRef(){var m=v("matricule_sh").toUpperCase();return "ANRSH-2026-"+m+"-"+String(h53(m+v("user_phone"))%10000).padStart(4,"0")}
+function mkRef(){var seed=String(Date.now())+"|"+v("user_phone")+"|"+Math.random();return "ANRSH-2026-"+String(h53(seed)%100000000).padStart(8,"0")}
 function codeFor(r){return String(h53(r+"|"+OFFICE_KEY)%1000000).padStart(6,"0")}
 var curRef="";
 function openURL(u){var w=null;try{w=window.open(u,"_blank")}catch(x){}if(!w)location.href=u}
@@ -1052,7 +1045,7 @@ function dlBlob(name,blob){
 function requestSecurityOTP(){
  var f=$("adhesionForm");if(!f.reportValidity())return;
  curRef=mkRef();syncBadgeLive();
- var t="طلب انخراط ANRSH 2026 ("+v("demand_type")+")\nرقم الطلب: "+curRef+"\nالاسم: "+v("first_name")+" "+v("last_name")+"\nMatricule: "+v("matricule_sh")+"\nCNR: "+v("cnr_no")+" | الضمان: "+v("nss_no")+"\nالصفة: "+v("user_type")+"\nالولاية: "+v("user_wilaya")+" / "+v("user_daira")+" / "+v("user_commune")+"\nالمكتب: "+$("user_bureau").value+"\nالهاتف: "+v("user_phone")+"\nالاشتراك: 500 دج (أرفق وصل الدفع والوثائق)";
+ var t="طلب انخراط ANRSH 2026 ("+v("demand_type")+")\nرقم الطلب: "+curRef+"\nالاسم: "+v("first_name")+" "+v("last_name")+"\nالصفة: "+v("user_type")+"\nالولاية: "+v("user_wilaya")+" / "+v("user_daira")+" / "+v("user_commune")+"\nالمكتب: "+$("user_bureau").value+"\nالهاتف: "+v("user_phone")+"\nالاشتراك: 500 دج (أرفق وصل الدفع والوثائق)";
  wa("213657709457",t);
  $("otpBox").style.display="block";
  otpDesc();
@@ -1093,7 +1086,7 @@ function snap(face,name){
  return html2canvas(c,{backgroundColor:"#090e18",scale:2,useCORS:true}).then(function(cv){host.remove();return new Promise(function(ok){cv.toBlob(function(b){dlBlob(name,b).then(ok)},"image/png")})}).catch(function(){host.remove();alert("تعذر إنشاء الصورة، التقط لقطة شاشة.")});
 }
 function downloadCard(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}if(!window.html2canvas){alert("تحقق من الاتصال بالإنترنت.");return}
- var m=v("matricule_sh");snap(document.querySelector(".badge-face.front"),"ANRSH-"+m+"-recto.png").then(function(){return snap(document.querySelector(".badge-face.back"),"ANRSH-"+m+"-verso.png")})}
+ var m=curRef||"ANRSH-2026";snap(document.querySelector(".badge-face.front"),m+"-recto.png").then(function(){return snap(document.querySelector(".badge-face.back"),m+"-verso.png")})}
 function printCard(){if(!unlocked){alert("أدخل رمز التحقق أولاً.");return}window.print()}
 function switchMainTab(n){
  var map={register:["section-register","tab-reg"],reports:["section-reports","tab-reports"],directory:["section-directory","tab-dir"],admin:["section-admin","tab-admin"]};
@@ -1355,7 +1348,7 @@ function unlockCard(){unlocked=true;["btnDl","btnPr"].forEach(function(i){$(i).c
 var SB=false,JWT=null,ROWSM=[]; // Supabase backend disabled; Cloudflare D1 is authoritative.
 function sbFetch(path,o){o=o||{};o.headers=Object.assign({apikey:CFG.supabaseKey},(JWT||!/^sb_/.test(CFG.supabaseKey))?{Authorization:"Bearer "+(JWT||CFG.supabaseKey)}:{},o.headers||{});return fetch(CFG.supabaseUrl+path,o).then(function(r){return r.text().then(function(t){var j;try{j=t?JSON.parse(t):null}catch(x){j=t}if(!r.ok)throw new Error(typeof j==="string"?j:(j&&(j.message||j.msg||j.error_description))||r.status);return j})})}
 function rpc(n,a){return sbFetch("/rest/v1/rpc/"+n,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)})}
-function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),nin:v("nin_no"),matricule:v("matricule_sh"),activity:v("user_activity"),work_region:v("user_work_region"),specialty:v("last_structure"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),nss:v("nss_no"),cnr:v("cnr_no"),files:F}}
+function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),activity:v("user_activity"),work_region:v("user_work_region"),specialty:v("last_structure"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),files:F}}
 function submitBackend(){
  var id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.floor(Math.random()*1e6),F={},map={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
  var ups=Object.keys(map).map(function(k){var f=$(map[k]).files[0];if(!f)return null;var path=id+"/"+k+"-"+f.name.replace(/[^\w.\-]/g,"_");F[k]=path;return sbFetch("/storage/v1/object/docs/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream"},body:f})}).filter(Boolean);
@@ -1462,9 +1455,9 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       birth_date:val("birth_date"), birth_place:val("birth_place"), birth_wilaya:val("birth_wilaya"), birth_daira:val("birth_daira"), birth_commune:val("birth_commune"), blood_group:val("blood_group"),
       user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"), wilaya_name:el("user_wilaya")&&el("user_wilaya").selectedOptions[0]?el("user_wilaya").selectedOptions[0].textContent:"",
       daira:val("user_daira"), commune:val("user_commune"), postal_code:val("user_postal_code"), address:val("user_address"),
-      nin:val("nin_no"), matricule:val("matricule_sh"), activity:val("user_activity"),
+       activity:val("user_activity"),
       work_region:val("user_work_region"), specialty:val("last_structure"), retire_year:val("retire_year"),
-      phone:val("user_phone"), email:val("user_email"), nss:val("nss_no"), cnr:val("cnr_no"),
+      phone:val("user_phone"), email:val("user_email"), 
       consent:!!(el("accept_rules")&&el("accept_rules").checked&&el("accept_privacy")&&el("accept_privacy").checked)
     };
   }
