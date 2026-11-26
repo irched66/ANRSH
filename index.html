@@ -757,10 +757,6 @@ textarea{resize:vertical;font-family:inherit}
                             </select>
                         </div>
                         <div class="field-group">
-                            <label id="t-lbl-struct">المهنة / التخصص (Spécialité):</label>
-                            <input type="text" id="last_structure" placeholder="مهندس دولة في الميكانيك العامة">
-                        </div>
-                        <div class="field-group">
                             <label id="t-lbl-retireyear">سنة التقاعد:</label>
                             <input type="number" id="retire_year" placeholder="2016">
                         </div>
@@ -882,7 +878,6 @@ textarea{resize:vertical;font-family:inherit}
                                     <div class="badge-info">
                                         <div class="badge-info-line"><span>الاسم</span><b id="bdName">—</b></div>
                                         <div class="badge-info-line"><span>الصفة</span><b id="bdType">—</b></div>
-                                        <div class="badge-info-line"><span>الاختصاص</span><b id="bdSpec">—</b></div>
                                         <div class="badge-info-line"><span>الولاية</span><b id="bdWil">—</b></div>
                                         <div class="badge-info-line"><span>الناحية</span><b id="bdAct">—</b></div>
                                     </div>
@@ -1015,7 +1010,6 @@ function syncBadgeLive(){
  $("bdSig").textContent=HEADS[$("user_bureau").value]||"—";
  var latinName=(lang==="ar"?v("first_name_latin")+" "+v("last_name_latin"):v("first_name")+" "+v("last_name")).trim(); $("bdName").textContent=latinName||"—"; var arabicName=(lang==="ar"?v("first_name")+" "+v("last_name"):v("first_name_ar")+" "+v("last_name_ar")).trim(); if($("bdNameAr"))$("bdNameAr").textContent=arabicName||"—";
  $("bdType").textContent=v("user_type")||"—";
- $("bdSpec").textContent=v("last_structure")||"—";
  $("bdWil").textContent=v("user_wilaya")||"—";
  $("bdAct").textContent=v("user_work_region")||"—";
  $("bdBureau").textContent=$("user_bureau").value;
@@ -1139,7 +1133,6 @@ EXPLO / DEV - الاستكشاف والتطوير|EXPLO / DEV - Exploration et d
 COM - تسويق المحروقات|COM - Commercialisation des hydrocarbures|COM - Hydrocarbon marketing
 DG / Siège - المديرية العامة والمصالح الوظيفية|DG / Siège - Direction générale et services|HQ - General management & support
 ناحية العمل بسوناطراك (Région)|Région de travail (Sonatrach)|Work region (Sonatrach)
-المهنة / التخصص (Spécialité)|Spécialité / métier|Specialty / occupation
 سنة التقاعد|Année de départ en retraite|Retirement year
 الاتصال والمكتب الجهوي للانتساب|Contact et bureau régional|Contact and regional office
 رقم الهاتف النقال (للتواصل والواتساب)|Téléphone mobile (WhatsApp)|Mobile phone (WhatsApp)
@@ -1344,7 +1337,7 @@ function unlockCard(){unlocked=true;["btnDl","btnPr"].forEach(function(i){$(i).c
 var SB=false,JWT=null,ROWSM=[]; // Supabase backend disabled; Cloudflare D1 is authoritative.
 function sbFetch(path,o){o=o||{};o.headers=Object.assign({apikey:CFG.supabaseKey},(JWT||!/^sb_/.test(CFG.supabaseKey))?{Authorization:"Bearer "+(JWT||CFG.supabaseKey)}:{},o.headers||{});return fetch(CFG.supabaseUrl+path,o).then(function(r){return r.text().then(function(t){var j;try{j=t?JSON.parse(t):null}catch(x){j=t}if(!r.ok)throw new Error(typeof j==="string"?j:(j&&(j.message||j.msg||j.error_description))||r.status);return j})})}
 function rpc(n,a){return sbFetch("/rest/v1/rpc/"+n,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(a)})}
-function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),activity:v("user_activity"),work_region:v("user_work_region"),specialty:v("last_structure"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),files:F}}
+function payload(F){return{bureau:$("user_bureau").value,first_name:v("first_name"),last_name:v("last_name"),birth_date:v("birth_date"),birth_place:v("birth_place"),blood_group:v("blood_group"),user_type:v("user_type"),demand_type:v("demand_type"),wilaya:v("user_wilaya"),daira:v("user_daira"),commune:v("user_commune"),address:v("user_address"),activity:v("user_activity"),work_region:v("user_work_region"),retire_year:v("retire_year"),phone:v("user_phone"),email:v("user_email"),files:F}}
 function submitBackend(){
  var id=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now())+Math.floor(Math.random()*1e6),F={},map={photo:"user_photo_file",cni:"doc_cni",cni_back:"doc_cni_back",retire:"doc_retire",proof:"doc_payment_proof"};
  var ups=Object.keys(map).map(function(k){var f=$(map[k]).files[0];if(!f)return null;var path=id+"/"+k+"-"+f.name.replace(/[^\w.\-]/g,"_");F[k]=path;return sbFetch("/storage/v1/object/docs/"+path,{method:"POST",headers:{"Content-Type":f.type||"application/octet-stream"},body:f})}).filter(Boolean);
@@ -1460,7 +1453,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       user_type:val("user_type"), demand_type:val("demand_type"), wilaya:val("user_wilaya"), wilaya_name:el("user_wilaya")&&el("user_wilaya").selectedOptions[0]?el("user_wilaya").selectedOptions[0].textContent:"",
       daira:val("user_daira"), commune:val("user_commune"), postal_code:val("user_postal_code"), address:val("user_address"),
        activity:val("user_activity"),
-      work_region:val("user_work_region"), specialty:val("last_structure"), retire_year:val("retire_year"),
+      work_region:val("user_work_region"), retire_year:val("retire_year"),
       phone:val("user_phone"), email:val("user_email"), 
       consent:!!(el("accept_rules")&&el("accept_rules").checked&&el("accept_privacy")&&el("accept_privacy").checked)
     };
