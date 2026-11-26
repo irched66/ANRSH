@@ -1405,6 +1405,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
   var unlockToken = "";
+  var stagingVerified = false;
   var originalDownloadCard = window.downloadCard;
   var originalPrintCard = window.printCard;
   async function requireValidPrintToken(){
@@ -1453,6 +1454,13 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   }
   async function api(path, options){
     if(!API_BASE) throw new Error("لم يُضبط رابط Worker التجريبي بعد. انشر إعداد wrangler.staging.toml أولاً ثم أضف رابط Worker الناتج إلى ANRSH_API_BASE_OVERRIDE.");
+    if(!stagingVerified){
+      var probe=await fetch(API_BASE+"/api/health",{cache:"no-store"});
+      var health=await probe.json().catch(function(){return {}});
+      if(!probe.ok||health.environment!=="staging"||health.database!=="connected")
+        throw new Error("رفض الاتصال: رابط الخادم لا يؤكد أنه بيئة ANRSH staging مستقلة ومتّصلة بقاعدة البيانات.");
+      stagingVerified=true;
+    }
     options=options||{};
     options.headers=Object.assign({},options.headers||{});
     if(ADMIN_KEY) options.headers["x-admin-key"]=ADMIN_KEY;
