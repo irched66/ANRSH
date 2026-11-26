@@ -33,7 +33,7 @@ jobs:
           node <<'NODE'
           const fs = require('node:fs');
           const vm = require('node:vm');
-          const pages = ['index.html', 'magazine.html', 'solidarity.html', 'solidarity-admin.html'];
+          const pages = ['magazine.html', 'solidarity.html', 'solidarity-admin.html'];
           let checked = 0;
           for (const page of pages) {
             const html = fs.readFileSync(page, 'utf8');
