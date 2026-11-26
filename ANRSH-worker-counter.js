@@ -470,6 +470,7 @@ async function handlePrintCheck(url, env) {
 }
 
 async function handleAdminList(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const r = await env.DB.prepare(`
@@ -496,6 +497,7 @@ async function archiveAccess(id, request, env) {
   return { role: "regional", bureau: session.bureau };
 }
 async function handleAdhesionArchive(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const access = await archiveAccess(id, request, env);
   if (!access) return json({ error: "unauthorized_or_out_of_scope" }, 403);
@@ -523,6 +525,7 @@ async function handleAdhesionArchive(id, request, env) {
 }
 
 async function handleAdminFile(id, type, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
@@ -615,6 +618,7 @@ async function handleAdminApprove(id, request, env) {
 }
 
 async function handleAdminFinance(url, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const validDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || "");
@@ -679,6 +683,7 @@ async function handleAdminMembershipFeeUpdate(request, env) {
 }
 
 async function handleAdminFinanceTransfer(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const body = await request.json().catch(() => ({}));
@@ -813,6 +818,7 @@ async function officeSession(request, env) {
   return { bureau: session.bureau, officeName: session.office_name, tokenHash: hash };
 }
 async function handleOfficeMe(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   return json({ ok: true, role: "regional_office", bureau: session.bureau, officeName: session.officeName });
@@ -825,6 +831,7 @@ async function handleOfficeLogout(request, env) {
   return json({ ok: true, loggedOut: true });
 }
 async function handleOfficeRequests(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   const r = await env.DB.prepare(`SELECT id, ref, bureau, name, phone, profile, files, status, created_at
@@ -836,6 +843,7 @@ async function handleOfficeRequests(request, env) {
   })));
 }
 async function handleOfficeFile(id, type, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
