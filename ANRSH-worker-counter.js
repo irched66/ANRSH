@@ -144,9 +144,8 @@ function validRef(v) {
 async function currentMembershipFee(env) {
   const row = await env.DB.prepare("SELECT fee_dzd FROM anrsh_platform_settings WHERE id = 1").first();
   const amount = Number(row && row.fee_dzd);
-  // The current finance-ledger migration enforces a fixed 500 DZD fee.
-  // Do not allow a settings mismatch to break payment confirmation/accounting.
-  if (!Number.isSafeInteger(amount) || amount !== DEFAULT_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
+  // 500 DZD is the current default, not a permanent restriction.
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) throw new Error("membership_settings_unavailable");
   return amount;
 }
 
@@ -448,12 +447,18 @@ async function handleVerify(ref, request, env) {
 
   const candidate = await sha256(ref + ":" + code);
   if (!safeEqual(candidate, row.otp_hash)) {
-    await env.DB.prepare("UPDATE members SET otp_tries = otp_tries + 1 WHERE ref = ?").bind(ref).run();
+    await env.DB.prepare("UPDATE members SET otp_tries = otp_tries + 1 WHERE ref = ? AND status = 'code_sent' AND otp_tries < ?")
+      .bind(ref, MAX_OTP_TRIES).run();
     return json({ error: "invalid_code" }, 401);
   }
 
   const token = await makePrintToken(ref, env);
-  await env.DB.prepare("UPDATE members SET status = 'unlocked' WHERE ref = ?").bind(ref).run();
+  const consumed = await env.DB.prepare(
+    "UPDATE members SET status = 'unlocked', otp_hash = NULL, otp_exp = NULL WHERE ref = ? AND status = 'code_sent' AND otp_hash = ? AND otp_exp >= ? AND otp_tries < ?"
+  ).bind(ref, row.otp_hash, Date.now(), MAX_OTP_TRIES).run();
+  if (!(Number(consumed?.meta?.changes || 0) > 0)) {
+    return json({ error: "code_already_used_or_expired" }, 409);
+  }
   return json({ ok: true, unlockToken: token, expiresIn: PRINT_TTL_SECONDS });
 }
 
@@ -465,6 +470,7 @@ async function handlePrintCheck(url, env) {
 }
 
 async function handleAdminList(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const r = await env.DB.prepare(`
@@ -491,6 +497,7 @@ async function archiveAccess(id, request, env) {
   return { role: "regional", bureau: session.bureau };
 }
 async function handleAdhesionArchive(id, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   const access = await archiveAccess(id, request, env);
   if (!access) return json({ error: "unauthorized_or_out_of_scope" }, 403);
@@ -518,6 +525,7 @@ async function handleAdhesionArchive(id, request, env) {
 }
 
 async function handleAdminFile(id, type, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
@@ -550,6 +558,9 @@ async function handleAdminApprove(id, request, env) {
   ).bind(id).first();
   if (!row) return json({ error: "member_not_found" }, 404);
 
+  if (row.status !== "pending_payment") {
+    return json({ error: "request_not_awaiting_payment_approval", status: row.status }, 409);
+  }
   const profile = parseJson(row.profile, {});
   const confirmedAt = new Date().toISOString();
   const financeId = crypto.randomUUID();
@@ -558,11 +569,11 @@ async function handleAdminApprove(id, request, env) {
   // Current association policy: all membership receipts are collected centrally by the National Office.
   const nationalAmount = feeAmount;
   const regionalAmount = 0;
-  // Payment is treated as confirmed only at this authenticated national-office approval step.
-  // UNIQUE member_id + request_ref make repeated approval idempotent (no double accounting).
+  // Payment is manually confirmed by the National Office after checking the uploaded receipt.
+  // A normal INSERT (not OR IGNORE) prevents duplicate approval from issuing another OTP.
   try {
     await env.DB.prepare(`
-        INSERT OR IGNORE INTO anrsh_membership_finance
+        INSERT INTO anrsh_membership_finance
           (id, member_id, request_ref, bureau, wilaya, member_name, demand_type,
            fee_amount, national_rate, national_amount, regional_rate, regional_amount,
            payment_status, payment_confirmed_at, confirmed_by)
@@ -607,6 +618,7 @@ async function handleAdminApprove(id, request, env) {
 }
 
 async function handleAdminFinance(url, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const validDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || "");
@@ -664,7 +676,6 @@ async function handleAdminMembershipFeeUpdate(request, env) {
   const body = await request.json().catch(() => ({}));
   const amount = Number(body.amountDzd);
   if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_MEMBERSHIP_FEE_DZD) return json({ error: "invalid_membership_fee" }, 400);
-  if (amount !== DEFAULT_MEMBERSHIP_FEE_DZD) return json({ error: "membership_fee_fixed_at_500" }, 409);
   try {
     await env.DB.prepare("UPDATE anrsh_platform_settings SET fee_dzd = ?, updated_at = CAST(strftime('%s','now') AS INTEGER), updated_by = 'national_admin' WHERE id = 1").bind(amount).run();
     return json({ ok: true, membershipFeeDzd: amount });
@@ -672,6 +683,7 @@ async function handleAdminMembershipFeeUpdate(request, env) {
 }
 
 async function handleAdminFinanceTransfer(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
   if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
   const body = await request.json().catch(() => ({}));
@@ -806,6 +818,7 @@ async function officeSession(request, env) {
   return { bureau: session.bureau, officeName: session.office_name, tokenHash: hash };
 }
 async function handleOfficeMe(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   return json({ ok: true, role: "regional_office", bureau: session.bureau, officeName: session.officeName });
@@ -818,6 +831,7 @@ async function handleOfficeLogout(request, env) {
   return json({ ok: true, loggedOut: true });
 }
 async function handleOfficeRequests(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   const r = await env.DB.prepare(`SELECT id, ref, bureau, name, phone, profile, files, status, created_at
@@ -829,6 +843,7 @@ async function handleOfficeRequests(request, env) {
   })));
 }
 async function handleOfficeFile(id, type, request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ error: "office_session_invalid_or_expired" }, 401);
   if (!FILE_KEYS.includes(type)) return json({ error: "invalid_file_type" }, 400);
