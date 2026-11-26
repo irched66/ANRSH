@@ -292,6 +292,7 @@ async function handleHealth(env) {
     `).first();
     return json({
       ok: true, database: "connected",
+      environment: env.ANRSH_ENV || "unset",
       active_wilayas: Number(row?.wilayas || 0),
       active_regional_offices: Number(row?.offices || 0)
     });
@@ -502,6 +503,7 @@ async function handleAdhesionArchive(id, request, env) {
     return json({ ok: true, member: { id:member.id, reference:member.ref, bureau:member.bureau, name:member.name, phone:member.phone, profile, photo, status:member.status, createdAt:member.created_at }, archives: archives.results || [] }, 200, { "cache-control": "private, no-store" });
   }
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const profile = parseJson(member.profile, {});
   const files = parseJson(member.files, {});
   const photo = files.photo && files.photo.data ? { name: files.photo.name || "photo", type: files.photo.type || "image/jpeg", data: files.photo.data } : null;
@@ -808,6 +810,7 @@ async function handleOfficeMe(request, env) {
   return json({ ok: true, role: "regional_office", bureau: session.bureau, officeName: session.officeName });
 }
 async function handleOfficeLogout(request, env) {
+  if (!stagingOnly(env)) return json({ error: "staging_environment_required" }, 503);
   const session = await officeSession(request, env);
   if (!session) return json({ ok: true });
   await env.DB.prepare("DELETE FROM anrsh_office_sessions WHERE token_hash = ?").bind(session.tokenHash).run();
