@@ -1573,18 +1573,12 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       '<button type="button" class="btn-card btn-flip" id="anrsh_refresh">🔄 تحديث</button><button type="button" class="btn-card btn-dl" id="anrsh_csv">تصدير CSV</button></div>'+
       '<div style="overflow-x:auto;margin-top:10px"><table id="adTbl" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div></div>'+
       '<section id="anrshFinancePanel" style="margin-top:22px;padding:14px;border:1px solid rgba(245,158,11,.5);border-radius:14px;background:rgba(0,0,0,.22)">'+
-      '<h3 style="color:var(--gold-light)">📊 الحسابات المالية للمكاتب الجهوية — 20% و80%</h3>'+
-      '<p style="font-size:.82rem;margin:6px 0 12px">يُحتسب نصيب المكتب الوطني بنسبة 20% والمكتب الجهوي بنسبة 80% من قيمة كل اشتراك مؤكد، وفق المبلغ المعتمد وقت الطلب.</p>'+
+      '<h3 style="color:var(--gold-light)">📊 الحسابات المالية المركزية — المكتب الوطني</h3>'+
+      '<p style="font-size:.82rem;margin:6px 0 12px">تُحصّل جميع اشتراكات المنخرطين في الحساب المركزي للمكتب الوطني. المكاتب الجهوية لا تملك حسابات تحصيل ولا تُسجّل لها حصص مالية تلقائية.</p>'+
       '<div class="form-row two-col"><div class="field-group"><label>من تاريخ</label><input id="fin_from" type="date"></div><div class="field-group"><label>إلى تاريخ</label><input id="fin_to" type="date"></div></div>'+
       '<div class="form-row two-col"><div class="field-group"><label>المكتب الجهوي</label><select id="fin_bureau"><option value="">كل المكاتب</option></select></div><div class="field-group" style="justify-content:end"><button type="button" class="btn-card btn-dl" onclick="adFinanceLoad()">🔄 إنشاء / تحديث التقرير</button></div></div>'+
       '<div id="fin_summary" style="margin:10px 0;padding:10px;background:rgba(255,255,255,.06);border-radius:10px">لم يتم تحميل التقرير بعد.</div>'+
       '<div style="overflow-x:auto"><table id="fin_offices" style="width:100%;font-size:.8rem;border-collapse:collapse"></table></div>'+
-      '<h4 style="margin:16px 0 8px;color:var(--gold-light)">تسجيل تحويل مستحقات مكتب جهوي</h4>'+
-      '<div class="form-row two-col"><div class="field-group"><label>المبلغ المحوّل (دج)</label><input id="fin_transfer_amount" type="number" min="1" step="1"></div><div class="field-group"><label>تاريخ التحويل</label><input id="fin_transfer_date" type="date"></div></div>'+
-      '<div class="form-row two-col"><div class="field-group"><label>بداية الفترة</label><input id="fin_period_start" type="date"></div><div class="field-group"><label>نهاية الفترة</label><input id="fin_period_end" type="date"></div></div>'+
-      '<div class="field-group"><label>مرجع التحويل البنكي / رقم العملية</label><input id="fin_bank_reference" maxlength="100"></div>'+
-      '<button type="button" class="btn-card btn-dl" style="margin-top:10px" onclick="adFinanceRecordTransfer()">💳 تسجيل التحويل البنكي</button>'+
-      '<div id="fin_transfer_msg" style="margin-top:8px;font-size:.85rem"></div>'+
       '<h4 style="margin:16px 0 8px;color:var(--gold-light)">تفاصيل الاشتراكات المؤكدة</h4>'+
       '<div style="overflow-x:auto"><table id="fin_entries" style="width:100%;font-size:.78rem;border-collapse:collapse"></table></div>'+
       '<button type="button" class="btn-card btn-flip" style="margin-top:10px" onclick="adFinanceCsv()">⬇️ تصدير كشف الحساب CSV</button>'+
@@ -1640,7 +1634,6 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var eye=document.createElement("button");eye.type="button";eye.className="btn-card btn-flip";eye.style.cssText="padding:5px;margin:2px";eye.textContent="👁️ استمارة الانخراط";eye.onclick=function(){adAdhesionFiche(r)};td.appendChild(eye);
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
-      var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
   };
@@ -1672,7 +1665,6 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       await adLoad();
     }catch(e){el("ad_out").textContent="تعذرت المصادقة: "+e.message;}
   };
-  window.adDelete=async function(id){if(!confirm("هل تريد حذف هذا الطلب نهائياً؟"))return;try{await api("/api/admin/members/"+encodeURIComponent(id),{method:"DELETE"});await adLoad();el("ad_out").textContent="تم حذف الطلب.";}catch(e){el("ad_out").textContent=e.message;}};
   window.adFinanceLoad=async function(){
     var from=val("fin_from"),to=val("fin_to"),bureau=val("fin_bureau");
     if(!from){
@@ -1689,11 +1681,11 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
       var x=data.summary||{};
       el("fin_summary").textContent="الفترة: "+from+" إلى "+to+" | عدد الاشتراكات المؤكدة: "+Number(x.count||0)+" | المداخيل: "+Number(x.gross||0).toLocaleString("fr-FR")+" دج | حصة الوطني: "+Number(x.national||0).toLocaleString("fr-FR")+" دج | حصة المكاتب الجهوية: "+Number(x.regional||0).toLocaleString("fr-FR")+" دج";
       var t=el("fin_offices");t.innerHTML="";var h=document.createElement("tr");
-      ["المكتب الجهوي","عدد الاشتراكات","المداخيل","حصة الوطني","حصة الجهوي","المحوّل","المتبقي"].forEach(function(v){addCell(h,v)});t.appendChild(h);
-      (data.offices||[]).forEach(function(o){var r=document.createElement("tr");[o.bureau,o.count,o.gross+" دج",o.national+" دج",o.regional+" دج",o.transferred+" دج",o.outstanding+" دج"].forEach(function(v){addCell(r,v)});t.appendChild(r);});
+      ["المكتب الجهوي المُسجّل","عدد الاشتراكات","إجمالي الاشتراكات","المحصّل مركزياً"].forEach(function(v){addCell(h,v)});t.appendChild(h);
+      (data.offices||[]).forEach(function(o){var r=document.createElement("tr");[o.bureau,o.count,o.gross+" دج",o.national+" دج"].forEach(function(v){addCell(r,v)});t.appendChild(r);});
       var et=el("fin_entries");et.innerHTML="";var eh=document.createElement("tr");
-      ["رقم الطلب","الاسم","الولاية","المكتب","نوع العملية","الإجمالي","حصة الوطني","حصة الجهوي","تاريخ تأكيد الدفع"].forEach(function(v){addCell(eh,v)});et.appendChild(eh);
-      (data.entries||[]).forEach(function(o){var r=document.createElement("tr");[o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.national_amount,o.regional_amount,o.payment_confirmed_at].forEach(function(v){addCell(r,v)});et.appendChild(r);});
+      ["رقم الطلب","الاسم","الولاية","المكتب","نوع العملية","المبلغ المحصّل مركزياً","تاريخ تأكيد الدفع"].forEach(function(v){addCell(eh,v)});et.appendChild(eh);
+      (data.entries||[]).forEach(function(o){var r=document.createElement("tr");[o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.payment_confirmed_at].forEach(function(v){addCell(r,v)});et.appendChild(r);});
     }catch(e){el("fin_summary").textContent="تعذر تحميل التقرير المالي: "+e.message+" — قد يلزم تطبيق ترحيل قاعدة البيانات ونشر Worker الجديد.";}
   };
   window.adFinanceRecordTransfer=async function(){
@@ -1709,8 +1701,8 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   };
   window.adFinanceCsv=function(){
     var d=window.ANRSH_FINANCE_DATA;if(!d){alert("حمّل التقرير المالي أولاً.");return;}
-    var rows=[["رقم الطلب","الاسم","الولاية","المكتب الجهوي","نوع العملية","المبلغ","حصة المكتب الوطني","حصة المكتب الجهوي","تاريخ تأكيد الدفع"]];
-    (d.entries||[]).forEach(function(o){rows.push([o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.national_amount,o.regional_amount,o.payment_confirmed_at]);});
+    var rows=[["رقم الطلب","الاسم","الولاية","المكتب الجهوي","نوع العملية","المبلغ المحصّل مركزياً","تاريخ تأكيد الدفع"]];
+    (d.entries||[]).forEach(function(o){rows.push([o.request_ref,o.member_name,o.wilaya,o.bureau,o.demand_type,o.fee_amount,o.payment_confirmed_at]);});
     var csv="\ufeff"+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
     dlBlob("ANRSH-rapport-financier-"+d.period.from+"-"+d.period.to+".csv",new Blob([csv],{type:"text/csv;charset=utf-8"}));
   };
