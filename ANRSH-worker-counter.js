@@ -993,11 +993,11 @@ async function route(request, env) {
   if (request.method === "GET" && path === "/api/solidarity/cases") return handlePublicSolidarityCases(env);
   if (request.method === "POST" && path === "/api/solidarity/contribute") return handleSolidarityContributor(request, env);
   if (request.method === "POST" && path === "/api/admin/solidarity/keys") return handleAdminSolidarityKeys(request, env);
-  const solidarityKeyMatch = path.match(/^\\/api\\/admin\\/solidarity\\/keys\\/([^/]+)\\/revoke$/);
-  if (request.method === "POST" && solidarityKeyMatch) return handleAdminSolidarityKeyRevoke(decodeURIComponent(solidarityKeyMatch[1]), request, env);
+  const solidarityKeyParts = path.split("/");
+  if (request.method === "POST" && solidarityKeyParts.length === 7 && solidarityKeyParts[1] === "api" && solidarityKeyParts[2] === "admin" && solidarityKeyParts[3] === "solidarity" && solidarityKeyParts[4] === "keys" && solidarityKeyParts[6] === "revoke") return handleAdminSolidarityKeyRevoke(decodeURIComponent(solidarityKeyParts[5]), request, env);
   if (request.method === "GET" && path === "/api/admin/solidarity/cases") return handleAdminSolidarityCases(request, env);
-  const solidarityStatusMatch = path.match(/^\\/api\\/admin\\/solidarity\\/cases\\/([^/]+)\\/status$/);
-  if (request.method === "POST" && solidarityStatusMatch) return handleAdminSolidarityCaseStatus(decodeURIComponent(solidarityStatusMatch[1]), request, env);
+  const solidarityStatusParts = path.split("/");
+  if (request.method === "POST" && solidarityStatusParts.length === 7 && solidarityStatusParts[1] === "api" && solidarityStatusParts[2] === "admin" && solidarityStatusParts[3] === "solidarity" && solidarityStatusParts[4] === "cases" && solidarityStatusParts[6] === "status") return handleAdminSolidarityCaseStatus(decodeURIComponent(solidarityStatusParts[5]), request, env);
 
   if (request.method === "GET" && path === "/api/health") return handleHealth(env);
   if (request.method === "GET" && path === "/api/public-stats") return handlePublicStats(env);
