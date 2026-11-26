@@ -396,7 +396,6 @@ async function handleCreateRequest(request, env) {
     postal_code: cleanText(p.postal_code, 10),
     address: cleanText(p.address, 300),
     activity: cleanText(p.activity, 120),
-    activity: cleanText(p.activity, 120),
     work_region: cleanText(p.work_region, 100),
     specialty: cleanText(p.specialty, 120),
     retire_year: cleanText(p.retire_year, 10),
