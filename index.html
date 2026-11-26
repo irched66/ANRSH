@@ -1628,11 +1628,27 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     ADMIN_ROWS.forEach(function(r){var p=r.profile||{}, hay=[r.requestNumber,r.name,r.bureau,r.phone,p.matricule,p.wilaya].join(" ").toLowerCase();if(q&&!hay.includes(q))return;
       var tr=document.createElement("tr");addCell(tr,r.requestNumber);addCell(tr,r.name);addCell(tr,r.bureau);addCell(tr,r.phone);addCell(tr,r.status);
       var td=document.createElement("td");
+      var eye=document.createElement("button");eye.type="button";eye.className="btn-card btn-flip";eye.style.cssText="padding:5px;margin:2px";eye.textContent="👁️ استمارة الانخراط";eye.onclick=function(){adAdhesionFiche(r)};td.appendChild(eye);
       (r.files||[]).forEach(function(k){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.cssText="padding:5px;margin:2px";b.textContent="📎 "+k;b.onclick=function(){adDocs(r.id,k)};td.appendChild(b)});
       var approve=document.createElement("button");approve.type="button";approve.className="btn-card btn-dl";approve.style.cssText="padding:5px;margin:2px";approve.textContent="✅ مصادقة وإصدار رمز";approve.onclick=function(){adApprove(r.id)};td.appendChild(approve);
       var del=document.createElement("button");del.type="button";del.className="btn-card btn-flip";del.style.cssText="padding:5px;margin:2px";del.textContent="🗑 حذف";del.onclick=function(){adDelete(r.id)};td.appendChild(del);
       tr.appendChild(td);table.appendChild(tr);
     });
+  };
+  window.adAdhesionFiche=async function(r){
+    var p=r.profile||{}, get=function(){for(var i=0;i<arguments.length;i++){var v=p[arguments[i]];if(v!=null&&String(v).trim())return String(v)}return ""};
+    var photo="";
+    try{if((r.files||[]).includes("photo")){var pr=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/files/photo");var pb=await pr.blob();photo=await new Promise(function(ok){var fr=new FileReader();fr.onload=function(){ok(fr.result)};fr.onerror=function(){ok("")};fr.readAsDataURL(pb)})}}catch(e){}
+    var fields=[["الاسم واللقب بالعربية",get("name_ar","full_name_ar","arabic_name","name")],["Nom et Prénom (FR)",get("name_fr","full_name_fr","french_name")],["تاريخ ومكان الميلاد",get("birth_date_place_ar","birth_date")+" "+get("birth_place_ar","birth_place")],["Date et lieu de naissance (FR)",get("birth_date_place_fr","birth_place_fr")],["تاريخ التقاعد",get("retirement_date","retirementDate","date_retirement")],["الناحية السابقة",get("former_region","former_work_region","old_region")],["الناحية الحالية",get("current_region","wilaya","wilaya_name")],["مديرية الشؤون الاجتماعية سوناطراك",get("sonatrach_region","sonatrach_social_region")],["رقم الهاتف",r.phone||get("phone","mobile")],["العنوان الشخصي",get("address","address_ar","personal_address")]];
+    var esc=function(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+    var snap={memberId:r.id,reference:r.requestNumber||"",fields:fields,profile:p};
+    var out=el("ad_out");out.innerHTML="";
+    var box=document.createElement("div");box.style.cssText="background:#fff;color:#111;padding:18px;margin-top:12px;border-radius:8px";
+    box.innerHTML='<div style="text-align:center;font-weight:bold">Association Nationale des Retraités SONATRACH</div><div style="text-align:center;font-size:22px;font-weight:bold;margin:12px">استمارة انخراط / FICHE D\'ADHÉSION</div><div style="font-weight:bold">الرقم الاستدلالي: '+esc(snap.reference)+'</div>'+(photo?'<img alt="Photo" src="'+photo+'" style="width:105px;height:125px;object-fit:cover;border:1px solid #777;margin-top:8px">':'')+fields.map(function(f){return '<div style="display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #aaa;padding:10px 0"><b>'+esc(f[0])+'</b><span>'+esc(f[1])+'</span></div>'}).join("");
+    var save=document.createElement("button");save.type="button";save.className="btn-card btn-dl";save.textContent="💾 حفظ نسخة في أرشيف المنخرط";save.style.margin="12px 6px 0 0";
+    save.onclick=async function(){try{var z=await api("/api/admin/requests/"+encodeURIComponent(r.id)+"/adhesion-archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(snap)});save.textContent="✓ حُفظت نسخة الأرشيف "+z.archiveId;save.disabled=true}catch(e){save.textContent="تعذر الحفظ: "+e.message}};
+    var print=document.createElement("button");print.type="button";print.className="btn-card btn-flip";print.textContent="🖨️ طباعة / حفظ PDF";print.style.margin="12px 0";print.onclick=function(){var win=window.open("","_blank");if(!win){alert("اسمح بالنوافذ المنبثقة للطباعة");return}win.document.write('<html lang="ar" dir="rtl"><meta charset="utf-8"><title>Fiche '+esc(snap.reference)+'</title><body style="font-family:Arial;padding:24px;color:#111">'+box.innerHTML+'</body></html>');win.document.close();win.focus();win.print()};
+    out.appendChild(box);out.appendChild(save);out.appendChild(print);
   };
   window.adDocs=async function(id,type){
     try{var r=await api("/api/admin/requests/"+encodeURIComponent(id)+"/files/"+encodeURIComponent(type));var blob=await r.blob();var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.target="_blank";a.rel="noopener";a.textContent="فتح الوثيقة: "+type;a.style.cssText="display:inline-block;color:var(--gold-light);margin:8px";var out=el("ad_out");out.innerHTML="";out.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url)},60000);}
