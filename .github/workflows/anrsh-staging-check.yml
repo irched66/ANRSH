@@ -22,3 +22,22 @@ jobs:
         run: node --check ANRSH-worker-counter.js
       - name: Check staging endpoint configuration syntax
         run: node --check assets/anrsh-config.js
+      - name: Check inline JavaScript in the frontend
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const vm = require('node:vm');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const scripts = [...html.matchAll(/<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi)];
+          let checked = 0;
+          for (const match of scripts) {
+            const attrs = match[1] || '';
+            const source = match[2] || '';
+            if (/\\bsrc\\s*=/.test(attrs) || !source.trim()) continue;
+            if (/type\\s*=\\s*["'](?:application\\/json|application\\/ld\\+json)/i.test(attrs)) continue;
+            new vm.Script(source, { filename: 'index-inline-' + checked + '.js' });
+            checked++;
+          }
+          if (!checked) throw new Error('No inline JavaScript blocks found');
+          console.log('Checked ' + checked + ' inline JavaScript blocks.');
+          NODE
