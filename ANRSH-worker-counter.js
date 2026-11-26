@@ -472,19 +472,39 @@ async function handleAdminList(request, env) {
   return json(requests);
 }
 
+async function archiveAccess(id, request, env) {
+  // National administrators use the server-side secret; regional presidents use their scoped bearer session.
+  if (adminKeyOk(request, env)) return { role: "national", bureau: "NATIONAL" };
+  const session = await officeSession(request, env);
+  if (!session) return null;
+  const member = await env.DB.prepare("SELECT bureau FROM members WHERE id = ?").bind(id).first();
+  if (!member || member.bureau !== session.bureau) return null;
+  return { role: "regional", bureau: session.bureau };
+}
 async function handleAdhesionArchive(id, request, env) {
   if (!env.DB) return json({ error: "database_unavailable" }, 503);
-  if (!adminKeyOk(request, env)) return json({ error: "unauthorized" }, 401);
-  const member = await env.DB.prepare("SELECT id, ref, bureau, name FROM members WHERE id = ?").bind(id).first();
+  const access = await archiveAccess(id, request, env);
+  if (!access) return json({ error: "unauthorized_or_out_of_scope" }, 403);
+  const member = await env.DB.prepare("SELECT id, ref, bureau, name, phone, profile, files, status, created_at FROM members WHERE id = ?").bind(id).first();
   if (!member) return json({ error: "member_not_found" }, 404);
-  let body; try { body = await request.json(); } catch { return json({ error: "invalid_json" }, 400); }
-  if (!body || body.memberId !== id) return json({ error: "archive_member_mismatch" }, 400);
-  const archiveId = crypto.randomUUID(), now = new Date().toISOString();
-  const snapshot = JSON.stringify({ memberId:id, reference:member.ref, bureau:member.bureau, name:member.name, fields:Array.isArray(body.fields)?body.fields:[], profile:body.profile&&typeof body.profile==="object"?body.profile:{}, createdAt:now });
-  if (snapshot.length > 100000) return json({ error:"archive_snapshot_too_large" }, 413);
+  if (request.method === "GET") {
+    const archives = await env.DB.prepare("SELECT id, member_ref, bureau, snapshot, created_at FROM member_adhesion_archive WHERE member_id = ? ORDER BY created_at DESC LIMIT 100").bind(id).all();
+    const profile = parseJson(member.profile, {});
+    const files = parseJson(member.files, {});
+    const photo = files.photo && files.photo.data ? { name: files.photo.name || "photo", type: files.photo.type || "image/jpeg", data: files.photo.data } : null;
+    return json({ ok: true, member: { id:member.id, reference:member.ref, bureau:member.bureau, name:member.name, phone:member.phone, profile, photo, status:member.status, createdAt:member.created_at }, archives: archives.results || [] }, 200, { "cache-control": "private, no-store" });
+  }
+  if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  const profile = parseJson(member.profile, {});
+  const files = parseJson(member.files, {});
+  const photo = files.photo && files.photo.data ? { name: files.photo.name || "photo", type: files.photo.type || "image/jpeg", data: files.photo.data } : null;
+  const now = new Date().toISOString();
+  const snapshot = JSON.stringify({ memberId:member.id, reference:member.ref, bureau:member.bureau, name:member.name, phone:member.phone, profile, photo, status:member.status, memberCreatedAt:member.created_at, archivedAt:now, archivedBy:access.role });
+  if (snapshot.length > 1400000) return json({ error:"archive_snapshot_too_large" }, 413);
+  const archiveId = crypto.randomUUID();
   await env.DB.prepare("INSERT INTO member_adhesion_archive (id, member_id, member_ref, bureau, snapshot, created_at) VALUES (?, ?, ?, ?, ?, ?)")
-    .bind(archiveId,id,member.ref,member.bureau,snapshot,now).run();
-  return json({ok:true,archiveId,createdAt:now});
+    .bind(archiveId,member.id,member.ref,member.bureau,snapshot,now).run();
+  return json({ok:true,archiveId,memberRef:member.ref,createdAt:now},201,{ "cache-control":"no-store" });
 }
 
 async function handleAdminFile(id, type, request, env) {
@@ -849,7 +869,7 @@ async function route(request, env) {
   if (path === "/api/admin/finance/transfers" && request.method === "POST") return handleAdminFinanceTransfer(request, env);
 
   const archiveMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/adhesion-archive$/);
-  if (request.method === "POST" && archiveMatch) return handleAdhesionArchive(decodeURIComponent(archiveMatch[1]), request, env);
+  if ((request.method === "GET" || request.method === "POST") && archiveMatch) return handleAdhesionArchive(decodeURIComponent(archiveMatch[1]), request, env);
 
   const fileMatch = path.match(/^\/api\/admin\/requests\/([^/]+)\/files\/([^/]+)$/);
   if (request.method === "GET" && fileMatch) {
