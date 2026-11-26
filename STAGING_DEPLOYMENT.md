@@ -48,11 +48,15 @@ npx wrangler d1 execute anrsh-staging --remote --config wrangler.staging.toml --
 
 Do not re-run migration 007 after it succeeds. Do not run these commands against a production database.
 
+Migration `010_solidarity_cases.sql` adds public, moderated solidarity cases, revocable contributor-key hashes, and an audit table. Apply it only to `anrsh-staging` after backup and only if these tables are absent. Contributor keys are shown once, expire after 90 days, and are stored as keyed hashes. All case-write, key-issue, key-revoke, and moderation endpoints fail closed unless `ANRSH_ENV=staging` and the National Office API key is valid. Public visitors can read only published, unexpired summaries. Never include identity numbers, medical records, or private documents in public case text.
+
 ## 5. Connect the frontend to the deployed staging Worker
 
 Edit `assets/anrsh-config.js` and set `window.ANRSH_API_BASE_OVERRIDE` to the exact URL copied from Wrangler. This file must contain only the public Worker URL, never API keys.
 
 The frontend intentionally has no fallback to the old `anrsh-ap-dev` endpoint. Until the staging URL is configured, API requests fail closed.
+
+The new pages are `magazine.html`, `solidarity.html`, and `solidarity-admin.html`. The admin page requires the `ADMIN_API_KEY` entered by the National Office operator; it does not save that key in browser storage. The contributor page accepts only individual contributor keys. Keep the admin page URL private and never send the National Office key to contributors.
 
 ## 6. Verify before using real data
 
