@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/member-adhesion-fiche-preview
+      - fix/anrsh-pr9-staging-safety
   pull_request:
     branches:
       - feature/member-adhesion-fiche-preview
@@ -18,7 +19,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check Cloudflare Worker syntax
+      - name: Check staging migration integrity with SQLite\n        run: python scripts/check-staging-migrations.py\n      - name: Check Cloudflare Worker syntax
         run: node --check ANRSH-worker-counter.js
       - name: Check staging endpoint configuration syntax
         run: node --check assets/anrsh-config.js
