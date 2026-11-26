@@ -36,6 +36,14 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}td,th{padding:9px;bord
 <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
 <div><h2 id="officeTitle">المكتب الجهوي</h2><small>البيانات المعروضة تخص مكتبك فقط.</small></div>
 <button id="logout">تسجيل الخروج</button></div>
+<section class="card" style="margin-top:14px">
+<h2>الولايات التابعة للمكتب</h2>
+<p class="muted">يمكنك إضافة ولاية غير مسندة إلى مكتب آخر. لا يمكن تغيير إسناد ولاية مسجلة إلا بموافقة المكتب الوطني.</p>
+<label for="wilayaSelect">اختر ولاية متاحة</label>
+<select id="wilayaSelect"><option value="">جارٍ تحميل الولايات...</option></select>
+<button id="assignWilaya">إضافة الولاية إلى مكتبي</button>
+<div id="officeWilayaList" style="overflow-x:auto;margin-top:12px"></div>
+</section>
 <button id="refresh">تحديث الطلبات</button>
 <div id="requests" style="overflow-x:auto;margin-top:14px"></div>
 </section>
@@ -82,7 +90,30 @@ async function activate(){
 }
 async function showWorkspace(){
  const me=await call("/api/office/me");$("auth").classList.add("hidden");$("workspace").classList.remove("hidden");
- $("officeTitle").textContent=me.officeName||me.bureau;msg("تم تسجيل الدخول بنجاح.");await loadRequests();
+ $("officeTitle").textContent=me.officeName||me.bureau;msg("تم تسجيل الدخول بنجاح.");await loadOfficeWilayas();await loadRequests();
+}
+async function loadOfficeWilayas(){
+ try{
+  const r=await call("/api/office/wilayas");
+  const select=$("wilayaSelect");select.innerHTML='<option value="">-- اختر ولاية غير مسندة --</option>';
+  (r.available||[]).forEach(w=>{const op=document.createElement("option");op.value=w.code;op.textContent=w.code+" — "+w.name_ar+" / "+(w.name_fr||"");select.appendChild(op);});
+  const box=$("officeWilayaList");
+  if(!(r.assigned||[]).length){box.textContent="لم تُسند أي ولاية لهذا المكتب بعد.";return}
+  const table=document.createElement("table"),head=document.createElement("tr");
+  ["الرمز","الولاية بالعربية","Français"].forEach(x=>{const th=document.createElement("th");th.textContent=x;head.appendChild(th)});
+  const thead=document.createElement("thead");thead.appendChild(head);table.appendChild(thead);
+  const body=document.createElement("tbody");
+  r.assigned.forEach(w=>{const tr=document.createElement("tr");[w.code,w.name_ar,w.name_fr||""].forEach(v=>{const td=document.createElement("td");td.textContent=v||"";tr.appendChild(td)});body.appendChild(tr)});
+  table.appendChild(body);box.replaceChildren(table);
+ }catch(e){msg("تعذر تحميل الولايات: "+e.message)}
+}
+async function assignWilaya(){
+ const code=$("wilayaSelect").value;
+ if(!code){msg("اختر ولاية أولاً.");return}
+ $("assignWilaya").disabled=true;
+ try{await call("/api/office/wilayas",{method:"POST",body:{wilaya_code:code}});msg("تمت إضافة الولاية إلى مكتبك بنجاح.");await loadOfficeWilayas();}
+ catch(e){msg(e.message)}
+ finally{$("assignWilaya").disabled=false}
 }
 async function loadRequests(){
  try{const rows=await call("/api/office/requests");const box=$("requests");
@@ -105,7 +136,7 @@ async function logout(){
  try{await call("/api/office/logout",{method:"POST"})}catch(e){}
  token="";sessionStorage.removeItem("anrsh_office_session");$("workspace").classList.add("hidden");$("auth").classList.remove("hidden");msg("تم تسجيل الخروج.");
 }
-$("login").onclick=login;$("activate").onclick=activate;$("logout").onclick=logout;$("refresh").onclick=loadRequests;
+$("login").onclick=login;$("activate").onclick=activate;$("logout").onclick=logout;$("refresh").onclick=loadRequests;$("assignWilaya").onclick=assignWilaya;
 loadOffices();
 if(token)showWorkspace().catch(()=>{token="";sessionStorage.removeItem("anrsh_office_session")});
 })();
