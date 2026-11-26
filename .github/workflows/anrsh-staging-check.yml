@@ -1,0 +1,24 @@
+name: ANRSH staging source checks
+
+on:
+  push:
+    branches:
+      - feature/member-adhesion-fiche-preview
+  pull_request:
+    branches:
+      - feature/member-adhesion-fiche-preview
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check Cloudflare Worker syntax
+        run: node --check ANRSH-worker-counter.js
+      - name: Check staging endpoint configuration syntax
+        run: node --check assets/anrsh-config.js
