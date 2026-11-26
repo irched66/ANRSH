@@ -5,6 +5,7 @@ on:
     branches:
       - feature/member-adhesion-fiche-preview
       - fix/anrsh-pr9-staging-safety
+      - feature/solidarity-magazine-portal
   pull_request:
     branches:
       - feature/member-adhesion-fiche-preview
@@ -39,8 +40,9 @@ jobs:
             const source = match[2] || '';
             if (/\bsrc\s*=/.test(attrs) || !source.trim()) continue;
             if (/type\s*=\s*["'](?:application\/json|application\/ld\+json)/i.test(attrs)) continue;
-            new vm.Script(source, { filename: 'index-inline-' + checked + '.js' });
+            new vm.Script(source, { filename: page + '-inline-' + checked + '.js' });
             checked++;
+            }
           }
           if (!checked) throw new Error('No inline JavaScript blocks found');
           console.log('Checked ' + checked + ' inline JavaScript blocks.');
