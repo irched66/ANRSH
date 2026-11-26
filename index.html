@@ -1399,7 +1399,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
 /* ===== ANRSH D1 API integration — edition 16 Nov 2026 ===== */
 (function(){
   "use strict";
-  var API_BASE = window.ANRSH_API_BASE_OVERRIDE || "https://anrsh-staging.irched2521.workers.dev";
+  var API_BASE = window.ANRSH_API_BASE_OVERRIDE || "";
   var ADMIN_KEY = "";
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
@@ -1451,6 +1451,7 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
     return map[key] || (j&&j.message) || ("خطأ في الاتصال بالخادم ("+status+").");
   }
   async function api(path, options){
+    if(!API_BASE) throw new Error("لم يُضبط رابط Worker التجريبي بعد. انشر إعداد wrangler.staging.toml أولاً ثم أضف رابط Worker الناتج إلى ANRSH_API_BASE_OVERRIDE.");
     options=options||{};
     options.headers=Object.assign({},options.headers||{});
     if(ADMIN_KEY) options.headers["x-admin-key"]=ADMIN_KEY;
