@@ -36,7 +36,7 @@ The Worker expects the D1 schema already to be present. First inspect the stagin
 
 Migration `007_central_membership_collection.sql` renames the former 20/80 finance ledger to `anrsh_membership_finance_legacy_006` and creates a new 100/0 ledger. It preserves the old ledger for audit. Apply it only after confirming that migration 006 exists in this staging database and after taking a staging backup.
 
-Migrations `008_regional_office_auth.sql` and `009_member_adhesion_archive.sql` add the regional-office activation/session tables and immutable adhesion archive. They require the `regional_offices` and `members` parent tables to exist first. The archive table may already have been created manually; the migration uses `IF NOT EXISTS`.
+Migration `008_regional_office_auth.sql` adds regional-office activation/session tables. Migration `009_member_adhesion_archive.sql` adds the immutable adhesion archive. Both require the `regional_offices` and `members` parent tables to exist first. Use only these canonical numbered migrations; the duplicate `008_member_adhesion_archive.sql` has been removed from this fix branch.
 
 After confirming the prerequisite schema and backup, apply only the missing migrations individually:
 
@@ -64,7 +64,7 @@ Check these read-only endpoints first:
 
 Then use fictitious test data only to test application submission, national-office approval, SMS OTP, OTP verification, and card print validation. The member OTP expires after 5 minutes; the print token expires after 15 minutes and is bound to the request reference.
 
-The current Worker stores private files in D1 (maximum 1 MiB total per request) because R2 is not configured. File routes require an authenticated National Office key or a scoped regional-office session. Do not treat this as a production document-storage approval.
+The current Worker stores private files in D1 (maximum 1 MiB total per request) because R2 is not configured. The fee is currently 500 DZD; the schema and Worker permit a later National Office fee change from 1 to 1,000,000 DZD without changing the current default. File routes require an authenticated National Office key or a scoped regional-office session. Do not treat this as a production document-storage approval.
 
 ## Production protection
 
