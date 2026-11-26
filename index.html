@@ -1404,6 +1404,22 @@ obs.observe(document.body,{childList:true,characterData:true,subtree:true});
   var ADMIN_ROWS = [];
   var ADMIN_ME = null;
   var unlockToken = "";
+  var originalDownloadCard = window.downloadCard;
+  var originalPrintCard = window.printCard;
+  async function requireValidPrintToken(){
+    if(!unlockToken || !curRef) throw new Error("يجب إدخال رمز التأكيد الذي أرسله المكتب بعد المصادقة على الدفع.");
+    var check = await api("/api/print-check?t="+encodeURIComponent(unlockToken), {method:"GET"});
+    if(!check || check.ok !== true) throw new Error("انتهت صلاحية إذن الطباعة. اطلب إعادة التحقق من المكتب.");
+    return true;
+  }
+  window.downloadCard = async function(){
+    try { await requireValidPrintToken(); if(typeof originalDownloadCard==="function") return originalDownloadCard(); }
+    catch(e){ alert(e.message || "تعذر التحقق من صلاحية البطاقة."); }
+  };
+  window.printCard = async function(){
+    try { await requireValidPrintToken(); if(typeof originalPrintCard==="function") return originalPrintCard(); }
+    catch(e){ alert(e.message || "تعذر التحقق من صلاحية البطاقة."); }
+  };
   window.ANRSH_API_BASE = API_BASE;
 
   function apiError(j, status){
