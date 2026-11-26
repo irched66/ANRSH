@@ -1121,9 +1121,7 @@ var ROWS=`المساعد الصوتي لذوي الإعاقة البصرية|Ass
 -- اختر البلدية --|-- Choisir la commune --|-- Select commune --
 غير مدرجة (اكتبها في العنوان)|Non listée (à saisir dans l’adresse)|Not listed (write it in the address)
 عنوان الإقامة بالتفصيل|Adresse détaillée|Detailed address
-رقم بطاقة التعريف الوطنية (CNI)|N° de carte d’identité nationale (CNI)|National ID number (CNI)
 المسار والنشاط بسوناطراك الأم ونواحيها|Parcours professionnel à Sonatrach|Career at Sonatrach
-رقم التسجيل بسوناطراك (Matricule SH)|Matricule Sonatrach (SH)|Sonatrach ID (SH)
 النشاط أو القسم بمجمع سوناطراك|Activité ou division à Sonatrach|Activity or division at Sonatrach
 DP - قسم الإنتاج (Division Production)|DP - Division Production|DP - Production Division
 FOR - قسم الحفر وأشغال الآبار (Division Forage)|FOR - Division Forage|FOR - Drilling & Wells Division
@@ -1142,8 +1140,6 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 المكتب الجهوي سكيكدة (الناحية الشرقية)|Bureau régional Skikda (zone Est)|Skikda regional office (East zone)
 المكتب الجهوي وهران (الناحية الغربية)|Bureau régional Oran (zone Ouest)|Oran regional office (West zone)
 المكتب التنفيذي الوطني (المقر المركزي)|Bureau exécutif national (siège)|National executive office (HQ)
-رقم الضمان الاجتماعي|N° de sécurité sociale|Social security number
-رقم التسجيل بالصندوق الوطني للتقاعد (CNR)|N° d’immatriculation CNR|CNR registration number
 الوثائق الإلزامية وإثبات الدفع الإلكتروني (500 دج)|Documents obligatoires et preuve de paiement (500 DA)|Required documents and payment proof (500 DZD)
 الصورة الشمسية الرسمية (للبطاقة البيومترية)|Photo d’identité officielle|Official passport photo
 نسخة من بطاقة التعريف الوطنية (صورة أو PDF)|Copie de la carte d’identité (image ou PDF)|Copy of national ID (image or PDF)
@@ -1161,7 +1157,6 @@ DG / Siège - المديرية العامة والمصالح الوظيفية|DG
 بطاقة انخراط · CARTE D’ADHÉRENT|CARTE D’ADHÉRENT|MEMBERSHIP CARD
 الاسم|Nom|Name
 الصفة|Statut|Status
-الاختصاص|Spécialité|Specialty
 الناحية|Région|Region
 معًا من أجل كرامة المتقاعد وحقوقه|Ensemble pour la dignité et les droits du retraité|Together for retirees’ dignity and rights
 المكتب الوطني ANRSH|Bureau National ANRSH|National Office ANRSH
@@ -1259,8 +1254,6 @@ Object.assign(D,{
 "اكتب اللقب":["Saisissez le nom","Enter last name"],
 "اكتب الاسم":["Saisissez le prénom","Enter first name"],
 "حي عدل CSCEC، عمارة 05":["Cité AADL CSCEC, bâtiment 05","AADL CSCEC residence, building 05"],
-"رقم بطاقة التعريف البيومترية":["Numéro de la carte d’identité biométrique","Biometric national ID number"],
-"رقم التسجيل بسوناطراك":["Matricule Sonatrach","Sonatrach registration number"]
 });
 for(var k in D){if(D[k].length<3)D[k][2]=k}
 
@@ -1357,7 +1350,7 @@ function adLoad(){sbFetch("/rest/v1/members?select=ref,member_no,bureau,status,c
 function cell(tr,t){var td=document.createElement("td");td.style.cssText="padding:6px;border-bottom:1px solid rgba(255,255,255,.12)";if(typeof t==="string")td.textContent=t;else td.appendChild(t);tr.appendChild(td)}
 function btn(t,f){var b=document.createElement("button");b.type="button";b.className="btn-card btn-flip";b.style.padding="6px";b.textContent=t;b.onclick=f;return b}
 function adRender(){var q=($("ad_q")?v("ad_q"):"").toLowerCase(),T=$("adTbl");T.innerHTML="";
- ROWSM.forEach(function(r,i){var d=r.data||{},nm=(d.first_name||"")+" "+(d.last_name||"");if(q&&(r.member_no+nm+r.bureau+(d.matricule||"")+r.ref).toLowerCase().indexOf(q)<0)return;
+ ROWSM.forEach(function(r,i){var d=r.data||{},nm=(d.first_name||"")+" "+(d.last_name||"");if(q&&(r.member_no+nm+r.bureau+r.ref).toLowerCase().indexOf(q)<0)return;
   var tr=document.createElement("tr");cell(tr,r.member_no||"");cell(tr,nm);cell(tr,r.bureau||"");cell(tr,d.phone||"");cell(tr,r.status==="paid"?"✅ مدفوع":"⏳ بانتظار الدفع");
   var box=document.createElement("div");box.appendChild(btn("👁️",function(){adFicha(i)}));box.appendChild(btn("📎",function(){adDocs(i)}));if(r.status!=="paid")box.appendChild(btn("✅ رمز",function(){adApprove(i)}));cell(tr,box);T.appendChild(tr)})}
 function fichaEsc(x){return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
@@ -1370,7 +1363,7 @@ function adFicha(i){
 }
 function adDocs(i){var r=ROWSM[i],o=$("ad_out");o.textContent="";Object.keys(r.files||{}).forEach(function(k){sbFetch("/storage/v1/object/sign/docs/"+r.files[k],{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expiresIn:600})}).then(function(x){var a=document.createElement("a");a.href=CFG.supabaseUrl+"/storage/v1"+x.signedURL;a.target="_blank";a.rel="noopener";a.textContent=k+" ";a.style.color="var(--gold-light)";o.appendChild(a)}).catch(function(e){o.textContent="خطأ: "+e.message})})}
 function adApprove(i){var r=ROWSM[i],o=$("ad_out");rpc("approve_request",{p_ref:r.ref}).then(function(c){var tel=String((r.data||{}).phone||"").replace(/\D/g,"").replace(/^0/,"213");o.innerHTML="";var d=document.createElement("div");d.dir="ltr";d.style.cssText="font-size:2rem;letter-spacing:6px;color:var(--gold-light);text-align:center";d.textContent=c;o.appendChild(d);o.appendChild(btn("💬 إرسال الرمز للعضو عبر واتساب",function(){wa(tel,"ANRSH: تم تأكيد دفع اشتراكك. رمز التأكيد لطلبك "+r.ref+" هو: "+c)}));adLoad()}).catch(function(e){o.textContent="خطأ: "+e.message})}
-function adCsv(){var L=[["member_no","ref","bureau","status","first_name","last_name","matricule","phone","email","wilaya","commune","created_at"]];ROWSM.forEach(function(r){var d=r.data||{};L.push([r.member_no,r.ref,r.bureau,r.status,d.first_name,d.last_name,d.matricule,d.phone,d.email,d.wilaya,d.commune,r.created_at])});
+function adCsv(){var L=[["member_no","ref","bureau","status","first_name","last_name","phone","email","wilaya","commune","created_at"]];ROWSM.forEach(function(r){var d=r.data||{};L.push([r.member_no,r.ref,r.bureau,r.status,d.first_name,d.last_name,d.phone,d.email,d.wilaya,d.commune,r.created_at])});
  dlBlob("anrsh-membres.csv",new Blob(["\ufeff"+L.map(function(x){return x.map(function(c){return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'}).join(",")}).join("\n")],{type:"text/csv"}))}
 var ME={role:"",bureau:""},RPS=[];
 function submitReport(){if(!JWT){alert("سجّل الدخول من فضاء الإدارة أولاً.");return}if(!v("rp_lit")){alert("اكتب التقرير الأدبي أولاً.");return}
