@@ -1,0 +1,20 @@
+name: Security Phase 1 Boundary Checks
+
+on:
+  push:
+    branches: [security-phase-1]
+  pull_request:
+    branches: [security-phase-1]
+
+jobs:
+  boundary-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax check
+        run: node --check ANRSH-worker-counter.js
+      - name: Security boundary checks
+        run: node tests/security-phase-1-boundary.mjs
